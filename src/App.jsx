@@ -1,120 +1,458 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useState } from 'react'
 import './App.css'
 
+const heroSlides = [
+  {
+    title: 'Experience Comfort, Style, and Luxury in Every Stay',
+    description:
+      'Premium hospitality wrapped in warm interiors, curated services, and unforgettable moments.',
+    image:
+      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
+    title: 'A Rivora Escape Designed for Rest and Refined Living',
+    description:
+      'Wake up to elegant details, serene views, and spaces tailored for modern travelers.',
+    image:
+      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
+    title: 'Elevated Stays for Couples, Families, and Weekend Retreats',
+    description:
+      'From immersive suites to signature offers, Rivora turns every booking into an experience.',
+    image:
+      'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1600&q=80',
+  },
+]
+
+const rooms = [
+  {
+    title: 'Standard Room',
+    image:
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=80',
+    description:
+      'Smartly designed comfort with warm timber finishes, ambient lighting, and thoughtful essentials.',
+    guests: '2 Guests',
+    beds: '1 King Bed',
+    size: '35 m²',
+    price: '$108',
+  },
+  {
+    title: 'Superior Room',
+    image:
+      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80',
+    description:
+      'A sophisticated room featuring a spa-style bathroom, lounge corner, and airy contemporary styling.',
+    guests: '3 Guests',
+    beds: '1 Queen Bed',
+    size: '42 m²',
+    price: '$129',
+  },
+  {
+    title: 'Executive Room',
+    image:
+      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=900&q=80',
+    description:
+      'An elevated suite experience with generous space, layered textures, and premium in-room amenities.',
+    guests: '2 Guests',
+    beds: '1 King Bed',
+    size: '52 m²',
+    price: '$149',
+  },
+]
+
+const offers = [
+  {
+    title: 'Romantic Stay',
+    image:
+      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=900&q=80',
+    description: '2 Night / Candlelight Dinner Package',
+    badge: '25% OFF',
+  },
+  {
+    title: 'Early Bird Deal',
+    image:
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80',
+    description: 'Reserve 15 Days Earlier',
+    badge: 'BEST VALUE',
+  },
+  {
+    title: 'Family Getaway',
+    image:
+      'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=80',
+    description: '3 Day Stay / Kids Free',
+    badge: 'POPULAR',
+  },
+]
+
+const articles = [
+  {
+    date: '29 Jan',
+    title: 'Top Hotel Amenities That Guests Value in 2026',
+    image:
+      'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=700&q=80',
+  },
+  {
+    date: '28 Jan',
+    title: 'Design Trends Shaping Modern Hotel Interiors',
+    image:
+      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=700&q=80',
+  },
+  {
+    date: '26 Jan',
+    title: 'What Makes a Hotel Stay Truly Memorable?',
+    image:
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=700&q=80',
+  },
+  {
+    date: '28 Jan',
+    title: '5 Tips to Get the Best Hotel Deals Online',
+    image:
+      'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=700&q=80',
+  },
+]
+
+const faqs = [
+  'What time is check-in and check-out?',
+  'Do you offer airport pickup or shuttle service?',
+  'Are pets allowed in the hotel?',
+  'Do you have free Wi‑Fi?',
+  'What facilities are available for guests?',
+  'Do you offer breakfast?',
+]
+
+const stats = [
+  { label: 'Luxury rooms', value: '180+' },
+  { label: 'Happy guests', value: '8500+' },
+  { label: 'Award wins', value: '65+' },
+]
+
+const answers = {
+  'What time is check-in and check-out?':
+    'Check-in begins at 3:00 PM and check-out is at 11:00 AM. Early check-in and late check-out are available on request.',
+  'Do you offer airport pickup or shuttle service?':
+    'Yes. Rivora offers private airport pickup and city transfer services that can be arranged during booking or through the concierge.',
+  'Are pets allowed in the hotel?':
+    'Selected suites are pet-friendly. Please contact the hotel before arrival so we can prepare the room accordingly.',
+  'Do you have free Wi‑Fi?':
+    'Complimentary high-speed Wi‑Fi is available throughout guest rooms, lounges, and public spaces.',
+  'What facilities are available for guests?':
+    'Guests enjoy access to the wellness spa, fitness studio, all-day dining, curated lounge spaces, meeting rooms, and concierge support.',
+  'Do you offer breakfast?':
+    'Yes. A signature breakfast experience is included in selected packages and can also be added to any stay.',
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [activeSlide, setActiveSlide] = useState(0)
+  const [openFaq, setOpenFaq] = useState(0)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % heroSlides.length)
+    }, 6000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const currentSlide = heroSlides[activeSlide]
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="page-shell">
+      <header className="site-header">
+        <a className="brand" href="#top" aria-label="Rivora home">
+          <span className="brand-mark" aria-hidden="true">
+            ✦
+          </span>
+          <span>rivora</span>
+        </a>
+
+        <nav className="site-nav" aria-label="Primary navigation">
+          <a href="#top">Home</a>
+          <a href="#rooms">Rooms</a>
+          <a href="#facilities">Pages</a>
+          <a href="#offers">Blog</a>
+          <a href="#footer">Contact</a>
+        </nav>
+
+        <a className="pill-button" href="#booking">
+          Reservation
+        </a>
+      </header>
+
+      <main>
+        <section className="hero-section" id="top">
+          <div
+            className="hero-card"
+            style={{ backgroundImage: `linear-gradient(rgba(44, 29, 19, 0.33), rgba(44, 29, 19, 0.45)), url(${currentSlide.image})` }}
+          >
+            <button
+              className="hero-arrow hero-arrow-left"
+              type="button"
+              aria-label="Previous slide"
+              onClick={() =>
+                setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length)
+              }
+            >
+              ‹
+            </button>
+
+            <div className="hero-copy">
+              <p className="eyebrow">Luxury Hotel Experience</p>
+              <h1>{currentSlide.title}</h1>
+              <p className="hero-description">{currentSlide.description}</p>
+            </div>
+
+            <div className="hero-dots" aria-label="Slide pagination">
+              {heroSlides.map((slide, index) => (
+                <button
+                  key={slide.title}
+                  className={index === activeSlide ? 'hero-dot active' : 'hero-dot'}
+                  type="button"
+                  aria-label={`Go to slide ${index + 1}`}
+                  onClick={() => setActiveSlide(index)}
+                />
+              ))}
+            </div>
+
+            <button
+              className="hero-arrow hero-arrow-right"
+              type="button"
+              aria-label="Next slide"
+              onClick={() => setActiveSlide((current) => (current + 1) % heroSlides.length)}
+            >
+              ›
+            </button>
+          </div>
+
+          <form className="booking-card" id="booking">
+            <div className="booking-field">
+              <label htmlFor="checkin">Check in</label>
+              <input id="checkin" type="date" defaultValue="2026-04-23" />
+            </div>
+            <div className="booking-field">
+              <label htmlFor="checkout">Check out</label>
+              <input id="checkout" type="date" defaultValue="2026-04-26" />
+            </div>
+            <div className="booking-field booking-counter">
+              <label htmlFor="adults">Adults</label>
+              <select id="adults" defaultValue="2">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+            <div className="booking-field booking-counter">
+              <label htmlFor="children">Children</label>
+              <select id="children" defaultValue="0">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </div>
+            <button className="booking-submit" type="submit">
+              Check Availability
+            </button>
+          </form>
+        </section>
+
+        <section className="section intro-section" id="rooms">
+          <p className="section-tag">Stay With Rivora</p>
+          <h2>Explore Room</h2>
+          <p className="section-description">
+            Discover a collection of serene suites crafted for comfort, privacy, and memorable stays.
+          </p>
+
+          <div className="room-list">
+            {rooms.map((room) => (
+              <article className="room-card" key={room.title}>
+                <img className="room-image" src={room.image} alt={room.title} loading="lazy" />
+                <div className="room-content">
+                  <div className="room-main">
+                    <div className="rating">★★★★★</div>
+                    <h3>{room.title}</h3>
+                    <p>{room.description}</p>
+                  </div>
+                  <ul className="room-meta" aria-label={`${room.title} highlights`}>
+                    <li>{room.guests}</li>
+                    <li>{room.beds}</li>
+                    <li>{room.size}</li>
+                  </ul>
+                  <div className="room-action">
+                    <strong>
+                      {room.price}
+                      <span>/night</span>
+                    </strong>
+                    <a href="#booking">Book now</a>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="section feature-banner">
+          <div className="feature-overlay">
+            <div className="score-block">
+              <span>4.9</span>
+              <p>2200+ Reviews</p>
+            </div>
+            <div className="feature-copy">
+              <p className="section-tag light">Awarded</p>
+              <h2>Exceptional hospitality and comfort. The perfect choice for relaxing and refreshing getaways.</h2>
+              <p>Crafted for guests who appreciate elegant spaces and attentive service.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="section facilities-section" id="facilities">
+          <p className="section-tag">Welcome to Grand Stay</p>
+          <h2>Hotel Facilities</h2>
+          <p className="section-description">
+            Rivora combines refined interiors with warm service and curated experiences in every corner.
+          </p>
+
+          <div className="facilities-grid">
+            <div className="facilities-visual">
+              <img
+                src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80"
+                alt="Rivora lounge"
+                loading="lazy"
+              />
+            </div>
+
+            <div className="stats-grid">
+              {stats.map((stat) => (
+                <article className="stat-card" key={stat.label}>
+                  <p>{stat.label}</p>
+                  <strong>{stat.value}</strong>
+                </article>
+              ))}
+              <article className="stat-card image-card">
+                <img
+                  src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80"
+                  alt="Guest support"
+                  loading="lazy"
+                />
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section className="section offers-section" id="offers">
+          <p className="section-tag">Exclusive Deals</p>
+          <h2>Latest Hotel Offers</h2>
+
+          <div className="offers-grid">
+            {offers.map((offer) => (
+              <article className="offer-card" key={offer.title}>
+                <img src={offer.image} alt={offer.title} loading="lazy" />
+                <span className="offer-badge">{offer.badge}</span>
+                <div className="offer-copy">
+                  <h3>{offer.title}</h3>
+                  <p>{offer.description}</p>
+                  <a href="#booking">Book now</a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="section faq-section">
+          <div className="faq-intro">
+            <p className="section-tag">FAQ</p>
+            <h2>Everything You Need to Know About Staying With Us</h2>
+          </div>
+
+          <div className="faq-list">
+            {faqs.map((question, index) => {
+              const isOpen = openFaq === index
+
+              return (
+                <article className={isOpen ? 'faq-item open' : 'faq-item'} key={question}>
+                  <button type="button" onClick={() => setOpenFaq(isOpen ? -1 : index)}>
+                    <span>{question}</span>
+                    <span aria-hidden="true">{isOpen ? '−' : '+'}</span>
+                  </button>
+                  {isOpen && <p>{answers[question]}</p>}
+                </article>
+              )
+            })}
+          </div>
+        </section>
+
+        <section className="section video-section">
+          <div className="video-frame">
+            <img
+              src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80"
+              alt="Luxury Rivora suite"
+            />
+            <button className="play-button" type="button" aria-label="Play Rivora introduction video">
+              ▶
+            </button>
+          </div>
+        </section>
+
+        <section className="section blog-section">
+          <p className="section-tag">Our Blog</p>
+          <h2>News &amp; Articles</h2>
+
+          <div className="articles-grid">
+            {articles.map((article) => (
+              <article className="article-card" key={article.title}>
+                <div className="article-image-wrap">
+                  <img src={article.image} alt={article.title} loading="lazy" />
+                  <span className="article-date">{article.date}</span>
+                </div>
+                <h3>{article.title}</h3>
+                <p>
+                  Discover hospitality insights, thoughtful travel ideas, and curated inspiration from Rivora.
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      <footer className="site-footer" id="footer">
+        <div>
+          <p className="footer-label">Address</p>
+          <a href="https://maps.google.com" target="_blank" rel="noreferrer">
+            2464 Royal Lane
+          </a>
+          <p>Brooklyn, NY 11206</p>
+        </div>
+        <div className="footer-brand">
+          <a className="brand brand-light" href="#top">
+            <span className="brand-mark" aria-hidden="true">
+              ✦
+            </span>
+            <span>rivora</span>
+          </a>
+          <div className="footer-socials" aria-label="Social links">
+            <a href="https://facebook.com" aria-label="Facebook">
+              f
+            </a>
+            <a href="https://instagram.com" aria-label="Instagram">
+              i
+            </a>
+            <a href="https://x.com" aria-label="X">
+              x
+            </a>
+            <a href="https://pinterest.com" aria-label="Pinterest">
+              p
+            </a>
+          </div>
+          <p>Copyright © 2026 — Rivora by React Vite</p>
         </div>
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
+          <p className="footer-label">Contact Us</p>
+          <a href="tel:+12125550147">(+1) 212 555 0147</a>
+          <a href="mailto:booking@rivora.com">booking@rivora.com</a>
         </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      </footer>
+    </div>
   )
 }
 
