@@ -371,10 +371,6 @@
   min-height: 360px;
   border-radius: 28px;
   overflow: hidden;
-  background:
-    linear-gradient(rgba(61, 38, 18, 0.6), rgba(61, 38, 18, 0.48)),
-    url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1600&q=80')
-      center/cover;
 }
 
 .feature-overlay {
@@ -384,6 +380,8 @@
   gap: clamp(1.6rem, 4vw, 4rem);
   padding: clamp(2rem, 4vw, 4rem);
   color: #fff;
+  background-position: center;
+  background-size: cover;
 }
 
 .score-block {

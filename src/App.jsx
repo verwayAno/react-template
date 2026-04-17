@@ -1,35 +1,46 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import heroSuite from './assets/rivora/hero-suite.svg'
+import roomStandard from './assets/rivora/room-standard.svg'
+import roomSuperior from './assets/rivora/room-superior.svg'
+import roomExecutive from './assets/rivora/room-executive.svg'
+import featureLounge from './assets/rivora/feature-lounge.svg'
+import facilitiesLounge from './assets/rivora/facilities-lounge.svg'
+import conciergeImage from './assets/rivora/concierge.svg'
+import offerRomantic from './assets/rivora/offer-romantic.svg'
+import offerEarlybird from './assets/rivora/offer-earlybird.svg'
+import offerFamily from './assets/rivora/offer-family.svg'
+import videoSuite from './assets/rivora/video-suite.svg'
+import articleCity from './assets/rivora/article-city.svg'
+import articleDesign from './assets/rivora/article-design.svg'
+import articlePool from './assets/rivora/article-pool.svg'
+import articleLaptop from './assets/rivora/article-laptop.svg'
 
 const heroSlides = [
   {
     title: 'Experience Comfort, Style, and Luxury in Every Stay',
     description:
       'Premium hospitality wrapped in warm interiors, curated services, and unforgettable moments.',
-    image:
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80',
+    image: heroSuite,
   },
   {
     title: 'A Rivora Escape Designed for Rest and Refined Living',
     description:
       'Wake up to elegant details, serene views, and spaces tailored for modern travelers.',
-    image:
-      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1600&q=80',
+    image: facilitiesLounge,
   },
   {
     title: 'Elevated Stays for Couples, Families, and Weekend Retreats',
     description:
       'From immersive suites to signature offers, Rivora turns every booking into an experience.',
-    image:
-      'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1600&q=80',
+    image: videoSuite,
   },
 ]
 
 const rooms = [
   {
     title: 'Standard Room',
-    image:
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=80',
+    image: roomStandard,
     description:
       'Smartly designed comfort with warm timber finishes, ambient lighting, and thoughtful essentials.',
     guests: '2 Guests',
@@ -39,8 +50,7 @@ const rooms = [
   },
   {
     title: 'Superior Room',
-    image:
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80',
+    image: roomSuperior,
     description:
       'A sophisticated room featuring a spa-style bathroom, lounge corner, and airy contemporary styling.',
     guests: '3 Guests',
@@ -50,8 +60,7 @@ const rooms = [
   },
   {
     title: 'Executive Room',
-    image:
-      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=900&q=80',
+    image: roomExecutive,
     description:
       'An elevated suite experience with generous space, layered textures, and premium in-room amenities.',
     guests: '2 Guests',
@@ -64,22 +73,19 @@ const rooms = [
 const offers = [
   {
     title: 'Romantic Stay',
-    image:
-      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=900&q=80',
+    image: offerRomantic,
     description: '2 Night / Candlelight Dinner Package',
     badge: '25% OFF',
   },
   {
     title: 'Early Bird Deal',
-    image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80',
+    image: offerEarlybird,
     description: 'Reserve 15 Days Earlier',
     badge: 'BEST VALUE',
   },
   {
     title: 'Family Getaway',
-    image:
-      'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=80',
+    image: offerFamily,
     description: '3 Day Stay / Kids Free',
     badge: 'POPULAR',
   },
@@ -89,26 +95,22 @@ const articles = [
   {
     date: '29 Jan',
     title: 'Top Hotel Amenities That Guests Value in 2026',
-    image:
-      'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=700&q=80',
+    image: articleCity,
   },
   {
     date: '28 Jan',
     title: 'Design Trends Shaping Modern Hotel Interiors',
-    image:
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=700&q=80',
+    image: articleDesign,
   },
   {
     date: '26 Jan',
     title: 'What Makes a Hotel Stay Truly Memorable?',
-    image:
-      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=700&q=80',
+    image: articlePool,
   },
   {
     date: '28 Jan',
     title: '5 Tips to Get the Best Hotel Deals Online',
-    image:
-      'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=700&q=80',
+    image: articleLaptop,
   },
 ]
 
@@ -293,7 +295,7 @@ function App() {
         </section>
 
         <section className="section feature-banner">
-          <div className="feature-overlay">
+          <div className="feature-overlay" style={{ backgroundImage: `linear-gradient(rgba(61, 38, 18, 0.6), rgba(61, 38, 18, 0.48)), url(${featureLounge})` }}>
             <div className="score-block">
               <span>4.9</span>
               <p>2200+ Reviews</p>
@@ -316,7 +318,7 @@ function App() {
           <div className="facilities-grid">
             <div className="facilities-visual">
               <img
-                src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80"
+                src={facilitiesLounge}
                 alt="Rivora lounge"
                 loading="lazy"
               />
@@ -331,7 +333,7 @@ function App() {
               ))}
               <article className="stat-card image-card">
                 <img
-                  src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80"
+                  src={conciergeImage}
                   alt="Guest support"
                   loading="lazy"
                 />
@@ -385,7 +387,7 @@ function App() {
         <section className="section video-section">
           <div className="video-frame">
             <img
-              src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80"
+              src={videoSuite}
               alt="Luxury Rivora suite"
             />
             <button className="play-button" type="button" aria-label="Play Rivora introduction video">
