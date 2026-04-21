@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@tailwind utilities;
 
 * {
   box-sizing: border-box;
@@ -16,12 +17,9 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Inter', sans-serif;
   line-height: 1.6;
-  background:
-    radial-gradient(circle at 12% 16%, color-mix(in srgb, var(--accent), transparent 88%) 0%, transparent 30%),
-    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--line), transparent 55%) 0%, transparent 28%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   transition: background 250ms ease, color 250ms ease;
 }
@@ -38,6 +36,7 @@ img {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }

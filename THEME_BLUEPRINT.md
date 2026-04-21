@@ -1,7 +1,6 @@
 # React Theme Blueprint — Architecture & Initialization Guide
 
 > **Purpose**: This document fully describes the architecture, file structure, naming conventions, data patterns, component hierarchy, styling system, and tooling of the **Rivora** theme built on `react-template`. Any AI agent (Copilot, Cursor, etc.) or developer can use this file to **scaffold a brand-new theme** that follows the exact same pattern, then customize its visual identity and content independently.
-
 ---
 
 ## Table of Contents
@@ -25,7 +24,7 @@
 
 ---
 
-## 1. Project Overview
+## 1. Project Overview 
 
 This is a **single-page React application** (with client-side routing) designed as a **multi-page marketing/booking website**. The entire UI lives in **two files**: `App.jsx` (all components + data) and `App.css` (all styles). This monolithic-but-simple approach makes themes **self-contained and easy to duplicate**.
 
