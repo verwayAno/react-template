@@ -576,27 +576,32 @@ function Reveal({ children, delay = 0, className = '' }) {
 /* ═══════════════════════════════
    CARD COMPONENTS
 ═══════════════════════════════ */
-function StayCard({ item, featured }) {
+function StayCard({ item }) {
   return (
-    <article className={`vl-stay-card${featured ? ' vl-stay-card--feat' : ''}`} style={{ '--c': item.color }}>
-      <Link to={`/stay/${item.id}`} className="vl-stay-card__img">
+    <article className="vl-stay-card" style={{ '--c': item.color }}>
+      <Link to={`/stay/${item.id}`} className="vl-stay-card__img-wrap">
         <img src={item.cover} alt={item.name} loading="lazy" />
-        <div className="vl-stay-card__veil" />
-        {item.badge && <span className="vl-badge">{item.badge}</span>}
-        <div className="vl-stay-card__region"><I n="map-pin-2-line" /> {item.region}</div>
-        <div className="vl-stay-card__hover">Explore <I n="arrow-right-up-line" /></div>
+        <div className="vl-stay-card__img-veil" />
+        {item.badge && <span className="vl-badge vl-stay-card__badge">{item.badge}</span>}
+        <span className="vl-stay-card__region-tag"><I n="map-pin-line" />{item.region}</span>
+        <div className="vl-stay-card__price-tag">
+          <span>from</span><strong>${item.price.toLocaleString()}</strong><span>/night</span>
+        </div>
+        <div className="vl-stay-card__overlay">
+          <span className="vl-stay-card__atmo">{item.atmosphere}</span>
+        </div>
       </Link>
       <div className="vl-stay-card__body">
-        <div className="vl-stay-card__row">
-          <span className="vl-stay-card__loc"><I n="map-pin-line" />{item.location}</span>
-          <span className="vl-stay-card__rat"><I n="star-fill" />{item.rating}</span>
+        <div className="vl-stay-card__header">
+          <span className="vl-stay-card__cat">{item.category}</span>
+          <div className="vl-stay-card__rat"><I n="star-fill" /><strong>{item.rating}</strong><span>({item.reviews})</span></div>
         </div>
         <h3><Link to={`/stay/${item.id}`}>{item.name}</Link></h3>
-        <p className="vl-stay-card__atmo">{item.atmosphere}</p>
+        <div className="vl-stay-card__loc"><I n="map-pin-2-line" />{item.location}</div>
+        <p className="vl-stay-card__tagline">{item.tagline}</p>
         <div className="vl-stay-card__foot">
           <div className="vl-stay-card__price">
-            <strong>${item.price.toLocaleString()}</strong>
-            <span> /night</span>
+            <strong>${item.price.toLocaleString()}</strong><span>/night</span>
           </div>
           <Link to={`/stay/${item.id}`} className="vl-pill-btn">View <I n="arrow-right-line" /></Link>
         </div>
@@ -606,27 +611,31 @@ function StayCard({ item, featured }) {
 }
 
 function ExpCard({ item }) {
-  const diffClass = `vl-diff--${item.difficulty.toLowerCase()}`
   return (
     <article className="vl-exp-card" style={{ '--c': item.color }}>
       <Link to={`/experiences/${item.id}`} className="vl-exp-card__img">
         <img src={item.cover} alt={item.name} loading="lazy" />
         <div className="vl-exp-card__veil" />
-        {item.badge && <span className="vl-badge">{item.badge}</span>}
+        <div className="vl-exp-card__top">
+          {item.badge && <span className="vl-badge">{item.badge}</span>}
+          <span className={`vl-diff vl-diff--${item.difficulty.toLowerCase()}`}>{item.difficulty}</span>
+        </div>
         <div className="vl-exp-card__meta">
-          <span><I n="time-line" />{item.duration}</span>
-          <span><I n="group-line" />{item.groupSize}</span>
-          <span className={`vl-diff ${diffClass}`}>{item.difficulty}</span>
+          <span className="vl-exp-card__meta-pill"><I n="time-line" />{item.duration}</span>
+          <span className="vl-exp-card__meta-pill"><I n="group-line" />{item.groupSize}</span>
         </div>
       </Link>
       <div className="vl-exp-card__body">
-        <span className="vl-exp-card__cat"><I n="map-pin-line" />{item.location}</span>
-        <h3><Link to={`/experiences/${item.id}`}>{item.name}</Link></h3>
-        <p>{item.tagline}</p>
-        <div className="vl-exp-card__foot">
-          <span className="vl-stay-card__price"><strong>${item.price}</strong><span> /person</span></span>
-          <Link to={`/experiences/${item.id}`} className="vl-pill-btn">Book <I n="arrow-right-line" /></Link>
+        <div className="vl-exp-card__header">
+          <span className="vl-exp-card__cat"><I n="compass-3-line" />{item.category}</span>
+          <span className="vl-exp-card__price"><strong>${item.price}</strong>/pp</span>
         </div>
+        <h3><Link to={`/experiences/${item.id}`}>{item.name}</Link></h3>
+        <div className="vl-exp-card__loc"><I n="map-pin-2-line" />{item.location}</div>
+        <p>{item.tagline}</p>
+        <Link to={`/experiences/${item.id}`} className="vl-pill-btn vl-pill-btn--full">
+          View Experience <I n="arrow-right-line" />
+        </Link>
       </div>
     </article>
   )
@@ -639,15 +648,24 @@ function PkgCard({ item }) {
         <img src={item.cover} alt={item.name} loading="lazy" />
         <div className="vl-pkg-card__veil" />
         {item.badge && <span className="vl-badge">{item.badge}</span>}
-        <div className="vl-pkg-card__dur"><I n="calendar-2-line" />{item.duration}</div>
       </Link>
       <div className="vl-pkg-card__body">
-        <span className="vl-exp-card__cat"><I n="map-pin-line" />{item.location}</span>
+        <div className="vl-pkg-card__meta">
+          <span className="vl-pkg-card__dur"><I n="calendar-2-line" />{item.duration}</span>
+          <span className="vl-pkg-card__loc-tag"><I n="map-pin-line" />{item.location}</span>
+        </div>
         <h3><Link to={`/packages/${item.id}`}>{item.name}</Link></h3>
-        <p>{item.tagline}</p>
-        <div className="vl-exp-card__foot">
-          <span className="vl-stay-card__price"><strong>${item.price.toLocaleString()}</strong><span> /{item.pricePer}</span></span>
-          <Link to={`/packages/${item.id}`} className="vl-pill-btn">View <I n="arrow-right-line" /></Link>
+        <p className="vl-pkg-card__tagline">{item.tagline}</p>
+        <div className="vl-pkg-card__includes">
+          {item.includes.slice(0, 3).map(inc => (
+            <span key={inc} className="vl-pkg-card__inc-tag"><I n="check-line" />{inc.split(',')[0]}</span>
+          ))}
+        </div>
+        <div className="vl-pkg-card__foot">
+          <div className="vl-pkg-card__price">
+            <span>from</span><strong>${item.price.toLocaleString()}</strong><span>/{item.pricePer}</span>
+          </div>
+          <Link to={`/packages/${item.id}`} className="vl-pill-btn">View Journey <I n="arrow-right-line" /></Link>
         </div>
       </div>
     </article>
@@ -668,49 +686,70 @@ function BookingBar() {
   const [checkin, setCheckin] = useState('')
   const [checkout, setCheckout] = useState('')
   const [guests, setGuests] = useState(2)
+  const [focused, setFocused] = useState(null)
 
   const handleSearch = e => {
     e.preventDefault()
     nav(`/${type}`)
   }
 
+  const TYPES = [
+    { key: 'stay', icon: 'hotel-line', label: 'Stay' },
+    { key: 'experiences', icon: 'compass-3-line', label: 'Activity' },
+    { key: 'packages', icon: 'gift-2-line', label: 'Package' },
+  ]
+
   return (
     <div className="vl-booking-bar">
       <div className="contain">
-        <form className="vl-booking-bar__inner" onSubmit={handleSearch}>
-          <div className="vl-booking-bar__tabs">
-            {[['stay','hotel-line','Stay'],['experiences','compass-3-line','Activity'],['packages','gift-2-line','Package']].map(([t, icon, label]) => (
-              <button key={t} type="button" className={`vl-bb-tab${type === t ? ' vl-bb-tab--on' : ''}`} onClick={() => setType(t)}>
-                <I n={icon} />{label}
+        <div className="vl-bb-card">
+          {/* Type selector */}
+          <div className="vl-bb-types">
+            {TYPES.map(({ key, icon, label }) => (
+              <button key={key} type="button" className={`vl-bb-type${type === key ? ' vl-bb-type--on' : ''}`} onClick={() => setType(key)}>
+                <div className="vl-bb-type__icon"><I n={icon} /></div>
+                <span>{label}</span>
+                {type === key && <div className="vl-bb-type__line" />}
               </button>
             ))}
           </div>
-          <div className="vl-booking-bar__fields">
-            <div className="vl-bb-field vl-bb-field--dest">
-              <I n="map-pin-2-line" />
-              <input type="text" placeholder="Destination or property" value={destination} onChange={e => setDestination(e.target.value)} aria-label="Destination" />
-            </div>
-            <div className="vl-bb-sep" />
-            <div className="vl-bb-field vl-bb-field--dates">
-              <I n="calendar-2-line" />
-              <div className="vl-bb-dates">
-                <input type="date" value={checkin} onChange={e => setCheckin(e.target.value)} aria-label="Check-in" />
-                <span aria-hidden>&#8594;</span>
-                <input type="date" value={checkout} onChange={e => setCheckout(e.target.value)} aria-label="Check-out" />
+          {/* Fields */}
+          <form className="vl-bb-form" onSubmit={handleSearch}>
+            <div className={`vl-bb-field-group${focused === 'dest' ? ' vl-bb-field-group--focused' : ''}`}>
+              <label htmlFor="bb-dest">Where</label>
+              <div className="vl-bb-input-row">
+                <I n="map-pin-2-line" />
+                <input id="bb-dest" type="text" placeholder="Destination or property" value={destination} onChange={e => setDestination(e.target.value)} onFocus={() => setFocused('dest')} onBlur={() => setFocused(null)} aria-label="Destination" />
               </div>
             </div>
-            <div className="vl-bb-sep" />
-            <div className="vl-bb-field vl-bb-field--guests">
-              <I n="group-line" />
-              <button type="button" className="vl-bb-cnt" onClick={() => setGuests(g => Math.max(1, g - 1))} aria-label="Remove guest">−</button>
-              <span>{guests} {guests === 1 ? 'Guest' : 'Guests'}</span>
-              <button type="button" className="vl-bb-cnt" onClick={() => setGuests(g => Math.min(12, g + 1))} aria-label="Add guest">+</button>
+            <div className="vl-bb-divider" />
+            <div className={`vl-bb-field-group${focused === 'checkin' ? ' vl-bb-field-group--focused' : ''}`}>
+              <label htmlFor="bb-checkin">Check In</label>
+              <div className="vl-bb-input-row">
+                <I n="calendar-2-line" />
+                <input id="bb-checkin" type="date" value={checkin} onChange={e => setCheckin(e.target.value)} onFocus={() => setFocused('checkin')} onBlur={() => setFocused(null)} aria-label="Check-in" />
+              </div>
             </div>
-          </div>
-          <button type="submit" className="vl-bb-search">
-            <I n="search-2-line" /> Search
-          </button>
-        </form>
+            <div className="vl-bb-divider" />
+            <div className={`vl-bb-field-group${focused === 'checkout' ? ' vl-bb-field-group--focused' : ''}`}>
+              <label htmlFor="bb-checkout">Check Out</label>
+              <div className="vl-bb-input-row">
+                <I n="calendar-check-line" />
+                <input id="bb-checkout" type="date" value={checkout} onChange={e => setCheckout(e.target.value)} onFocus={() => setFocused('checkout')} onBlur={() => setFocused(null)} aria-label="Check-out" />
+              </div>
+            </div>
+            <div className="vl-bb-divider" />
+            <div className="vl-bb-field-group vl-bb-field-group--guests">
+              <label>Guests</label>
+              <div className="vl-bb-guests-row">
+                <button type="button" className="vl-bb-guest-btn" onClick={() => setGuests(g => Math.max(1, g - 1))} aria-label="Remove guest"><I n="subtract-line" /></button>
+                <span className="vl-bb-guest-count"><I n="group-line" />{guests} {guests === 1 ? 'Guest' : 'Guests'}</span>
+                <button type="button" className="vl-bb-guest-btn" onClick={() => setGuests(g => Math.min(12, g + 1))} aria-label="Add guest"><I n="add-line" /></button>
+              </div>
+            </div>
+            <button type="submit" className="vl-bb-submit"><I n="search-2-line" /><span>Search</span></button>
+          </form>
+        </div>
       </div>
     </div>
   )
@@ -1147,8 +1186,12 @@ function AboutPage() {
 ═══════════════════════════════ */
 function StaysPage() {
   const [filter, setFilter] = useState('All')
+  const [sort, setSort] = useState('default')
   const cats = ['All', ...new Set(STAYS.map(s => s.category))]
-  const shown = filter === 'All' ? STAYS : STAYS.filter(s => s.category === filter)
+  let shown = filter === 'All' ? [...STAYS] : STAYS.filter(s => s.category === filter)
+  if (sort === 'price-asc') shown = [...shown].sort((a, b) => a.price - b.price)
+  if (sort === 'price-desc') shown = [...shown].sort((a, b) => b.price - a.price)
+  if (sort === 'rating') shown = [...shown].sort((a, b) => b.rating - a.rating)
 
   return (
     <main className="vl-list-page">
@@ -1156,19 +1199,30 @@ function StaysPage() {
         <div className="vl-page-hero__veil" />
         <div className="contain">
           <Reveal>
-            <span className="vl-eyebrow vl-eyebrow--light">Accommodations</span>
+            <span className="vl-eyebrow vl-eyebrow--light"><I n="hotel-line" /> Accommodations</span>
             <h1>Where You'll Rest</h1>
             <p>From overwater villas to mountain retreats — each stay hand-selected for the story it tells.</p>
           </Reveal>
         </div>
       </section>
       <div className="contain">
-        <div className="vl-filter-bar">
-          {cats.map(c => (
-            <button key={c} className={`vl-filter-btn${filter === c ? ' vl-filter-btn--on' : ''}`} onClick={() => setFilter(c)}>{c}</button>
-          ))}
+        <div className="vl-list-toolbar">
+          <div className="vl-filter-pills">
+            {cats.map(c => (
+              <button key={c} className={`vl-filter-pill${filter === c ? ' vl-filter-pill--on' : ''}`} onClick={() => setFilter(c)}>{c}</button>
+            ))}
+          </div>
+          <div className="vl-sort-select">
+            <I n="arrow-up-down-line" />
+            <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort by">
+              <option value="default">Featured</option>
+              <option value="rating">Top Rated</option>
+              <option value="price-asc">Price: Low → High</option>
+              <option value="price-desc">Price: High → Low</option>
+            </select>
+          </div>
         </div>
-        <div className="vl-cards-grid">
+        <div className="vl-stays-grid">
           {shown.map((s, i) => (
             <Reveal key={s.id} delay={i * 60}>
               <StayCard item={s} />
@@ -1229,13 +1283,23 @@ function StayDetailPage() {
         </div>
       </div>
 
-      {/* GALLERY STRIP */}
-      <div className="vl-gallery-strip contain">
-        {item.images.map((img, i) => (
-          <button key={i} className={`vl-gallery-strip__item${imgIdx === i ? ' vl-gallery-strip__item--on' : ''}`} onClick={() => setImgIdx(i)}>
-            <img src={img} alt={`View ${i + 1}`} loading="lazy" />
-          </button>
-        ))}
+      {/* GALLERY GRID */}
+      <div className="vl-stay-gallery contain">
+        <div className="vl-stay-gallery__main">
+          <img src={item.images[imgIdx] || item.cover} alt={item.name} />
+          <div className="vl-stay-gallery__dots">
+            {item.images.map((_, i) => (
+              <button key={i} className={`vl-stay-gallery__dot${imgIdx === i ? ' vl-stay-gallery__dot--on' : ''}`} onClick={() => setImgIdx(i)} aria-label={`Image ${i + 1}`} />
+            ))}
+          </div>
+        </div>
+        <div className="vl-stay-gallery__side">
+          {item.images.slice(1, 3).map((img, i) => (
+            <button key={i} className="vl-stay-gallery__side-img" onClick={() => setImgIdx(i + 1)}>
+              <img src={img} alt={`View ${i + 2}`} loading="lazy" />
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* BODY */}
@@ -1244,7 +1308,7 @@ function StayDetailPage() {
           {/* ATMOSPHERE TAGS */}
           <Reveal>
             <div className="vl-atmosphere">
-              {item.atmosphere.map(a => <span key={a} className="vl-atmo-tag">{a}</span>)}
+              {item.atmosphere.split(' · ').map(a => <span key={a} className="vl-atmo-tag">{a}</span>)}
             </div>
           </Reveal>
 
@@ -1322,8 +1386,13 @@ function StayDetailPage() {
 ═══════════════════════════════ */
 function ExperiencesPage() {
   const [filter, setFilter] = useState('All')
+  const [diff, setDiff] = useState('All')
   const cats = ['All', ...new Set(EXPERIENCES.map(e => e.category))]
-  const shown = filter === 'All' ? EXPERIENCES : EXPERIENCES.filter(e => e.category === filter)
+  const diffs = ['All', 'Easy', 'Intermediate', 'Expert']
+  const shown = EXPERIENCES.filter(e =>
+    (filter === 'All' || e.category === filter) &&
+    (diff === 'All' || e.difficulty === diff)
+  )
 
   return (
     <main className="vl-list-page">
@@ -1331,19 +1400,26 @@ function ExperiencesPage() {
         <div className="vl-page-hero__veil" />
         <div className="contain">
           <Reveal>
-            <span className="vl-eyebrow vl-eyebrow--light">Activities</span>
+            <span className="vl-eyebrow vl-eyebrow--light"><I n="compass-3-line" /> Activities</span>
             <h1>Moments Worth Having</h1>
             <p>Guided experiences curated by those who know the land, sea, and sky better than anyone.</p>
           </Reveal>
         </div>
       </section>
       <div className="contain">
-        <div className="vl-filter-bar">
-          {cats.map(c => (
-            <button key={c} className={`vl-filter-btn${filter === c ? ' vl-filter-btn--on' : ''}`} onClick={() => setFilter(c)}>{c}</button>
-          ))}
+        <div className="vl-list-toolbar">
+          <div className="vl-filter-pills">
+            {cats.map(c => (
+              <button key={c} className={`vl-filter-pill${filter === c ? ' vl-filter-pill--on' : ''}`} onClick={() => setFilter(c)}>{c}</button>
+            ))}
+          </div>
+          <div className="vl-filter-pills vl-filter-pills--diff">
+            {diffs.map(d => (
+              <button key={d} className={`vl-filter-pill vl-filter-pill--sm${diff === d ? ' vl-filter-pill--on' : ''}`} onClick={() => setDiff(d)}>{d}</button>
+            ))}
+          </div>
         </div>
-        <div className="vl-cards-grid vl-cards-grid--exp">
+        <div className="vl-exp-grid">
           {shown.map((e, i) => (
             <Reveal key={e.id} delay={i * 60}>
               <ExpCard item={e} />
@@ -1457,21 +1533,32 @@ function ExperienceDetailPage() {
    PACKAGES LIST PAGE
 ═══════════════════════════════ */
 function PackagesPage() {
+  const [filter, setFilter] = useState('All')
+  const durations = ['All', ...new Set(PACKAGES.map(p => p.duration))]
+  const shown = filter === 'All' ? PACKAGES : PACKAGES.filter(p => p.duration === filter)
+
   return (
     <main className="vl-list-page">
       <section className="vl-page-hero vl-page-hero--pkg">
         <div className="vl-page-hero__veil" />
         <div className="contain">
           <Reveal>
-            <span className="vl-eyebrow vl-eyebrow--light">Curated Journeys</span>
+            <span className="vl-eyebrow vl-eyebrow--light"><I n="gift-2-line" /> Curated Journeys</span>
             <h1>Complete Packages</h1>
             <p>Every detail handled. Every moment considered. You just have to show up.</p>
           </Reveal>
         </div>
       </section>
       <div className="contain">
+        <div className="vl-list-toolbar">
+          <div className="vl-filter-pills">
+            {durations.map(d => (
+              <button key={d} className={`vl-filter-pill${filter === d ? ' vl-filter-pill--on' : ''}`} onClick={() => setFilter(d)}>{d}</button>
+            ))}
+          </div>
+        </div>
         <div className="vl-pkg-list-grid">
-          {PACKAGES.map((p, i) => (
+          {shown.map((p, i) => (
             <Reveal key={p.id} delay={i * 80}>
               <PkgCard item={p} />
             </Reveal>
@@ -1492,7 +1579,7 @@ function PackageDetailPage() {
 
   if (!item) return <NotFound />
 
-  const stayData = STAYS.find(s => s.name === item.stay)
+  const stayData = STAYS.find(s => s.id === item.stay)
 
   return (
     <main className="vl-pkg-detail" style={{ '--ac': item.color }}>
@@ -1531,7 +1618,10 @@ function PackageDetailPage() {
             {item.itinerary.map((day, i) => (
               <Reveal key={day.day} delay={i * 55}>
                 <div className="vl-itinerary__item">
-                  <div className="vl-itinerary__num">Day {day.day}</div>
+                  <div className="vl-itinerary__num">
+                    <span className="vl-itinerary__circle">{day.day}</span>
+                    <span className="vl-itinerary__day-label">Day</span>
+                  </div>
                   <div className="vl-itinerary__content">
                     <h4>{day.title}</h4>
                     <p>{day.desc}</p>
@@ -1541,20 +1631,26 @@ function PackageDetailPage() {
             ))}
           </div>
 
-          {/* EXPERIENCES IN PACKAGE */}
-          {item.experiences.length > 0 && (
+          {item.experiences && item.experiences.length > 0 && (
             <>
               <Reveal delay={80}>
                 <h3>Activities Included</h3>
               </Reveal>
               <div className="vl-pkg-exp-list">
-                {item.experiences.map(expName => {
-                  const e = EXPERIENCES.find(x => x.name === expName)
+                {item.experiences.map(expId => {
+                  const e = EXPERIENCES.find(x => x.id === expId)
                   return e ? (
-                    <Reveal key={expName} delay={60}>
+                    <Reveal key={expId} delay={60}>
                       <div className="vl-pkg-exp-chip">
-                        <I n="compass-3-line" />
-                        <Link to={`/experiences/${e.id}`}>{expName}</Link>
+                        <div className="vl-pkg-exp-chip__img">
+                          <img src={e.cover} alt={e.name} loading="lazy" />
+                        </div>
+                        <div className="vl-pkg-exp-chip__body">
+                          <span className="vl-pkg-exp-chip__cat"><I n="compass-3-line" />{e.category}</span>
+                          <Link to={`/experiences/${e.id}`} className="vl-pkg-exp-chip__name">{e.name}</Link>
+                          <span className="vl-pkg-exp-chip__loc"><I n="map-pin-line" />{e.location}</span>
+                        </div>
+                        <Link to={`/experiences/${e.id}`} className="vl-pkg-exp-chip__arrow"><I n="arrow-right-line" /></Link>
                       </div>
                     </Reveal>
                   ) : null
@@ -1568,9 +1664,16 @@ function PackageDetailPage() {
           {/* PRICE BOX */}
           <Reveal>
             <div className="vl-pkg-price-box">
-              <span>From</span>
-              <strong>${item.price.toLocaleString()}</strong>
-              <span>/ {item.pricePer}</span>
+              <div className="vl-pkg-price-box__header">
+                <div>
+                  <span className="vl-pkg-price-box__from">From</span>
+                  <div className="vl-pkg-price-box__price">
+                    <strong>${item.price.toLocaleString()}</strong>
+                    <span>/{item.pricePer}</span>
+                  </div>
+                </div>
+                <div className="vl-pkg-price-box__dur"><I n="calendar-2-line" />{item.duration}</div>
+              </div>
               <hr />
               <h4>What's Included</h4>
               <ul>
