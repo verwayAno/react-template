@@ -428,6 +428,24 @@ const WHY_US = [
   { icon: 'award-line',        title: 'Guaranteed as described', desc: 'If a property or experience falls short of our description, we make it right at our own cost.' },
 ]
 
+const AMENITIES = [
+  { icon: 'customer-service-2-line', title: '24/7 Concierge',     desc: 'Round-the-clock personal assistance — from restaurant bookings to last-minute itinerary changes.' },
+  { icon: 'car-line',               title: 'Private Transfers',  desc: 'Chauffeured arrivals and departures in luxury vehicles, coordinated seamlessly with your schedule.' },
+  { icon: 'restaurant-2-line',      title: 'Curated Dining',     desc: 'Access to private chef\'s tables and reservations at otherwise inaccessible venues worldwide.' },
+  { icon: 'flight-takeoff-line',    title: 'Flight Assistance',  desc: 'Business and first-class flight booking with lounge access and priority check-in coordination.' },
+  { icon: 'health-book-line',       title: 'Travel Insurance',   desc: 'Comprehensive coverage built into every package — medical, cancellation, and evacuation included.' },
+  { icon: 'camera-lens-line',       title: 'Private Photography', desc: 'Professional photographers available at select destinations to capture your journey beautifully.' },
+]
+
+const FAQ_ITEMS = [
+  { q: 'How far in advance should I book?', a: 'For peak seasons and luxury properties, 3–6 months in advance is recommended. Last-minute journeys are possible but subject to availability.' },
+  { q: 'Do you handle visa and documentation?', a: 'We provide guidance and connect you with specialist visa services for complex destinations, though legal responsibility remains with the traveller.' },
+  { q: "What if a property doesn't match the description?", a: 'Our Guaranteed as Described policy means we will rehouse you in a comparable or superior property at our cost — no questions asked.' },
+  { q: 'Can I customise a package itinerary?', a: 'Every journey is customisable. Use our packages as a starting point — your concierge will adapt any detail to your preferences.' },
+  { q: 'What currencies do you accept?', a: 'We quote in USD but accept all major currencies and international bank transfers. Cryptocurrency available on request.' },
+  { q: 'Is solo travel catered for?', a: 'Absolutely. Solo travellers are a significant part of our clientele. Single supplements and solo-friendly itineraries are available across all listings.' },
+]
+
 /* ═══════════════════════════════
    THEME SWITCHER
 ═══════════════════════════════ */
@@ -489,6 +507,7 @@ function SiteHeader({ mode, setMode }) {
     { label: 'Activities',  to: '/experiences', icon: 'compass-3-line' },
     { label: 'Packages',    to: '/packages',    icon: 'gift-2-line'    },
     { label: 'About',       to: '/about',       icon: 'team-line'      },
+    { label: 'Contact',     to: '/contact',     icon: 'mail-line'      },
   ]
 
   return (
@@ -640,6 +659,64 @@ function Stars({ n }) {
 }
 
 /* ═══════════════════════════════
+   BOOKING BAR
+═══════════════════════════════ */
+function BookingBar() {
+  const nav = useNavigate()
+  const [type, setType] = useState('stay')
+  const [destination, setDestination] = useState('')
+  const [checkin, setCheckin] = useState('')
+  const [checkout, setCheckout] = useState('')
+  const [guests, setGuests] = useState(2)
+
+  const handleSearch = e => {
+    e.preventDefault()
+    nav(`/${type}`)
+  }
+
+  return (
+    <div className="vl-booking-bar">
+      <div className="contain">
+        <form className="vl-booking-bar__inner" onSubmit={handleSearch}>
+          <div className="vl-booking-bar__tabs">
+            {[['stay','hotel-line','Stay'],['experiences','compass-3-line','Activity'],['packages','gift-2-line','Package']].map(([t, icon, label]) => (
+              <button key={t} type="button" className={`vl-bb-tab${type === t ? ' vl-bb-tab--on' : ''}`} onClick={() => setType(t)}>
+                <I n={icon} />{label}
+              </button>
+            ))}
+          </div>
+          <div className="vl-booking-bar__fields">
+            <div className="vl-bb-field vl-bb-field--dest">
+              <I n="map-pin-2-line" />
+              <input type="text" placeholder="Destination or property" value={destination} onChange={e => setDestination(e.target.value)} aria-label="Destination" />
+            </div>
+            <div className="vl-bb-sep" />
+            <div className="vl-bb-field vl-bb-field--dates">
+              <I n="calendar-2-line" />
+              <div className="vl-bb-dates">
+                <input type="date" value={checkin} onChange={e => setCheckin(e.target.value)} aria-label="Check-in" />
+                <span aria-hidden>&#8594;</span>
+                <input type="date" value={checkout} onChange={e => setCheckout(e.target.value)} aria-label="Check-out" />
+              </div>
+            </div>
+            <div className="vl-bb-sep" />
+            <div className="vl-bb-field vl-bb-field--guests">
+              <I n="group-line" />
+              <button type="button" className="vl-bb-cnt" onClick={() => setGuests(g => Math.max(1, g - 1))} aria-label="Remove guest">−</button>
+              <span>{guests} {guests === 1 ? 'Guest' : 'Guests'}</span>
+              <button type="button" className="vl-bb-cnt" onClick={() => setGuests(g => Math.min(12, g + 1))} aria-label="Add guest">+</button>
+            </div>
+          </div>
+          <button type="submit" className="vl-bb-search">
+            <I n="search-2-line" /> Search
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════
    HOME PAGE
 ═══════════════════════════════ */
 function HomePage() {
@@ -693,16 +770,29 @@ function HomePage() {
         <div className="rv-hero__scroll-hint" aria-hidden="true"><span>Scroll</span><I n="arrow-down-line" /></div>
       </section>
 
-      {/* ── ANIMATED STATS STRIP ── */}
-      <div className="vl-stats-strip">
-        {STATS.map((s, i) => (
-          <Reveal key={s.label} delay={i * 80} className="vl-stats-strip__item">
-            <I n={s.icon} />
-            <strong>{s.value}</strong>
-            <span>{s.label}</span>
-          </Reveal>
-        ))}
-      </div>
+      {/* ── BOOKING BAR ── */}
+      <BookingBar />
+
+      {/* ── STATS ── */}
+      <section className="vl-stats-section">
+        <div className="vl-stats-section__bg" aria-hidden="true" />
+        <div className="contain">
+          <div className="vl-stats-grid">
+            {STATS.map((s, i) => (
+              <Reveal key={s.label} delay={i * 90}>
+                <div className="vl-stat-card">
+                  <div className="vl-stat-card__icon"><I n={s.icon} /></div>
+                  <div className="vl-stat-card__body">
+                    <strong className="vl-stat-card__value">{s.value}</strong>
+                    <span className="vl-stat-card__label">{s.label}</span>
+                  </div>
+                  <div className="vl-stat-card__glow" aria-hidden="true" />
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ── DESTINATION CATEGORIES ── */}
       <section className="vl-section">
@@ -849,6 +939,32 @@ function HomePage() {
                   <div className="vl-why__icon"><I n={w.icon} /></div>
                   <h4>{w.title}</h4>
                   <p>{w.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── AMENITIES ── */}
+      <section className="vl-section vl-amenities-sec">
+        <div className="contain">
+          <Reveal>
+            <div className="vl-sec-head vl-sec-head--center">
+              <span className="vl-eyebrow"><I n="service-line" /> Every Journey, Elevated</span>
+              <h2>Included as Standard</h2>
+              <p className="vl-sec-sub">Thoughtful services that make a VELYR journey feel effortlessly seamless — from the moment you depart.</p>
+            </div>
+          </Reveal>
+          <div className="vl-amenities-sec__grid">
+            {AMENITIES.map((a, i) => (
+              <Reveal key={a.title} delay={i * 65}>
+                <div className="vl-amenity-card">
+                  <div className="vl-amenity-card__icon"><I n={a.icon} /></div>
+                  <div className="vl-amenity-card__body">
+                    <h4>{a.title}</h4>
+                    <p>{a.desc}</p>
+                  </div>
                 </div>
               </Reveal>
             ))}
@@ -1488,68 +1604,235 @@ function PackageDetailPage() {
 function SiteFooter() {
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
-
-  const handleSub = e => {
-    e.preventDefault()
-    if (email) setSubscribed(true)
-  }
+  const handleSub = e => { e.preventDefault(); if (email) setSubscribed(true) }
 
   return (
     <footer className="vl-footer">
-      <svg className="vl-footer__wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" />
-      </svg>
-      <div className="contain vl-footer__inner">
-        <div className="vl-footer__brand">
-          <VelyrLogo />
-          <p>Curated travel for those who seek the extraordinary — not the expected.</p>
-          <div className="vl-footer__social">
-            <a href="#" aria-label="Instagram"><I n="instagram-line" /></a>
-            <a href="#" aria-label="Pinterest"><I n="pinterest-line" /></a>
-            <a href="#" aria-label="Twitter"><I n="twitter-x-line" /></a>
-            <a href="#" aria-label="YouTube"><I n="youtube-line" /></a>
+      <div className="vl-footer__glow" aria-hidden="true">
+        <div className="vl-footer__glow-1" />
+        <div className="vl-footer__glow-2" />
+      </div>
+      <div className="vl-footer__glass">
+        <div className="contain vl-footer__inner">
+          {/* BRAND */}
+          <div className="vl-footer__brand">
+            <VelyrLogo />
+            <p>Building unforgettable journeys for those who seek the extraordinary — not just the expected.</p>
+            <ul className="vl-footer__social">
+              <li><a href="#" aria-label="Instagram"><I n="instagram-line" /></a></li>
+              <li><a href="#" aria-label="Pinterest"><I n="pinterest-line" /></a></li>
+              <li><a href="#" aria-label="Twitter"><I n="twitter-x-line" /></a></li>
+              <li><a href="#" aria-label="YouTube"><I n="youtube-line" /></a></li>
+              <li><a href="#" aria-label="Facebook"><I n="facebook-line" /></a></li>
+            </ul>
           </div>
-        </div>
-        <div className="vl-footer__nav">
+
+          {/* EXPLORE */}
           <div className="vl-footer__col">
             <h5>Explore</h5>
-            <Link to="/stay">Stays</Link>
-            <Link to="/experiences">Activities</Link>
-            <Link to="/packages">Packages</Link>
-            <Link to="/about">About</Link>
+            <ul>
+              <li><Link to="/stay"><I n="hotel-line" /> Stays</Link></li>
+              <li><Link to="/experiences"><I n="compass-3-line" /> Activities</Link></li>
+              <li><Link to="/packages"><I n="gift-2-line" /> Packages</Link></li>
+              <li><Link to="/about"><I n="team-line" /> About Us</Link></li>
+              <li><Link to="/contact"><I n="mail-line" /> Contact</Link></li>
+            </ul>
           </div>
+
+          {/* HELPFUL */}
           <div className="vl-footer__col">
-            <h5>Destinations</h5>
-            {DEST_CATEGORIES.slice(0, 4).map(d => (
-              <Link key={d.label} to="/stay">{d.label}</Link>
-            ))}
+            <h5>Helpful</h5>
+            <ul>
+              <li><a href="#"><I n="question-answer-line" /> FAQs</a></li>
+              <li><a href="#"><I n="customer-service-2-line" /> Support</a></li>
+              <li>
+                <a href="#" className="vl-footer__live-link">
+                  <I n="chat-1-line" /> Live Chat
+                  <span className="vl-footer__ping"><span /><span /></span>
+                </a>
+              </li>
+              <li><a href="#"><I n="shield-check-line" /> Privacy</a></li>
+              <li><a href="#"><I n="file-text-line" /> Terms</a></li>
+            </ul>
           </div>
-          <div className="vl-footer__col">
-            <h5>Company</h5>
-            <a href="#">Press</a>
-            <a href="#">Careers</a>
-            <a href="#">Partnerships</a>
-            <a href="#">Contact</a>
+
+          {/* CONTACT + NEWSLETTER */}
+          <div className="vl-footer__col vl-footer__col--contact">
+            <h5>Contact Us</h5>
+            <ul className="vl-footer__contact-list">
+              <li>
+                <span className="vl-footer__ci"><I n="mail-line" /></span>
+                <a href="mailto:hello@velyr.com">hello@velyr.com</a>
+              </li>
+              <li>
+                <span className="vl-footer__ci"><I n="phone-line" /></span>
+                <a href="tel:+18005550199">+1 800 555 0199</a>
+              </li>
+              <li>
+                <span className="vl-footer__ci"><I n="map-pin-2-line" /></span>
+                <address>12 Curator Lane, Geneva</address>
+              </li>
+            </ul>
+            <div className="vl-footer__newsletter">
+              <p>The VELYR Journal — rare destinations delivered.</p>
+              {subscribed ? (
+                <p className="vl-footer__subbed"><I n="check-double-line" /> You're on the list.</p>
+              ) : (
+                <form className="vl-footer__form" onSubmit={handleSub}>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required aria-label="Email" />
+                  <button type="submit"><I n="send-plane-fill" /></button>
+                </form>
+              )}
+            </div>
           </div>
         </div>
-        <div className="vl-footer__newsletter">
-          <h5>The VELYR Journal</h5>
-          <p>Rare destinations, travel wisdom, and curator notes — delivered when it matters.</p>
-          {subscribed ? (
-            <p className="vl-footer__subbed"><I n="check-double-line" /> You're on the list.</p>
-          ) : (
-            <form className="vl-footer__form" onSubmit={handleSub}>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required aria-label="Email" />
-              <button type="submit"><I n="send-plane-fill" /></button>
-            </form>
-          )}
+
+        <div className="vl-footer__bottom">
+          <div className="contain">
+            <span>All rights reserved.</span>
+            <span>&copy; {new Date().getFullYear()} VELYR &middot; Rare Journeys</span>
+          </div>
         </div>
-      </div>
-      <div className="vl-footer__bottom">
-        <span>© {new Date().getFullYear()} VELYR. All rights reserved.</span>
-        <span><a href="#">Privacy</a> · <a href="#">Terms</a></span>
       </div>
     </footer>
+  )
+}
+
+/* ═══════════════════════════════
+   CONTACT PAGE
+═══════════════════════════════ */
+function ContactPage() {
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
+  const [sent, setSent] = useState(false)
+  const [openFaq, setOpenFaq] = useState(null)
+
+  const handleSubmit = e => {
+    e.preventDefault()
+    if (form.name && form.email && form.message) setSent(true)
+  }
+
+  return (
+    <main className="vl-contact">
+      {/* HERO */}
+      <section className="vl-page-hero vl-page-hero--contact">
+        <div className="vl-page-hero__veil" />
+        <div className="contain">
+          <Reveal>
+            <span className="vl-eyebrow vl-eyebrow--light"><I n="mail-send-line" /> Get In Touch</span>
+            <h1>Let's Plan Your Journey</h1>
+            <p>Our curators are available Monday–Saturday. Expect a response within 24 hours.</p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* MAIN GRID */}
+      <section className="vl-section">
+        <div className="contain vl-contact__grid">
+          {/* FORM */}
+          <Reveal>
+            <div className="vl-contact__form-wrap">
+              <h2>Send Us a Message</h2>
+              {sent ? (
+                <div className="vl-contact__success">
+                  <div className="vl-contact__success-icon"><I n="check-double-line" /></div>
+                  <h3>Message Received!</h3>
+                  <p>Thank you, {form.name}. Your curator will be in touch within 24 hours.</p>
+                </div>
+              ) : (
+                <form className="vl-contact__form" onSubmit={handleSubmit}>
+                  <div className="vl-contact__row">
+                    <label>
+                      <span>Full Name</span>
+                      <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your name" required />
+                    </label>
+                    <label>
+                      <span>Email</span>
+                      <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="your@email.com" required />
+                    </label>
+                  </div>
+                  <label>
+                    <span>Subject</span>
+                    <input type="text" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="How can we help?" />
+                  </label>
+                  <label>
+                    <span>Message</span>
+                    <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} rows={6} placeholder="Tell us about your dream journey..." required />
+                  </label>
+                  <button type="submit" className="vl-btn-primary">
+                    <I n="send-plane-line" /> Send Message
+                  </button>
+                </form>
+              )}
+            </div>
+          </Reveal>
+
+          {/* INFO */}
+          <Reveal delay={100}>
+            <div className="vl-contact__info">
+              <div className="vl-contact__info-card">
+                <div className="vl-contact__info-icon"><I n="mail-line" /></div>
+                <div>
+                  <h4>Email</h4>
+                  <a href="mailto:hello@velyr.com">hello@velyr.com</a>
+                </div>
+              </div>
+              <div className="vl-contact__info-card">
+                <div className="vl-contact__info-icon"><I n="phone-line" /></div>
+                <div>
+                  <h4>Phone</h4>
+                  <a href="tel:+18005550199">+1 800 555 0199</a>
+                  <span>Mon–Sat, 08:00–20:00 CET</span>
+                </div>
+              </div>
+              <div className="vl-contact__info-card">
+                <div className="vl-contact__info-icon"><I n="map-pin-2-line" /></div>
+                <div>
+                  <h4>Address</h4>
+                  <address>12 Curator Lane<br />Geneva, Switzerland</address>
+                </div>
+              </div>
+              <div className="vl-contact__info-card">
+                <div className="vl-contact__info-icon"><I n="time-line" /></div>
+                <div>
+                  <h4>Office Hours</h4>
+                  <span>Mon–Fri: 08:00–18:00 CET</span>
+                  <span>Sat: 09:00–14:00 CET</span>
+                </div>
+              </div>
+              <div className="vl-contact__map">
+                <img src="https://images.unsplash.com/photo-1527004013197-933b977c48c1?w=600&auto=format&fit=crop" alt="Geneva, Switzerland office location" loading="lazy" />
+                <div className="vl-contact__map-pin"><I n="map-pin-fill" /></div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="vl-section vl-section--alt">
+        <div className="contain">
+          <Reveal>
+            <div className="vl-sec-head vl-sec-head--center">
+              <span className="vl-eyebrow"><I n="question-answer-line" /> Need Answers?</span>
+              <h2>Frequently Asked Questions</h2>
+            </div>
+          </Reveal>
+          <div className="vl-faq-grid">
+            {FAQ_ITEMS.map((item, i) => (
+              <Reveal key={i} delay={i * 50}>
+                <div className={`vl-faq-item${openFaq === i ? ' vl-faq-item--open' : ''}`}>
+                  <button className="vl-faq-item__q" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                    <span>{item.q}</span>
+                    <I n={openFaq === i ? 'subtract-line' : 'add-line'} />
+                  </button>
+                  <div className="vl-faq-item__a"><p>{item.a}</p></div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
   )
 }
 
@@ -1602,6 +1885,7 @@ function AppShell() {
           <Route path="/experiences/:id" element={<ExperienceDetailPage />} />
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/packages/:id" element={<PackageDetailPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
