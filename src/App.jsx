@@ -576,9 +576,9 @@ function Reveal({ children, delay = 0, className = '' }) {
 /* ═══════════════════════════════
    CARD COMPONENTS
 ═══════════════════════════════ */
-function StayCard({ item }) {
+function StayCard({ item, onBook }) {
   return (
-    <article className="vl-stay-card" style={{ '--c': item.color }}>
+    <article className="vl-stay-card">
       <Link to={`/stay/${item.id}`} className="vl-stay-card__img-wrap">
         <img src={item.cover} alt={item.name} loading="lazy" />
         <div className="vl-stay-card__img-veil" />
@@ -603,16 +603,19 @@ function StayCard({ item }) {
           <div className="vl-stay-card__price">
             <strong>${item.price.toLocaleString()}</strong><span>/night</span>
           </div>
-          <Link to={`/stay/${item.id}`} className="vl-pill-btn">View <I n="arrow-right-line" /></Link>
+          <div className="vl-stay-card__foot-btns">
+            <Link to={`/stay/${item.id}`} className="vl-pill-btn vl-pill-btn--ghost">View</Link>
+            {onBook && <button className="vl-pill-btn" onClick={() => onBook(item)}>Book <I n="arrow-right-line" /></button>}
+          </div>
         </div>
       </div>
     </article>
   )
 }
 
-function ExpCard({ item }) {
+function ExpCard({ item, onBook }) {
   return (
-    <article className="vl-exp-card" style={{ '--c': item.color }}>
+    <article className="vl-exp-card">
       <Link to={`/experiences/${item.id}`} className="vl-exp-card__img">
         <img src={item.cover} alt={item.name} loading="lazy" />
         <div className="vl-exp-card__veil" />
@@ -633,17 +636,18 @@ function ExpCard({ item }) {
         <h3><Link to={`/experiences/${item.id}`}>{item.name}</Link></h3>
         <div className="vl-exp-card__loc"><I n="map-pin-2-line" />{item.location}</div>
         <p>{item.tagline}</p>
-        <Link to={`/experiences/${item.id}`} className="vl-pill-btn vl-pill-btn--full">
-          View Experience <I n="arrow-right-line" />
-        </Link>
+        <div className="vl-exp-card__foot-btns">
+          <Link to={`/experiences/${item.id}`} className="vl-pill-btn vl-pill-btn--ghost vl-pill-btn--full">View</Link>
+          {onBook && <button className="vl-pill-btn vl-pill-btn--full" onClick={() => onBook(item)}>Book <I n="arrow-right-line" /></button>}
+        </div>
       </div>
     </article>
   )
 }
 
-function PkgCard({ item }) {
+function PkgCard({ item, onBook }) {
   return (
-    <article className="vl-pkg-card" style={{ '--c': item.color }}>
+    <article className="vl-pkg-card">
       <Link to={`/packages/${item.id}`} className="vl-pkg-card__img">
         <img src={item.cover} alt={item.name} loading="lazy" />
         <div className="vl-pkg-card__veil" />
@@ -665,7 +669,10 @@ function PkgCard({ item }) {
           <div className="vl-pkg-card__price">
             <span>from</span><strong>${item.price.toLocaleString()}</strong><span>/{item.pricePer}</span>
           </div>
-          <Link to={`/packages/${item.id}`} className="vl-pill-btn">View Journey <I n="arrow-right-line" /></Link>
+          <div className="vl-pkg-card__foot-btns">
+            <Link to={`/packages/${item.id}`} className="vl-pill-btn vl-pill-btn--ghost">View</Link>
+            {onBook && <button className="vl-pill-btn" onClick={() => onBook(item)}>Book <I n="arrow-right-line" /></button>}
+          </div>
         </div>
       </div>
     </article>
@@ -673,7 +680,299 @@ function PkgCard({ item }) {
 }
 
 function Stars({ n }) {
-  return <span className="vl-stars">{'★'.repeat(n)}</span>
+  return <span className="vl-stars">{'★'.repeat(Math.floor(n))}</span>
+}
+
+/* ═══════════════════════════════
+   MINI CALENDAR PICKER
+═══════════════════════════════ */
+function MiniCalendar({ value, onChange, label, minDate }) {
+  const today = new Date()
+  const initial = value ? new Date(value) : (minDate ? new Date(minDate) : today)
+  const [viewYear, setViewYear] = useState(initial.getFullYear())
+  const [viewMonth, setViewMonth] = useState(initial.getMonth())
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa']
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const cells = [...Array(firstDay).fill(null), ...Array.from({length: daysInMonth}, (_, i) => i + 1)]
+
+  const min = minDate ? new Date(minDate) : null
+  min && min.setHours(0,0,0,0)
+
+  const isDisabled = (d) => {
+    if (!d) return true
+    const dt = new Date(viewYear, viewMonth, d)
+    dt.setHours(0,0,0,0)
+    if (min && dt < min) return true
+    const now = new Date(); now.setHours(0,0,0,0)
+    if (dt < now) return true
+    return false
+  }
+
+  const isSelected = (d) => {
+    if (!d || !value) return false
+    const v = new Date(value)
+    return v.getFullYear() === viewYear && v.getMonth() === viewMonth && v.getDate() === d
+  }
+
+  const select = (d) => {
+    if (isDisabled(d)) return
+    const dt = new Date(viewYear, viewMonth, d)
+    const iso = dt.toISOString().split('T')[0]
+    onChange(iso)
+    setOpen(false)
+  }
+
+  const fmt = (iso) => {
+    if (!iso) return ''
+    const [y, m, d] = iso.split('-')
+    return `${MONTHS[parseInt(m)-1]} ${parseInt(d)}, ${y}`
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [open])
+
+  useEffect(() => {
+    if (value) {
+      const d = new Date(value)
+      setViewYear(d.getFullYear())
+      setViewMonth(d.getMonth())
+    }
+  }, [value])
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
+    else setViewMonth(m => m - 1)
+  }
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
+    else setViewMonth(m => m + 1)
+  }
+
+  return (
+    <div className="vl-cal" ref={ref}>
+      <button type="button" className="vl-cal__trigger" onClick={() => setOpen(v => !v)} aria-label={label}>
+        <I n="calendar-2-line" />
+        <span>{value ? fmt(value) : label}</span>
+        <I n="arrow-down-s-line" className="vl-cal__chevron" />
+      </button>
+      {open && (
+        <div className="vl-cal__popup">
+          <div className="vl-cal__nav">
+            <button type="button" onClick={prevMonth} aria-label="Previous month"><I n="arrow-left-s-line" /></button>
+            <span>{MONTHS[viewMonth]} {viewYear}</span>
+            <button type="button" onClick={nextMonth} aria-label="Next month"><I n="arrow-right-s-line" /></button>
+          </div>
+          <div className="vl-cal__grid">
+            {DAYS.map(d => <span key={d} className="vl-cal__day-name">{d}</span>)}
+            {cells.map((d, i) => (
+              <button key={i} type="button"
+                className={`vl-cal__day${d ? '' : ' vl-cal__day--empty'}${isSelected(d) ? ' vl-cal__day--sel' : ''}${isDisabled(d) ? ' vl-cal__day--dis' : ''}`}
+                onClick={() => select(d)}
+                disabled={isDisabled(d)}
+                aria-label={d ? `${MONTHS[viewMonth]} ${d}, ${viewYear}` : undefined}
+              >{d || ''}</button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════
+   MULTI-STEP BOOKING MODAL
+═══════════════════════════════ */
+function BookingModal({ item, type = 'stay', onClose }) {
+  const [step, setStep] = useState(1)
+  const [form, setForm] = useState({
+    checkin: '', checkout: '', guests: 2,
+    firstName: '', lastName: '', email: '', phone: '',
+    specialRequests: ''
+  })
+  const [submitted, setSubmitted] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', h)
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', h); document.body.style.overflow = '' }
+  }, [onClose])
+
+  const nights = form.checkin && form.checkout
+    ? Math.max(0, Math.round((new Date(form.checkout) - new Date(form.checkin)) / 86400000))
+    : 0
+
+  const priceBase = item?.price || 0
+  const total = type === 'stay' ? nights * priceBase * form.guests / 2 : priceBase * form.guests
+
+  const canNext1 = type === 'stay' ? (form.checkin && form.checkout && nights > 0) : true
+  const canNext2 = form.firstName && form.lastName && form.email
+
+  const STEPS = [
+    { label: 'Dates & Guests', icon: 'calendar-2-line' },
+    { label: 'Your Details',   icon: 'user-line'        },
+    { label: 'Confirmation',   icon: 'check-double-line' },
+  ]
+
+  return (
+    <div className="vl-modal-overlay" role="dialog" aria-modal="true" aria-label="Booking" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="vl-modal" ref={ref}>
+        {/* Header */}
+        <div className="vl-modal__head">
+          <div className="vl-modal__title">
+            <I n="sparkling-2-line" />
+            <span>Book — {item?.name}</span>
+          </div>
+          <button className="vl-modal__close" onClick={onClose} aria-label="Close"><I n="close-line" /></button>
+        </div>
+
+        {/* Step indicator */}
+        <div className="vl-modal__steps">
+          {STEPS.map((s, i) => (
+            <div key={i} className={`vl-modal__step${step > i + 1 ? ' vl-modal__step--done' : step === i + 1 ? ' vl-modal__step--on' : ''}`}>
+              <div className="vl-modal__step-num">
+                {step > i + 1 ? <I n="check-line" /> : i + 1}
+              </div>
+              <span>{s.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Body */}
+        <div className="vl-modal__body">
+          {!submitted && step === 1 && (
+            <div className="vl-modal__section">
+              <h4>When are you travelling?</h4>
+              {type === 'stay' && (
+                <div className="vl-modal__date-row">
+                  <div className="vl-modal__field">
+                    <label>Check In</label>
+                    <MiniCalendar value={form.checkin} onChange={v => setForm(f => ({...f, checkin: v, checkout: f.checkout && new Date(f.checkout) <= new Date(v) ? '' : f.checkout}))} label="Pick date" />
+                  </div>
+                  <div className="vl-modal__field">
+                    <label>Check Out</label>
+                    <MiniCalendar value={form.checkout} onChange={v => setForm(f => ({...f, checkout: v}))} label="Pick date" minDate={form.checkin} />
+                  </div>
+                </div>
+              )}
+              {type !== 'stay' && (
+                <div className="vl-modal__field">
+                  <label>Experience Date</label>
+                  <MiniCalendar value={form.checkin} onChange={v => setForm(f => ({...f, checkin: v}))} label="Pick date" />
+                </div>
+              )}
+              {nights > 0 && type === 'stay' && (
+                <div className="vl-modal__night-badge"><I n="moon-line" />{nights} {nights === 1 ? 'night' : 'nights'}</div>
+              )}
+              <div className="vl-modal__field">
+                <label>Guests</label>
+                <div className="vl-modal__counter">
+                  <button type="button" onClick={() => setForm(f => ({...f, guests: Math.max(1, f.guests - 1)}))}>−</button>
+                  <span><I n="group-line" /> {form.guests} {form.guests === 1 ? 'Guest' : 'Guests'}</span>
+                  <button type="button" onClick={() => setForm(f => ({...f, guests: Math.min(12, f.guests + 1)}))}>+</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!submitted && step === 2 && (
+            <div className="vl-modal__section">
+              <h4>Tell us about yourself</h4>
+              <div className="vl-modal__date-row">
+                <div className="vl-modal__field">
+                  <label>First Name *</label>
+                  <input type="text" value={form.firstName} onChange={e => setForm(f => ({...f, firstName: e.target.value}))} placeholder="Sofia" required />
+                </div>
+                <div className="vl-modal__field">
+                  <label>Last Name *</label>
+                  <input type="text" value={form.lastName} onChange={e => setForm(f => ({...f, lastName: e.target.value}))} placeholder="Almeria" required />
+                </div>
+              </div>
+              <div className="vl-modal__field">
+                <label>Email Address *</label>
+                <input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} placeholder="your@email.com" required />
+              </div>
+              <div className="vl-modal__field">
+                <label>Phone Number</label>
+                <input type="tel" value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} placeholder="+1 800 000 0000" />
+              </div>
+              <div className="vl-modal__field">
+                <label>Special Requests</label>
+                <textarea value={form.specialRequests} onChange={e => setForm(f => ({...f, specialRequests: e.target.value}))} rows={3} placeholder="Dietary requirements, accessibility needs, celebrations..." />
+              </div>
+            </div>
+          )}
+
+          {!submitted && step === 3 && (
+            <div className="vl-modal__section">
+              <h4>Review your booking</h4>
+              <div className="vl-modal__summary">
+                <div className="vl-modal__summary-img">
+                  <img src={item?.cover || item?.images?.[0]} alt={item?.name} />
+                </div>
+                <div className="vl-modal__summary-body">
+                  <span className="vl-modal__summary-cat">{type === 'stay' ? 'Stay' : type === 'experiences' ? 'Activity' : 'Package'}</span>
+                  <strong>{item?.name}</strong>
+                  <span className="vl-modal__summary-loc"><I n="map-pin-line" />{item?.location}</span>
+                </div>
+              </div>
+              <div className="vl-modal__summary-rows">
+                {form.checkin && <div className="vl-modal__sr"><span>Check in</span><strong>{form.checkin}</strong></div>}
+                {form.checkout && <div className="vl-modal__sr"><span>Check out</span><strong>{form.checkout}</strong></div>}
+                {nights > 0 && type === 'stay' && <div className="vl-modal__sr"><span>Nights</span><strong>{nights}</strong></div>}
+                <div className="vl-modal__sr"><span>Guests</span><strong>{form.guests}</strong></div>
+                <div className="vl-modal__sr"><span>Name</span><strong>{form.firstName} {form.lastName}</strong></div>
+                <div className="vl-modal__sr"><span>Email</span><strong>{form.email}</strong></div>
+                {total > 0 && <div className="vl-modal__sr vl-modal__sr--total"><span>Estimated Total</span><strong>${total.toLocaleString()}</strong></div>}
+              </div>
+              <p className="vl-modal__note">Your concierge will confirm availability and send a detailed quote within 24 hours.</p>
+            </div>
+          )}
+
+          {submitted && (
+            <div className="vl-modal__success">
+              <div className="vl-modal__success-icon"><I n="check-double-line" /></div>
+              <h3>Booking Request Sent!</h3>
+              <p>Thank you, {form.firstName}. Your VELYR concierge will be in touch within 24 hours with a personalised confirmation.</p>
+              <button className="vl-btn-primary" onClick={onClose}>Close <I n="arrow-right-line" /></button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer nav */}
+        {!submitted && (
+          <div className="vl-modal__foot">
+            {step > 1 && <button className="vl-btn-ghost" onClick={() => setStep(s => s - 1)}><I n="arrow-left-line" /> Back</button>}
+            {step < 3 && (
+              <button className="vl-btn-primary vl-modal__next"
+                onClick={() => setStep(s => s + 1)}
+                disabled={step === 1 && !canNext1}>
+                Continue <I n="arrow-right-line" />
+              </button>
+            )}
+            {step === 3 && (
+              <button className="vl-btn-primary vl-modal__next"
+                onClick={() => { if (canNext2) setSubmitted(true) }}
+                disabled={!canNext2}>
+                <I n="send-plane-line" /> Confirm Request
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 /* ═══════════════════════════════
@@ -723,20 +1022,16 @@ function BookingBar() {
               </div>
             </div>
             <div className="vl-bb-divider" />
-            <div className={`vl-bb-field-group${focused === 'checkin' ? ' vl-bb-field-group--focused' : ''}`}>
-              <label htmlFor="bb-checkin">Check In</label>
-              <div className="vl-bb-input-row">
-                <I n="calendar-2-line" />
-                <input id="bb-checkin" type="date" value={checkin} onChange={e => setCheckin(e.target.value)} onFocus={() => setFocused('checkin')} onBlur={() => setFocused(null)} aria-label="Check-in" />
-              </div>
+            <div className={`vl-bb-field-group vl-bb-field-group--cal${focused === 'checkin' ? ' vl-bb-field-group--focused' : ''}`}
+              onFocus={() => setFocused('checkin')} onBlur={() => setFocused(null)}>
+              <label>Check In</label>
+              <MiniCalendar value={checkin} onChange={setCheckin} label="Pick date" />
             </div>
             <div className="vl-bb-divider" />
-            <div className={`vl-bb-field-group${focused === 'checkout' ? ' vl-bb-field-group--focused' : ''}`}>
-              <label htmlFor="bb-checkout">Check Out</label>
-              <div className="vl-bb-input-row">
-                <I n="calendar-check-line" />
-                <input id="bb-checkout" type="date" value={checkout} onChange={e => setCheckout(e.target.value)} onFocus={() => setFocused('checkout')} onBlur={() => setFocused(null)} aria-label="Check-out" />
-              </div>
+            <div className={`vl-bb-field-group vl-bb-field-group--cal${focused === 'checkout' ? ' vl-bb-field-group--focused' : ''}`}
+              onFocus={() => setFocused('checkout')} onBlur={() => setFocused(null)}>
+              <label>Check Out</label>
+              <MiniCalendar value={checkout} onChange={setCheckout} label="Pick date" minDate={checkin} />
             </div>
             <div className="vl-bb-divider" />
             <div className="vl-bb-field-group vl-bb-field-group--guests">
@@ -761,6 +1056,7 @@ function BookingBar() {
 function HomePage() {
   const [heroIdx, setHeroIdx] = useState(0)
   const [testIdx, setTestIdx] = useState(0)
+  const [booking, setBooking] = useState(null)
   const heroItems = STAYS.slice(0, 4)
 
   useEffect(() => {
@@ -772,6 +1068,7 @@ function HomePage() {
 
   return (
     <>
+      {booking && <BookingModal item={booking.item} type={booking.type} onClose={() => setBooking(null)} />}
       {/* ── HERO (unchanged) ── */}
       <section className="rv-hero" style={{ '--hero-color': active.color }}>
         <div className="rv-hero__slides">
@@ -877,7 +1174,7 @@ function HomePage() {
           <div className="vl-stays-grid">
             {STAYS.slice(0, 3).map((s, i) => (
               <Reveal key={s.id} delay={i * 80}>
-                <StayCard item={s} featured={i === 0} />
+                <StayCard item={s} featured={i === 0} onBook={s => setBooking({item: s, type: 'stay'})} />
               </Reveal>
             ))}
           </div>
@@ -954,7 +1251,7 @@ function HomePage() {
           <div className="vl-exp-grid">
             {EXPERIENCES.slice(0, 4).map((e, i) => (
               <Reveal key={e.id} delay={i * 70}>
-                <ExpCard item={e} />
+                <ExpCard item={e} onBook={e => setBooking({item: e, type: 'experiences'})} />
               </Reveal>
             ))}
           </div>
@@ -1024,7 +1321,7 @@ function HomePage() {
           <div className="vl-pkg-grid">
             {PACKAGES.slice(0, 3).map((p, i) => (
               <Reveal key={p.id} delay={i * 80}>
-                <PkgCard item={p} />
+                <PkgCard item={p} onBook={p => setBooking({item: p, type: 'packages'})} />
               </Reveal>
             ))}
           </div>
@@ -1187,6 +1484,7 @@ function AboutPage() {
 function StaysPage() {
   const [filter, setFilter] = useState('All')
   const [sort, setSort] = useState('default')
+  const [booking, setBooking] = useState(null)
   const cats = ['All', ...new Set(STAYS.map(s => s.category))]
   let shown = filter === 'All' ? [...STAYS] : STAYS.filter(s => s.category === filter)
   if (sort === 'price-asc') shown = [...shown].sort((a, b) => a.price - b.price)
@@ -1195,6 +1493,7 @@ function StaysPage() {
 
   return (
     <main className="vl-list-page">
+      {booking && <BookingModal item={booking} type="stay" onClose={() => setBooking(null)} />}
       <section className="vl-page-hero vl-page-hero--stays">
         <div className="vl-page-hero__veil" />
         <div className="contain">
@@ -1225,7 +1524,7 @@ function StaysPage() {
         <div className="vl-stays-grid">
           {shown.map((s, i) => (
             <Reveal key={s.id} delay={i * 60}>
-              <StayCard item={s} />
+              <StayCard item={s} onBook={setBooking} />
             </Reveal>
           ))}
         </div>
@@ -1242,6 +1541,7 @@ function StayDetailPage() {
   const nav = useNavigate()
   const item = STAYS.find(s => s.id === id)
   const [imgIdx, setImgIdx] = useState(0)
+  const [booking, setBooking] = useState(false)
   const heroRef = useRef(null)
 
   useEffect(() => {
@@ -1261,6 +1561,7 @@ function StayDetailPage() {
 
   return (
     <main className="vl-stay-detail">
+      {booking && <BookingModal item={item} type="stay" onClose={() => setBooking(false)} />}
       {/* HERO */}
       <div className="vl-stay-detail__hero-wrap" style={{ '--ac': item.color }}>
         <div className="vl-stay-detail__hero-img">
@@ -1350,7 +1651,7 @@ function StayDetailPage() {
             <ul className="vl-book-panel__features">
               {item.highlights.slice(0, 3).map(h => <li key={h}><I n="check-line" />{h}</li>)}
             </ul>
-            <button className="vl-btn-primary vl-btn-primary--full">
+            <button className="vl-btn-primary vl-btn-primary--full" onClick={() => setBooking(true)}>
               <I n="calendar-check-line" /> Book This Stay
             </button>
             <p className="vl-book-panel__note">Free cancellation within 48 hours</p>
@@ -1387,6 +1688,7 @@ function StayDetailPage() {
 function ExperiencesPage() {
   const [filter, setFilter] = useState('All')
   const [diff, setDiff] = useState('All')
+  const [booking, setBooking] = useState(null)
   const cats = ['All', ...new Set(EXPERIENCES.map(e => e.category))]
   const diffs = ['All', 'Easy', 'Intermediate', 'Expert']
   const shown = EXPERIENCES.filter(e =>
@@ -1396,6 +1698,7 @@ function ExperiencesPage() {
 
   return (
     <main className="vl-list-page">
+      {booking && <BookingModal item={booking} type="experiences" onClose={() => setBooking(null)} />}
       <section className="vl-page-hero vl-page-hero--exp">
         <div className="vl-page-hero__veil" />
         <div className="contain">
@@ -1422,7 +1725,7 @@ function ExperiencesPage() {
         <div className="vl-exp-grid">
           {shown.map((e, i) => (
             <Reveal key={e.id} delay={i * 60}>
-              <ExpCard item={e} />
+              <ExpCard item={e} onBook={setBooking} />
             </Reveal>
           ))}
         </div>
@@ -1438,11 +1741,13 @@ function ExperienceDetailPage() {
   const { id } = useParams()
   const nav = useNavigate()
   const item = EXPERIENCES.find(e => e.id === id)
+  const [booking, setBooking] = useState(false)
 
   if (!item) return <NotFound />
 
   return (
     <main className="vl-exp-detail" style={{ '--ac': item.color }}>
+      {booking && <BookingModal item={item} type="experiences" onClose={() => setBooking(false)} />}
       {/* DARK DRAMATIC HERO */}
       <div className="vl-exp-detail__hero">
         <img src={item.cover} alt={item.name} />
@@ -1517,7 +1822,7 @@ function ExperienceDetailPage() {
                 <strong>${item.price.toLocaleString()}</strong>
                 <span>/person</span>
               </div>
-              <button className="vl-btn-primary vl-btn-primary--full">
+              <button className="vl-btn-primary vl-btn-primary--full" onClick={() => setBooking(true)}>
                 <I n="calendar-check-line" /> Reserve Spot
               </button>
               <p className="vl-book-panel__note">Small group — spots fill fast</p>
@@ -1534,11 +1839,13 @@ function ExperienceDetailPage() {
 ═══════════════════════════════ */
 function PackagesPage() {
   const [filter, setFilter] = useState('All')
+  const [booking, setBooking] = useState(null)
   const durations = ['All', ...new Set(PACKAGES.map(p => p.duration))]
   const shown = filter === 'All' ? PACKAGES : PACKAGES.filter(p => p.duration === filter)
 
   return (
     <main className="vl-list-page">
+      {booking && <BookingModal item={booking} type="packages" onClose={() => setBooking(null)} />}
       <section className="vl-page-hero vl-page-hero--pkg">
         <div className="vl-page-hero__veil" />
         <div className="contain">
@@ -1560,7 +1867,7 @@ function PackagesPage() {
         <div className="vl-pkg-list-grid">
           {shown.map((p, i) => (
             <Reveal key={p.id} delay={i * 80}>
-              <PkgCard item={p} />
+              <PkgCard item={p} onBook={setBooking} />
             </Reveal>
           ))}
         </div>
@@ -1576,6 +1883,7 @@ function PackageDetailPage() {
   const { id } = useParams()
   const nav = useNavigate()
   const item = PACKAGES.find(p => p.id === id)
+  const [booking, setBooking] = useState(false)
 
   if (!item) return <NotFound />
 
@@ -1583,6 +1891,7 @@ function PackageDetailPage() {
 
   return (
     <main className="vl-pkg-detail" style={{ '--ac': item.color }}>
+      {booking && <BookingModal item={item} type="packages" onClose={() => setBooking(false)} />}
       {/* HERO */}
       <div className="vl-pkg-detail__hero">
         <img src={item.cover} alt={item.name} />
@@ -1679,7 +1988,7 @@ function PackageDetailPage() {
               <ul>
                 {item.includes.map(inc => <li key={inc}><I n="check-double-line" />{inc}</li>)}
               </ul>
-              <button className="vl-btn-primary vl-btn-primary--full">
+              <button className="vl-btn-primary vl-btn-primary--full" onClick={() => setBooking(true)}>
                 <I n="send-plane-line" /> Request This Journey
               </button>
               <p className="vl-book-panel__note">Personalised quote within 24 hours</p>
