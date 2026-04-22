@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef, Component } from 'react'
+import { createPortal } from 'react-dom'
 import { Routes, Route, Link, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom'
 import './App.css'
 
@@ -692,7 +693,10 @@ function MiniCalendar({ value, onChange, label, minDate }) {
   const [viewYear, setViewYear] = useState(initial.getFullYear())
   const [viewMonth, setViewMonth] = useState(initial.getMonth())
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const wrapRef = useRef(null)
+  const trigRef = useRef(null)
+  const popRef = useRef(null)
 
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa']
@@ -734,11 +738,40 @@ function MiniCalendar({ value, onChange, label, minDate }) {
     return `${MONTHS[parseInt(m)-1]} ${parseInt(d)}, ${y}`
   }
 
+  const openCalendar = () => {
+    if (!trigRef.current) { setOpen(v => !v); return }
+    const r = trigRef.current.getBoundingClientRect()
+    const popW = Math.min(290, window.innerWidth - 16)
+    const spaceBelow = window.innerHeight - r.bottom
+    const openUp = spaceBelow < 340 && r.top > 340
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - popW - 8))
+    setPos({
+      left,
+      ...(openUp
+        ? { bottom: window.innerHeight - r.top + 6, top: 'auto' }
+        : { top: r.bottom + 6, bottom: 'auto' })
+    })
+    setOpen(v => !v)
+  }
+
   useEffect(() => {
     if (!open) return
-    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
+    const onDown = (e) => {
+      if (
+        (popRef.current && popRef.current.contains(e.target)) ||
+        (trigRef.current && trigRef.current.contains(e.target))
+      ) return
+      setOpen(false)
+    }
+    const onClose = () => setOpen(false)
+    document.addEventListener('mousedown', onDown)
+    window.addEventListener('scroll', onClose, true)
+    window.addEventListener('resize', onClose)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      window.removeEventListener('scroll', onClose, true)
+      window.removeEventListener('resize', onClose)
+    }
   }, [open])
 
   useEffect(() => {
@@ -758,33 +791,36 @@ function MiniCalendar({ value, onChange, label, minDate }) {
     else setViewMonth(m => m + 1)
   }
 
+  const popup = open ? createPortal(
+    <div className="vl-cal__popup" ref={popRef} style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, left: pos.left, zIndex: 99999 }}>
+      <div className="vl-cal__nav">
+        <button type="button" onClick={prevMonth} aria-label="Previous month"><I n="arrow-left-s-line" /></button>
+        <span>{MONTHS[viewMonth]} {viewYear}</span>
+        <button type="button" onClick={nextMonth} aria-label="Next month"><I n="arrow-right-s-line" /></button>
+      </div>
+      <div className="vl-cal__grid">
+        {DAYS.map(d => <span key={d} className="vl-cal__day-name">{d}</span>)}
+        {cells.map((d, i) => (
+          <button key={i} type="button"
+            className={`vl-cal__day${d ? '' : ' vl-cal__day--empty'}${isSelected(d) ? ' vl-cal__day--sel' : ''}${isDisabled(d) ? ' vl-cal__day--dis' : ''}`}
+            onClick={() => select(d)}
+            disabled={isDisabled(d)}
+            aria-label={d ? `${MONTHS[viewMonth]} ${d}, ${viewYear}` : undefined}
+          >{d || ''}</button>
+        ))}
+      </div>
+    </div>,
+    document.body
+  ) : null
+
   return (
-    <div className="vl-cal" ref={ref}>
-      <button type="button" className="vl-cal__trigger" onClick={() => setOpen(v => !v)} aria-label={label}>
+    <div className="vl-cal" ref={wrapRef}>
+      <button type="button" className="vl-cal__trigger" ref={trigRef} onClick={openCalendar} aria-label={label}>
         <I n="calendar-2-line" />
         <span>{value ? fmt(value) : label}</span>
         <I n="arrow-down-s-line" className="vl-cal__chevron" />
       </button>
-      {open && (
-        <div className="vl-cal__popup">
-          <div className="vl-cal__nav">
-            <button type="button" onClick={prevMonth} aria-label="Previous month"><I n="arrow-left-s-line" /></button>
-            <span>{MONTHS[viewMonth]} {viewYear}</span>
-            <button type="button" onClick={nextMonth} aria-label="Next month"><I n="arrow-right-s-line" /></button>
-          </div>
-          <div className="vl-cal__grid">
-            {DAYS.map(d => <span key={d} className="vl-cal__day-name">{d}</span>)}
-            {cells.map((d, i) => (
-              <button key={i} type="button"
-                className={`vl-cal__day${d ? '' : ' vl-cal__day--empty'}${isSelected(d) ? ' vl-cal__day--sel' : ''}${isDisabled(d) ? ' vl-cal__day--dis' : ''}`}
-                onClick={() => select(d)}
-                disabled={isDisabled(d)}
-                aria-label={d ? `${MONTHS[viewMonth]} ${d}, ${viewYear}` : undefined}
-              >{d || ''}</button>
-            ))}
-          </div>
-        </div>
-      )}
+      {popup}
     </div>
   )
 }
