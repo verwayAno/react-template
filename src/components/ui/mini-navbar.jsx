@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 function AnimatedNavLink({ to, children }) {
@@ -19,24 +19,13 @@ function AnimatedNavLink({ to, children }) {
 export function MiniNavbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [visible, setVisible] = useState(false)
-  const [shapeClass, setShapeClass] = useState('rounded-full')
-  const timerRef = useRef(null)
+  const shapeClass = isOpen ? 'rounded-xl' : 'rounded-full'
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 380)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    if (isOpen) {
-      setShapeClass('rounded-xl')
-    } else {
-      timerRef.current = setTimeout(() => setShapeClass('rounded-full'), 300)
-    }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [isOpen])
 
   const navLinks = [
     { label: 'Rooms', to: '/accommodations' },

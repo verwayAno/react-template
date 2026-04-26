@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
 @tailwind utilities;
 
 * {
@@ -17,9 +17,12 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Nunito Sans', sans-serif;
   line-height: 1.6;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--accent), transparent 84%) 0%, transparent 26%),
+    radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--accent2), transparent 88%) 0%, transparent 30%),
+    var(--bg);
   color: var(--text);
   transition: background 250ms ease, color 250ms ease;
 }

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion as Motion } from 'framer-motion'
 
 const FADE_UP = {
   hidden: { opacity: 0, y: 22 },
@@ -19,34 +19,34 @@ export function AnimatedMarqueeHero({
     <section className="azm-hero">
       {/* Centered text block */}
       <div className="azm-hero__content">
-        <motion.div
+        <Motion.div
           className="azm-tagline"
           initial="hidden"
           animate="show"
           variants={FADE_UP}
         >
           {tagline}
-        </motion.div>
+        </Motion.div>
 
-        <motion.h1
+        <Motion.h1
           className="azm-hero__h1"
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 90, damping: 18, delay: 0.12 }}
         >
           {title}
-        </motion.h1>
+        </Motion.h1>
 
-        <motion.p
+        <Motion.p
           className="azm-hero__p"
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 90, damping: 18, delay: 0.28 }}
         >
           {description}
-        </motion.p>
+        </Motion.p>
 
-        <motion.button
+        <Motion.button
           className="azm-hero__btn"
           onClick={onCtaClick}
           initial={{ opacity: 0, y: 18 }}
@@ -56,12 +56,12 @@ export function AnimatedMarqueeHero({
           whileTap={{ scale: 0.96 }}
         >
           {ctaText}
-        </motion.button>
+        </Motion.button>
       </div>
 
       {/* Scrolling image marquee */}
       <div className="azm-marquee">
-        <motion.div
+        <Motion.div
           className="azm-marquee__track"
           animate={{ x: ['0%', '-50%'] }}
           transition={{ ease: 'linear', duration: 35, repeat: Infinity }}
@@ -77,7 +77,7 @@ export function AnimatedMarqueeHero({
               <img src={src} alt="" loading="lazy" />
             </div>
           ))}
-        </motion.div>
+        </Motion.div>
       </div>
     </section>
   )

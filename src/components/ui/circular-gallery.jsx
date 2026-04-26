@@ -9,16 +9,19 @@ export function CircularGallery({
 }) {
   const [opened, setOpened]     = useState(0)
   const [inPlace, setInPlace]   = useState(0)
-  const [disabled, setDisabled] = useState(false)
-  const [gsapReady, setGsapReady] = useState(false)
+  const disabled = opened !== inPlace
+  const [gsapReady, setGsapReady] = useState(() =>
+    typeof window !== 'undefined' && Boolean(window.gsap && window.MotionPathPlugin)
+  )
   const [lightbox, setLightbox] = useState(false)
   const [lbIdx, setLbIdx]       = useState(0)
   const autoplayTimer = useRef(null)
 
   useEffect(() => {
-    if (window.gsap && window.MotionPathPlugin) {
-      window.gsap.registerPlugin(window.MotionPathPlugin)
-      setGsapReady(true)
+    if (gsapReady) {
+      if (window.gsap && window.MotionPathPlugin) {
+        window.gsap.registerPlugin(window.MotionPathPlugin)
+      }
       return
     }
     const gsapScript = document.createElement('script')
@@ -35,7 +38,7 @@ export function CircularGallery({
       document.body.appendChild(mpScript)
     }
     document.body.appendChild(gsapScript)
-  }, [])
+  }, [gsapReady])
 
   const handleTabClick = (index) => { if (!disabled) setOpened(index) }
   const onInPlace = (index) => setInPlace(index)
@@ -47,9 +50,6 @@ export function CircularGallery({
   const prev = useCallback(() => {
     setOpened((cur) => (cur - 1 + images.length) % images.length)
   }, [images.length])
-
-  useEffect(() => { setDisabled(true) }, [opened])
-  useEffect(() => { setDisabled(false) }, [inPlace])
 
   useEffect(() => {
     if (!gsapReady) return

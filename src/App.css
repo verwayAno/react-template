@@ -1,82 +1,82 @@
 /* -------------------------------------------------------
-   VELYR � RARE JOURNEYS � Complete Stylesheet
+   TERRANOVA - WILD ROUTES - Complete Stylesheet
    prefix: vl-   (rv- kept for hero compatibility)
 ------------------------------------------------------- */
 
 /* -- THEME VARIABLES -- */
 [data-mode="dark"] {
-  --bg: #0a0a0f;
-  --bg2: #111118;
-  --bg3: #1a1a24;
-  --surface: #16161f;
-  --surface2: #1f1f2e;
-  --border: rgba(255,255,255,0.08);
-  --text: #f0eff8;
-  --text2: #a09eb8;
-  --text3: #6b6a85;
-  --accent: #c8a96e;
-  --accent2: #e8c98a;
-  --glow: rgba(200,169,110,0.18);
-  --hero-overlay: linear-gradient(to top, rgba(8,8,14,0.92) 0%, rgba(8,8,14,0.3) 60%, transparent 100%);
+  --bg: #08151a;
+  --bg2: #0d2026;
+  --bg3: #13343c;
+  --surface: #112830;
+  --surface2: #173943;
+  --border: rgba(121, 191, 184, 0.24);
+  --text: #e8f5f4;
+  --text2: #b3d2cf;
+  --text3: #7da7a3;
+  --accent: #37b6a6;
+  --accent2: #f49a43;
+  --glow: rgba(55, 182, 166, 0.22);
+  --hero-overlay: linear-gradient(to top, rgba(4, 16, 20, 0.94) 0%, rgba(4, 16, 20, 0.34) 58%, transparent 100%);
 }
 [data-mode="light"] {
-  --bg: #faf9f6;
-  --bg2: #f2f0eb;
-  --bg3: #e8e5de;
+  --bg: #f4f8f3;
+  --bg2: #e7efe5;
+  --bg3: #dce8dd;
   --surface: #ffffff;
-  --surface2: #f5f3ee;
-  --border: rgba(0,0,0,0.09);
-  --text: #1a1916;
-  --text2: #5a5750;
-  --text3: #9a9790;
-  --accent: #b08d4a;
-  --accent2: #c8a96e;
-  --glow: rgba(176,141,74,0.12);
-  --hero-overlay: linear-gradient(to top, rgba(15,13,10,0.88) 0%, rgba(15,13,10,0.25) 60%, transparent 100%);
+  --surface2: #edf5ef;
+  --border: rgba(20, 65, 59, 0.14);
+  --text: #163734;
+  --text2: #3f625f;
+  --text3: #7a9591;
+  --accent: #dd6f31;
+  --accent2: #149b96;
+  --glow: rgba(221, 111, 49, 0.16);
+  --hero-overlay: linear-gradient(to top, rgba(18, 27, 24, 0.82) 0%, rgba(18, 27, 24, 0.24) 60%, transparent 100%);
 }
-[data-mode="neon"] {
-  --bg: #03010d;
-  --bg2: #07040f;
-  --bg3: #0d0920;
-  --surface: #0a071a;
-  --surface2: #120f2a;
-  --border: rgba(140,80,255,0.15);
-  --text: #e8e0ff;
-  --text2: #a090d0;
-  --text3: #6050a0;
-  --accent: #a855f7;
-  --accent2: #c084fc;
-  --glow: rgba(168,85,247,0.22);
-  --hero-overlay: linear-gradient(to top, rgba(3,1,13,0.95) 0%, rgba(3,1,13,0.3) 60%, transparent 100%);
+[data-mode="classic"] {
+  --bg: #f3ecdf;
+  --bg2: #ebe0cf;
+  --bg3: #ded0b9;
+  --surface: #fbf4e8;
+  --surface2: #f3e7d4;
+  --border: rgba(69, 72, 50, 0.16);
+  --text: #2e3227;
+  --text2: #575d49;
+  --text3: #828767;
+  --accent: #b86a2f;
+  --accent2: #2b7b72;
+  --glow: rgba(184, 106, 47, 0.2);
+  --hero-overlay: linear-gradient(to top, rgba(26, 24, 18, 0.88) 0%, rgba(26, 24, 18, 0.26) 58%, transparent 100%);
 }
-[data-mode="ember"] {
-  --bg: #0f0804;
-  --bg2: #160d05;
-  --bg3: #201208;
-  --surface: #1a0e06;
-  --surface2: #241508;
-  --border: rgba(255,120,50,0.12);
-  --text: #fff0e0;
-  --text2: #c09070;
-  --text3: #806040;
-  --accent: #e8702a;
-  --accent2: #f08840;
-  --glow: rgba(232,112,42,0.20);
-  --hero-overlay: linear-gradient(to top, rgba(15,8,4,0.95) 0%, rgba(15,8,4,0.3) 60%, transparent 100%);
+[data-mode="modern"] {
+  --bg: #ecf8f7;
+  --bg2: #d8f0ee;
+  --bg3: #c8e8e5;
+  --surface: #f8fffe;
+  --surface2: #def6f4;
+  --border: rgba(12, 93, 89, 0.18);
+  --text: #0f3435;
+  --text2: #316567;
+  --text3: #5b8789;
+  --accent: #0d9f95;
+  --accent2: #f07d2f;
+  --glow: rgba(13, 159, 149, 0.24);
+  --hero-overlay: linear-gradient(to top, rgba(6, 31, 36, 0.88) 0%, rgba(6, 31, 36, 0.28) 60%, transparent 100%);
 }
 
 /* -- RESET & BASE -- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Nunito Sans', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   transition: background 0.35s, color 0.35s;
   overflow-x: hidden;
 }
-h1,h2,h3,h4,h5 { font-family: 'Space Grotesk', sans-serif; line-height: 1.15; }
+h1,h2,h3,h4,h5 { font-family: 'Sora', sans-serif; line-height: 1.15; }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }
 img { max-width: 100%; display: block; object-fit: cover; }
@@ -828,7 +828,7 @@ ul { list-style: none; }
 .vl-spotlight__price { font-size: 1.6rem; font-weight: 800; color: var(--accent); }
 .vl-spotlight__per { font-size: 0.8rem; color: var(--text3); }
 
-/* -- WHY VELYR -- */
+/* -- WHY TERRANOVA -- */
 .vl-why { background: var(--bg); }
 .vl-why__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
 .vl-why__card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; transition: transform 0.3s, box-shadow 0.3s; }
@@ -1145,8 +1145,8 @@ ul { list-style: none; }
 }
 [data-mode="dark"] .vl-footer__glass   { background: color-mix(in srgb, var(--bg3) 85%, transparent); }
 [data-mode="light"] .vl-footer__glass  { background: color-mix(in srgb, var(--bg3) 90%, transparent); }
-[data-mode="neon"] .vl-footer__glass   { background: color-mix(in srgb, var(--bg3) 80%, transparent); border-top-color: var(--border); }
-[data-mode="ember"] .vl-footer__glass  { background: color-mix(in srgb, var(--bg3) 82%, transparent); }
+[data-mode="classic"] .vl-footer__glass   { background: color-mix(in srgb, var(--bg3) 80%, transparent); border-top-color: var(--border); }
+[data-mode="modern"] .vl-footer__glass  { background: color-mix(in srgb, var(--bg3) 82%, transparent); }
 
 /* Inner grid: brand | explore | helpful | contact */
 .vl-footer__inner { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.4fr; gap: 3rem; padding: 4rem 0 2rem; }
@@ -1376,4 +1376,384 @@ ul { list-style: none; }
   .vl-modal__foot { padding: 0.85rem 1.25rem 1.25rem; }
   .vl-modal__head { padding: 1.25rem 1.25rem 0; }
   .vl-modal__steps { padding: 1rem 1.25rem; }
+}
+
+/* -------------------------------------------------------
+   TERRANOVA REDESIGN LAYER
+------------------------------------------------------- */
+:root {
+  --tn-radius-lg: 22px;
+  --tn-radius-xl: 32px;
+  --tn-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes terra-float {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -14px, 0) scale(1.06); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+body {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 16% 18%, color-mix(in srgb, var(--accent), transparent 83%) 0%, transparent 26%),
+    radial-gradient(circle at 84% 9%, color-mix(in srgb, var(--accent2), transparent 85%) 0%, transparent 30%),
+    linear-gradient(160deg, color-mix(in srgb, var(--bg2), transparent 35%) 0%, transparent 40%),
+    var(--bg);
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  width: 42vmax;
+  height: 42vmax;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(74px);
+  opacity: 0.2;
+  animation: terra-float 18s ease-in-out infinite;
+}
+
+body::before {
+  top: -24vmax;
+  right: -14vmax;
+  background: color-mix(in srgb, var(--accent2), transparent 50%);
+}
+
+body::after {
+  bottom: -26vmax;
+  left: -16vmax;
+  background: color-mix(in srgb, var(--accent), transparent 40%);
+  animation-delay: -7s;
+}
+
+.contain {
+  max-width: 1300px;
+  padding: 0 clamp(1rem, 2.2vw, 2rem);
+}
+
+.vl-section {
+  padding: clamp(4.2rem, 7.5vw, 6.8rem) 0;
+}
+
+.vl-section--alt {
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--bg2), var(--surface) 24%) 0%,
+    color-mix(in srgb, var(--bg2), transparent 25%) 100%
+  );
+}
+
+.vl-header {
+  inset: 0.9rem clamp(0.6rem, 1.8vw, 1.35rem) auto clamp(0.6rem, 1.8vw, 1.35rem);
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.vl-header__inner {
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 74%);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(14px) saturate(155%);
+  border-radius: 18px;
+  padding: 0.64rem 1rem;
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--accent), transparent 90%);
+}
+
+.vl-header--scrolled {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.vl-header--scrolled .vl-header__inner {
+  transform: translateY(-1px);
+}
+
+.vl-logo__name {
+  letter-spacing: 0.2em;
+}
+
+.vl-logo__tagline {
+  letter-spacing: 0.2em;
+}
+
+.vl-nav__link {
+  border-radius: 12px;
+}
+
+.vl-nav__link:hover,
+.vl-nav__link--on {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent), transparent 88%);
+}
+
+.rv-hero {
+  margin: 0 clamp(0.65rem, 1.9vw, 1.35rem);
+  border-radius: 0 0 48px 48px;
+  min-height: min(100svh, 920px);
+}
+
+.rv-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(130deg, color-mix(in srgb, var(--accent), transparent 95%) 0%, transparent 56%);
+  pointer-events: none;
+}
+
+.rv-hero__content {
+  padding-top: clamp(8.8rem, 16vh, 11rem);
+  padding-bottom: clamp(5.8rem, 14vh, 9.2rem);
+}
+
+.rv-hero__h1 {
+  max-width: 12ch;
+  text-shadow: 0 14px 30px rgba(0, 0, 0, 0.4);
+}
+
+.rv-hero__sub {
+  max-width: 600px;
+  border-left: 2px solid color-mix(in srgb, var(--accent2), transparent 15%);
+  padding-left: 0.95rem;
+  background: color-mix(in srgb, var(--bg), transparent 82%);
+  backdrop-filter: blur(10px);
+  border-radius: 0 12px 12px 0;
+}
+
+.rv-hero__thumb {
+  width: 232px;
+  border-radius: 14px;
+}
+
+.vl-booking-bar {
+  margin-top: -5.4rem;
+  padding-bottom: 4rem;
+}
+
+.vl-bb-card {
+  border-radius: 30px;
+  border-color: color-mix(in srgb, var(--accent), transparent 72%);
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--surface), white 4%) 0%, color-mix(in srgb, var(--surface2), transparent 20%) 100%);
+  box-shadow:
+    0 38px 86px rgba(0, 0, 0, 0.32),
+    0 0 0 1px color-mix(in srgb, var(--accent2), transparent 84%);
+}
+
+.vl-bb-types {
+  padding: 0 1.4rem;
+}
+
+.vl-bb-form {
+  min-height: 90px;
+}
+
+.vl-sec-head h2 {
+  font-size: clamp(1.95rem, 3.8vw, 3.05rem);
+  letter-spacing: -0.02em;
+}
+
+.vl-sec-sub {
+  max-width: 640px;
+}
+
+.vl-stats-grid {
+  gap: 1.15rem;
+}
+
+.vl-stat-card {
+  border-radius: 24px;
+  padding: 1.8rem 1.55rem;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--surface), white 4%) 0%,
+    color-mix(in srgb, var(--surface2), transparent 18%) 100%
+  );
+}
+
+.vl-stat-card__icon {
+  border-radius: 18px;
+}
+
+.vl-dest-card {
+  border-radius: 24px;
+}
+
+.vl-marq {
+  margin: 0 clamp(0.6rem, 1.8vw, 1.35rem);
+  border-radius: 15px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 74%);
+}
+
+.vl-stay-card,
+.vl-exp-card,
+.vl-pkg-card,
+.vl-spotlight,
+.vl-why__card,
+.vl-amenity-card,
+.vl-test-wrap,
+.vl-contact__info-card,
+.vl-faq-item,
+.vl-pkg-price-box,
+.vl-book-panel,
+.vl-exp-detail__includes-box,
+.vl-exp-detail__book-box {
+  border-radius: 26px;
+  border-color: color-mix(in srgb, var(--accent), transparent 72%);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--surface), white 4%) 0%, color-mix(in srgb, var(--surface2), transparent 12%) 100%);
+}
+
+.vl-stay-card,
+.vl-exp-card,
+.vl-pkg-card {
+  transition:
+    transform 0.52s var(--tn-ease),
+    box-shadow 0.4s var(--tn-ease),
+    border-color 0.32s var(--tn-ease);
+}
+
+.vl-stay-card:hover,
+.vl-exp-card:hover,
+.vl-pkg-card:hover {
+  transform: translateY(-10px) rotateX(1.5deg);
+  box-shadow: 0 30px 80px color-mix(in srgb, var(--accent), transparent 84%);
+}
+
+.vl-stay-card:hover .vl-stay-card__img-wrap img,
+.vl-exp-card:hover .vl-exp-card__img img,
+.vl-pkg-card:hover .vl-pkg-card__img img {
+  transform: scale(1.12) rotate(-1deg);
+}
+
+.vl-stays-grid > :first-child .vl-stay-card {
+  transform: translateY(-16px);
+}
+
+.vl-stays-grid > :first-child .vl-stay-card:hover {
+  transform: translateY(-24px);
+}
+
+.vl-pkg-card {
+  grid-template-columns: minmax(250px, 1.9fr) minmax(360px, 2.5fr);
+}
+
+.vl-spotlight {
+  grid-template-columns: 1.05fr 1fr;
+  border-radius: 30px;
+}
+
+.vl-spotlight__body {
+  padding: clamp(1.6rem, 3vw, 2.8rem);
+}
+
+.vl-testimonial {
+  padding: clamp(2.2rem, 3.6vw, 3rem);
+}
+
+.vl-cta-band {
+  margin: 3rem clamp(0.65rem, 1.9vw, 1.35rem) 0;
+  border-radius: 38px;
+  overflow: hidden;
+}
+
+.vl-page-hero {
+  margin: 1rem clamp(0.65rem, 1.9vw, 1.35rem) 0;
+  border-radius: 30px;
+  min-height: 430px;
+}
+
+.vl-page-hero .contain {
+  padding-top: 8.6rem;
+  padding-bottom: 3.9rem;
+}
+
+.vl-filter-pill {
+  border-radius: 14px;
+}
+
+.vl-modal {
+  border-radius: 30px;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--surface), white 4%) 0%,
+    color-mix(in srgb, var(--surface2), transparent 12%) 100%
+  );
+}
+
+.vl-footer {
+  margin-top: 4.8rem;
+}
+
+.vl-footer__glass {
+  margin: 0 clamp(0.65rem, 1.9vw, 1.35rem);
+  border-radius: 34px 34px 0 0;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 70%);
+  box-shadow: 0 -22px 60px color-mix(in srgb, var(--accent), transparent 92%);
+}
+
+@media (max-width: 1100px) {
+  .vl-header {
+    inset: 0.55rem 0.75rem auto 0.75rem;
+  }
+
+  .rv-hero {
+    margin: 0;
+    border-radius: 0 0 28px 28px;
+  }
+
+  .vl-booking-bar {
+    margin-top: -3rem;
+  }
+
+  .vl-pkg-card {
+    grid-template-columns: 1fr;
+  }
+
+  .vl-page-hero,
+  .vl-cta-band,
+  .vl-footer__glass,
+  .vl-marq {
+    margin-inline: 0.65rem;
+    border-radius: 24px;
+  }
+
+  .vl-stays-grid > :first-child .vl-stay-card,
+  .vl-stays-grid > :first-child .vl-stay-card:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .vl-header {
+    inset: 0;
+  }
+
+  .vl-header__inner {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    padding: 0.65rem 1rem;
+  }
+
+  .vl-booking-bar {
+    margin-top: -1.9rem;
+  }
+
+  .vl-page-hero .contain {
+    padding-top: 7.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }

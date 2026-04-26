@@ -382,13 +382,13 @@ const TESTIMONIALS = [
   {
     name: 'Charlotte & Marcus Webb', role: 'Anniversary trip, Bora Bora',
     img: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&auto=format&fit=crop',
-    text: 'VELYR knew our anniversary was approaching before we did. The overwater bungalow had rose petals on the deck, a private chef, and a bottle of wine from the year we met. We cried. Twice.',
+    text: 'TERRANOVA knew our anniversary was approaching before we did. The overwater bungalow had rose petals on the deck, a private chef, and a bottle of wine from the year we met. We cried. Twice.',
     rating: 5, location: 'Bora Bora, French Polynesia',
   },
   {
     name: 'Takeshi Mori', role: 'Japan Ritual Circuit',
     img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop',
-    text: "I have been to Japan four times. VELYR's Japan circuit showed me a country I had never seen before. Private geisha dinner, bamboo forest at dawn with no one else — it felt like having Japan as a private estate.",
+    text: "I have been to Japan four times. TERRANOVA's Japan circuit showed me a country I had never seen before. Private geisha dinner, bamboo forest at dawn with no one else — it felt like having Japan as a private estate.",
     rating: 5, location: 'Hakone, Japan',
   },
   {
@@ -407,10 +407,10 @@ const STATS = [
 ]
 
 const THEME_MODES = [
-  { id: 'dark',  icon: 'moon-fill',       label: 'Night' },
-  { id: 'light', icon: 'sun-fill',        label: 'Day'   },
-  { id: 'neon',  icon: 'flashlight-fill', label: 'Neon'  },
-  { id: 'ember', icon: 'fire-fill',       label: 'Dusk'  },
+  { id: 'light',   icon: 'sun-fill',         label: 'Light' },
+  { id: 'dark',    icon: 'moon-fill',        label: 'Dark' },
+  { id: 'classic', icon: 'compass-3-fill',   label: 'Classic' },
+  { id: 'modern',  icon: 'sparkling-2-fill', label: 'Modern' },
 ]
 
 const DEST_CATEGORIES = [
@@ -456,7 +456,7 @@ function ThemeSwitcher({ mode, setMode }) {
       {THEME_MODES.map(({ id, icon, label }) => (
         <button key={id}
           className={`vl-theme-btn${mode === id ? ' vl-theme-btn--on' : ''}`}
-          onClick={() => { setMode(id); localStorage.setItem('velyr-mode', id) }}
+          onClick={() => { setMode(id); localStorage.setItem('terranova-mode', id) }}
           title={label} aria-label={`${label} mode`}>
           <I n={icon} />
           <span>{label}</span>
@@ -467,11 +467,11 @@ function ThemeSwitcher({ mode, setMode }) {
 }
 
 /* ═══════════════════════════════
-   VELYR LOGO MARK
+  TERRANOVA LOGO MARK
 ═══════════════════════════════ */
-function VelyrLogo({ size = 'md' }) {
+function TerranovaLogo({ size = 'md', onClick }) {
   return (
-    <Link to="/" className={`vl-logo vl-logo--${size}`}>
+    <Link to="/" className={`vl-logo vl-logo--${size}`} onClick={onClick}>
       <span className="vl-logo__mark" aria-hidden="true">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M14 2L26 8V20L14 26L2 20V8L14 2Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
@@ -480,8 +480,8 @@ function VelyrLogo({ size = 'md' }) {
         </svg>
       </span>
       <span className="vl-logo__text">
-        <span className="vl-logo__name">VELYR</span>
-        <span className="vl-logo__tagline">Rare Journeys</span>
+        <span className="vl-logo__name">TERRANOVA</span>
+        <span className="vl-logo__tagline">Wild Routes</span>
       </span>
     </Link>
   )
@@ -493,15 +493,12 @@ function VelyrLogo({ size = 'md' }) {
 function SiteHeader({ mode, setMode }) {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const location = useLocation()
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 60)
     window.addEventListener('scroll', h, { passive: true })
     return () => window.removeEventListener('scroll', h)
   }, [])
-
-  useEffect(() => { setOpen(false) }, [location.pathname])
 
   const navLinks = [
     { label: 'Stays',       to: '/stay',        icon: 'hotel-line'     },
@@ -514,7 +511,7 @@ function SiteHeader({ mode, setMode }) {
   return (
     <header className={`vl-header${scrolled ? ' vl-header--scrolled' : ''}`}>
       <div className="vl-header__inner contain">
-        <VelyrLogo />
+        <TerranovaLogo onClick={() => setOpen(false)} />
         <nav className="vl-nav" aria-label="Primary">
           {navLinks.map(l => (
             <NavLink key={l.to} to={l.to}
@@ -538,7 +535,7 @@ function SiteHeader({ mode, setMode }) {
       {open && <button className="vl-overlay" onClick={() => setOpen(false)} aria-label="Close menu" />}
       <div className={`vl-drawer${open ? ' vl-drawer--open' : ''}`}>
         <div className="vl-drawer__head">
-          <VelyrLogo />
+          <TerranovaLogo onClick={() => setOpen(false)} />
           <button onClick={() => setOpen(false)} className="vl-drawer__close" aria-label="Close"><I n="close-line" /></button>
         </div>
         <nav className="vl-drawer__nav">
@@ -774,14 +771,6 @@ function MiniCalendar({ value, onChange, label, minDate }) {
     }
   }, [open])
 
-  useEffect(() => {
-    if (value) {
-      const d = new Date(value)
-      setViewYear(d.getFullYear())
-      setViewMonth(d.getMonth())
-    }
-  }, [value])
-
   const prevMonth = () => {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
     else setViewMonth(m => m - 1)
@@ -980,7 +969,7 @@ function BookingModal({ item, type = 'stay', onClose }) {
             <div className="vl-modal__success">
               <div className="vl-modal__success-icon"><I n="check-double-line" /></div>
               <h3>Booking Request Sent!</h3>
-              <p>Thank you, {form.firstName}. Your VELYR concierge will be in touch within 24 hours with a personalised confirmation.</p>
+              <p>Thank you, {form.firstName}. Your TERRANOVA concierge will be in touch within 24 hours with a personalised confirmation.</p>
               <button className="vl-btn-primary" onClick={onClose}>Close <I n="arrow-right-line" /></button>
             </div>
           )}
@@ -1294,12 +1283,12 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ── WHY VELYR ── */}
+      {/* ── WHY TERRANOVA ── */}
       <section className="vl-section vl-why">
         <div className="contain">
           <Reveal>
             <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow"><I n="award-line" /> Why VELYR</span>
+              <span className="vl-eyebrow"><I n="award-line" /> Why TERRANOVA</span>
               <h2>Curation Over Commission</h2>
               <p className="vl-sec-sub">Every choice we make serves only one person: you.</p>
             </div>
@@ -1325,7 +1314,7 @@ function HomePage() {
             <div className="vl-sec-head vl-sec-head--center">
               <span className="vl-eyebrow"><I n="service-line" /> Every Journey, Elevated</span>
               <h2>Included as Standard</h2>
-              <p className="vl-sec-sub">Thoughtful services that make a VELYR journey feel effortlessly seamless — from the moment you depart.</p>
+              <p className="vl-sec-sub">Thoughtful services that make a TERRANOVA journey feel effortlessly seamless — from the moment you depart.</p>
             </div>
           </Reveal>
           <div className="vl-amenities-sec__grid">
@@ -1438,7 +1427,7 @@ function AboutPage() {
           <Reveal>
             <span className="vl-eyebrow vl-eyebrow--light">Our Story</span>
             <h1>Travel That Changes You</h1>
-            <p>VELYR was founded on a single belief: extraordinary travel should be accessible to those who seek it, not just those who stumble upon it.</p>
+            <p>TERRANOVA was founded on a single belief: extraordinary travel should be accessible to those who seek it, not just those who stumble upon it.</p>
           </Reveal>
         </div>
       </section>
@@ -1448,7 +1437,7 @@ function AboutPage() {
           <Reveal>
             <div className="vl-about__text">
               <h2>Why We Exist</h2>
-              <p>Most travel platforms are built around paid placements and algorithmic recommendations. We're different — every destination, stay, and experience on VELYR has been visited by a member of our team. If we wouldn't go back, we won't list it.</p>
+              <p>Most travel platforms are built around paid placements and algorithmic recommendations. We're different — every destination, stay, and experience on TERRANOVA has been visited by a member of our team. If we wouldn't go back, we won't list it.</p>
               <p>Our curators live in the places you dream of visiting. They know the hidden valley restaurant, the guide who'll take you off the beaten path, and the best season to witness something unforgettable.</p>
             </div>
           </Reveal>
@@ -1494,7 +1483,7 @@ function AboutPage() {
           <Reveal>
             <div className="vl-sec-head vl-sec-head--center">
               <span className="vl-eyebrow">Our Promise</span>
-              <h2>The VELYR Standard</h2>
+              <h2>The TERRANOVA Standard</h2>
             </div>
           </Reveal>
           <div className="vl-why__grid">
@@ -2064,7 +2053,7 @@ function SiteFooter() {
         <div className="contain vl-footer__inner">
           {/* BRAND */}
           <div className="vl-footer__brand">
-            <VelyrLogo />
+            <TerranovaLogo />
             <p>Building unforgettable journeys for those who seek the extraordinary — not just the expected.</p>
             <ul className="vl-footer__social">
               <li><a href="#" aria-label="Instagram"><I n="instagram-line" /></a></li>
@@ -2110,7 +2099,7 @@ function SiteFooter() {
             <ul className="vl-footer__contact-list">
               <li>
                 <span className="vl-footer__ci"><I n="mail-line" /></span>
-                <a href="mailto:hello@velyr.com">hello@velyr.com</a>
+                <a href="mailto:hello@terranova.travel">hello@terranova.travel</a>
               </li>
               <li>
                 <span className="vl-footer__ci"><I n="phone-line" /></span>
@@ -2122,7 +2111,7 @@ function SiteFooter() {
               </li>
             </ul>
             <div className="vl-footer__newsletter">
-              <p>The VELYR Journal — rare destinations delivered.</p>
+              <p>The TERRANOVA Journal — rare destinations delivered.</p>
               {subscribed ? (
                 <p className="vl-footer__subbed"><I n="check-double-line" /> You're on the list.</p>
               ) : (
@@ -2138,7 +2127,7 @@ function SiteFooter() {
         <div className="vl-footer__bottom">
           <div className="contain">
             <span>All rights reserved.</span>
-            <span>&copy; {new Date().getFullYear()} VELYR &middot; Rare Journeys</span>
+            <span>&copy; {new Date().getFullYear()} TERRANOVA &middot; Wild Routes</span>
           </div>
         </div>
       </div>
@@ -2221,7 +2210,7 @@ function ContactPage() {
                 <div className="vl-contact__info-icon"><I n="mail-line" /></div>
                 <div>
                   <h4>Email</h4>
-                  <a href="mailto:hello@velyr.com">hello@velyr.com</a>
+                  <a href="mailto:hello@terranova.travel">hello@terranova.travel</a>
                 </div>
               </div>
               <div className="vl-contact__info-card">
@@ -2307,18 +2296,38 @@ function NotFound() {
 ═══════════════════════════════ */
 function AppShell() {
   const [mode, setMode] = useState(() => {
-    try { return localStorage.getItem('velyr-mode') || 'dark' } catch { return 'dark' }
+    try { return localStorage.getItem('terranova-mode') || 'modern' } catch { return 'modern' }
   })
   const { pathname } = useLocation()
 
   useEffect(() => {
     document.documentElement.setAttribute('data-mode', mode)
-    try { localStorage.setItem('velyr-mode', mode) } catch {}
+    try { localStorage.setItem('terranova-mode', mode) } catch { /* ignore storage failures */ }
   }, [mode])
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [pathname])
+
+  useEffect(() => {
+    if (mode !== 'modern' || !window.gsap) return
+    const targets = document.querySelectorAll(
+      '.vl-reveal--on, .vl-sec-head, .vl-stay-card, .vl-exp-card, .vl-pkg-card, .vl-stat-card'
+    )
+    if (!targets.length) return
+    window.gsap.fromTo(
+      targets,
+      { opacity: 0, y: 18 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.02,
+        ease: 'power2.out',
+        clearProps: 'opacity,transform',
+      }
+    )
+  }, [pathname, mode])
 
   return (
     <ErrorBoundary>
