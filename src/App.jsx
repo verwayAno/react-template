@@ -1078,7 +1078,7 @@ function BookingBar() {
 /* ═══════════════════════════════
    HOME PAGE
 ═══════════════════════════════ */
-function HomePage() {
+function HomePage({ mode }) {
   const [heroIdx, setHeroIdx] = useState(0)
   const [testIdx, setTestIdx] = useState(0)
   const [booking, setBooking] = useState(null)
@@ -1089,13 +1089,56 @@ function HomePage() {
     return () => clearInterval(t)
   }, [heroItems.length])
 
+  useEffect(() => {
+    const t = setInterval(() => setTestIdx(i => (i + 1) % TESTIMONIALS.length), 6800)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    if (mode !== 'modern' || !window.gsap) return
+    const targets = document.querySelectorAll('.rv-hero__h1-pre, .rv-hero__h1-main, .rv-hero__sub, .rv-hero__actions')
+    if (!targets.length) return
+    window.gsap.fromTo(
+      targets,
+      { opacity: 0, y: 24 },
+      { opacity: 1, y: 0, duration: 0.75, stagger: 0.07, ease: 'power2.out', clearProps: 'opacity,transform' }
+    )
+  }, [heroIdx, mode])
+
+  const handleHeroMove = (e) => {
+    if (mode !== 'modern' || !window.gsap) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2
+    window.gsap.to('.rv-hero__slide--active img', {
+      x: x * 18,
+      y: y * 14,
+      scale: 1.045,
+      duration: 0.45,
+      ease: 'power2.out',
+      overwrite: true,
+    })
+  }
+
+  const handleHeroLeave = () => {
+    if (mode !== 'modern' || !window.gsap) return
+    window.gsap.to('.rv-hero__slide img', {
+      x: 0,
+      y: 0,
+      scale: 1,
+      duration: 0.55,
+      ease: 'power2.out',
+      overwrite: true,
+    })
+  }
+
   const active = heroItems[heroIdx]
 
   return (
     <>
       {booking && <BookingModal item={booking.item} type={booking.type} onClose={() => setBooking(null)} />}
       {/* ── HERO (unchanged) ── */}
-      <section className="rv-hero" style={{ '--hero-color': active.color }}>
+      <section className="rv-hero" style={{ '--hero-color': active.color }} onMouseMove={handleHeroMove} onMouseLeave={handleHeroLeave}>
         <div className="rv-hero__slides">
           {heroItems.map((item, i) => (
             <div key={item.id} className={`rv-hero__slide${i === heroIdx ? ' rv-hero__slide--active' : ''}`}>
@@ -2334,7 +2377,7 @@ function AppShell() {
       <SiteHeader mode={mode} setMode={setMode} />
       <main id="main-content" tabIndex={-1} style={{ outline: 'none' }}>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<HomePage mode={mode} />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/stay" element={<StaysPage />} />
           <Route path="/stay/:id" element={<StayDetailPage />} />

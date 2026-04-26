@@ -1529,6 +1529,14 @@ body::after {
   border-radius: 14px;
 }
 
+.rv-hero__slide img {
+  transition: transform 6s ease, filter 0.45s var(--tn-ease);
+}
+
+.rv-hero__slide--active img {
+  filter: saturate(1.08) contrast(1.03);
+}
+
 .vl-booking-bar {
   margin-top: -5.4rem;
   padding-bottom: 4rem;
@@ -1579,7 +1587,21 @@ body::after {
   border-radius: 18px;
 }
 
+.vl-dest-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: 170px;
+  gap: 1rem;
+}
+
+.vl-dest-grid > *:nth-child(1) { grid-column: span 5; grid-row: span 2; }
+.vl-dest-grid > *:nth-child(2) { grid-column: span 4; grid-row: span 1; }
+.vl-dest-grid > *:nth-child(3) { grid-column: span 3; grid-row: span 1; }
+.vl-dest-grid > *:nth-child(4) { grid-column: span 3; grid-row: span 1; }
+.vl-dest-grid > *:nth-child(5) { grid-column: span 4; grid-row: span 1; }
+.vl-dest-grid > *:nth-child(6) { grid-column: span 5; grid-row: span 2; }
+
 .vl-dest-card {
+  height: 100%;
   border-radius: 24px;
 }
 
@@ -1636,6 +1658,22 @@ body::after {
 
 .vl-stays-grid > :first-child .vl-stay-card:hover {
   transform: translateY(-24px);
+}
+
+.vl-stays-grid,
+.vl-exp-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1.35rem;
+}
+
+.vl-stays-grid > *,
+.vl-exp-grid > * {
+  grid-column: span 4;
+}
+
+.vl-exp-grid > :nth-child(1),
+.vl-exp-grid > :nth-child(2) {
+  grid-column: span 6;
 }
 
 .vl-pkg-card {
@@ -1712,6 +1750,20 @@ body::after {
 
   .vl-pkg-card {
     grid-template-columns: 1fr;
+  }
+
+  .vl-dest-grid,
+  .vl-stays-grid,
+  .vl-exp-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: auto;
+  }
+
+  .vl-dest-grid > *,
+  .vl-stays-grid > *,
+  .vl-exp-grid > * {
+    grid-column: span 1 !important;
+    grid-row: span 1 !important;
   }
 
   .vl-page-hero,
