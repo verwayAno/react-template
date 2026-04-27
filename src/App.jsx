@@ -459,7 +459,6 @@ function ThemeSwitcher({ mode, setMode }) {
           onClick={() => { setMode(id); localStorage.setItem('terranova-mode', id) }}
           title={label} aria-label={`${label} mode`}>
           <I n={icon} />
-          <span>{label}</span>
         </button>
       ))}
     </div>
@@ -493,14 +492,20 @@ function TerranovaLogo({ size = 'md', onClick }) {
 function SiteHeader({ mode, setMode }) {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 60)
+    const h = () => {
+      setScrolled(window.scrollY > 60)
+      const max = document.body.scrollHeight - window.innerHeight
+      setProgress(max > 0 ? Math.round((window.scrollY / max) * 100) : 0)
+    }
     window.addEventListener('scroll', h, { passive: true })
     return () => window.removeEventListener('scroll', h)
   }, [])
 
   const navLinks = [
+    { label: 'Home',        to: '/',            icon: 'home-5-line'    },
     { label: 'Stays',       to: '/stay',        icon: 'hotel-line'     },
     { label: 'Activities',  to: '/experiences', icon: 'compass-3-line' },
     { label: 'Packages',    to: '/packages',    icon: 'gift-2-line'    },
@@ -510,8 +515,14 @@ function SiteHeader({ mode, setMode }) {
 
   return (
     <header className={`vl-header${scrolled ? ' vl-header--scrolled' : ''}`}>
+      {/* Scroll progress bar */}
+      <div className="vl-header__progress" aria-hidden="true">
+        <div className="vl-header__progress-fill" style={{ width: `${progress}%` }} />
+      </div>
+
       <div className="vl-header__inner contain">
         <TerranovaLogo onClick={() => setOpen(false)} />
+
         <nav className="vl-nav" aria-label="Primary">
           {navLinks.map(l => (
             <NavLink key={l.to} to={l.to}
@@ -520,10 +531,12 @@ function SiteHeader({ mode, setMode }) {
             </NavLink>
           ))}
         </nav>
+
         <div className="vl-header__right">
           <ThemeSwitcher mode={mode} setMode={setMode} />
           <Link to="/packages" className="vl-book-btn">
-            <I n="sparkling-2-line" /> Plan a Journey
+            <I n="calendar-check-line" />
+            <span>Book Now</span>
           </Link>
           <button className="vl-burger" onClick={() => setOpen(v => !v)} aria-expanded={open} aria-label="Menu">
             <span className={`vl-burger__bar${open ? ' vl-burger__bar--x' : ''}`}><span/><span/><span/></span>
@@ -550,7 +563,7 @@ function SiteHeader({ mode, setMode }) {
         <div className="vl-drawer__foot">
           <ThemeSwitcher mode={mode} setMode={setMode} />
           <Link to="/packages" className="vl-book-btn vl-book-btn--full" onClick={() => setOpen(false)}>
-            <I n="sparkling-2-line" /> Plan a Journey
+            <I n="calendar-check-line" /> Book Now
           </Link>
         </div>
       </div>
@@ -1018,57 +1031,107 @@ function BookingBar() {
   }
 
   const TYPES = [
-    { key: 'stay', icon: 'hotel-line', label: 'Stay' },
-    { key: 'experiences', icon: 'compass-3-line', label: 'Activity' },
-    { key: 'packages', icon: 'gift-2-line', label: 'Package' },
+    { key: 'stay',        icon: 'hotel-line',     label: 'Stay',     desc: '140+ properties' },
+    { key: 'experiences', icon: 'compass-3-line', label: 'Activity', desc: '80+ experiences' },
+    { key: 'packages',    icon: 'gift-2-line',    label: 'Package',  desc: 'Curated journeys' },
   ]
 
   return (
     <div className="vl-booking-bar">
       <div className="contain">
         <div className="vl-bb-card">
-          {/* Type selector */}
-          <div className="vl-bb-types">
-            {TYPES.map(({ key, icon, label }) => (
-              <button key={key} type="button" className={`vl-bb-type${type === key ? ' vl-bb-type--on' : ''}`} onClick={() => setType(key)}>
-                <div className="vl-bb-type__icon"><I n={icon} /></div>
-                <span>{label}</span>
-                {type === key && <div className="vl-bb-type__line" />}
-              </button>
-            ))}
+
+          {/* Header: type tabs + tagline */}
+          <div className="vl-bb-header">
+            <div className="vl-bb-types">
+              {TYPES.map(({ key, icon, label, desc }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`vl-bb-type${type === key ? ' vl-bb-type--on' : ''}`}
+                  onClick={() => setType(key)}
+                >
+                  <div className="vl-bb-type__icon"><I n={icon} /></div>
+                  <div className="vl-bb-type__text">
+                    <span>{label}</span>
+                    <small>{desc}</small>
+                  </div>
+                  {type === key && <div className="vl-bb-type__line" />}
+                </button>
+              ))}
+            </div>
+            <div className="vl-bb-tagline">
+              <I n="sparkling-2-line" />
+              <span>Find your extraordinary journey</span>
+            </div>
           </div>
-          {/* Fields */}
+
+          {/* Search fields row */}
           <form className="vl-bb-form" onSubmit={handleSearch}>
             <div className={`vl-bb-field-group${focused === 'dest' ? ' vl-bb-field-group--focused' : ''}`}>
-              <label htmlFor="bb-dest">Where</label>
+              <label htmlFor="bb-dest">
+                <I n="map-pin-2-line" /> Where
+              </label>
               <div className="vl-bb-input-row">
-                <I n="map-pin-2-line" />
-                <input id="bb-dest" type="text" placeholder="Destination or property" value={destination} onChange={e => setDestination(e.target.value)} onFocus={() => setFocused('dest')} onBlur={() => setFocused(null)} aria-label="Destination" />
+                <input
+                  id="bb-dest"
+                  type="text"
+                  placeholder="Destination or property"
+                  value={destination}
+                  onChange={e => setDestination(e.target.value)}
+                  onFocus={() => setFocused('dest')}
+                  onBlur={() => setFocused(null)}
+                  aria-label="Destination"
+                />
               </div>
             </div>
+
             <div className="vl-bb-divider" />
-            <div className={`vl-bb-field-group vl-bb-field-group--cal${focused === 'checkin' ? ' vl-bb-field-group--focused' : ''}`}
-              onFocus={() => setFocused('checkin')} onBlur={() => setFocused(null)}>
-              <label>Check In</label>
+
+            <div
+              className={`vl-bb-field-group vl-bb-field-group--cal${focused === 'checkin' ? ' vl-bb-field-group--focused' : ''}`}
+              onFocus={() => setFocused('checkin')}
+              onBlur={() => setFocused(null)}
+            >
+              <label><I n="calendar-line" /> Check In</label>
               <MiniCalendar value={checkin} onChange={setCheckin} label="Pick date" />
             </div>
+
             <div className="vl-bb-divider" />
-            <div className={`vl-bb-field-group vl-bb-field-group--cal${focused === 'checkout' ? ' vl-bb-field-group--focused' : ''}`}
-              onFocus={() => setFocused('checkout')} onBlur={() => setFocused(null)}>
-              <label>Check Out</label>
+
+            <div
+              className={`vl-bb-field-group vl-bb-field-group--cal${focused === 'checkout' ? ' vl-bb-field-group--focused' : ''}`}
+              onFocus={() => setFocused('checkout')}
+              onBlur={() => setFocused(null)}
+            >
+              <label><I n="calendar-check-line" /> Check Out</label>
               <MiniCalendar value={checkout} onChange={setCheckout} label="Pick date" minDate={checkin} />
             </div>
+
             <div className="vl-bb-divider" />
+
             <div className="vl-bb-field-group vl-bb-field-group--guests">
-              <label>Guests</label>
+              <label><I n="group-line" /> Guests</label>
               <div className="vl-bb-guests-row">
-                <button type="button" className="vl-bb-guest-btn" onClick={() => setGuests(g => Math.max(1, g - 1))} aria-label="Remove guest"><I n="subtract-line" /></button>
-                <span className="vl-bb-guest-count"><I n="group-line" />{guests} {guests === 1 ? 'Guest' : 'Guests'}</span>
-                <button type="button" className="vl-bb-guest-btn" onClick={() => setGuests(g => Math.min(12, g + 1))} aria-label="Add guest"><I n="add-line" /></button>
+                <button type="button" className="vl-bb-guest-btn" onClick={() => setGuests(g => Math.max(1, g - 1))} aria-label="Remove guest">
+                  <I n="subtract-line" />
+                </button>
+                <span className="vl-bb-guest-count">
+                  <strong>{guests}</strong>&nbsp;{guests === 1 ? 'Guest' : 'Guests'}
+                </span>
+                <button type="button" className="vl-bb-guest-btn" onClick={() => setGuests(g => Math.min(12, g + 1))} aria-label="Add guest">
+                  <I n="add-line" />
+                </button>
               </div>
             </div>
-            <button type="submit" className="vl-bb-submit"><I n="search-2-line" /><span>Search</span></button>
+
+            <button type="submit" className="vl-bb-submit">
+              <span className="vl-bb-submit__icon"><I n="search-2-line" /></span>
+              <span className="vl-bb-submit__label">Search</span>
+              <span className="vl-bb-submit__arrow"><I n="arrow-right-line" /></span>
+            </button>
           </form>
+
         </div>
       </div>
     </div>
@@ -1095,15 +1158,34 @@ function HomePage({ mode }) {
   }, [])
 
   useEffect(() => {
-    if (mode !== 'modern' || !window.gsap) return
-    const targets = document.querySelectorAll('.rv-hero__h1-pre, .rv-hero__h1-main, .rv-hero__sub, .rv-hero__actions')
-    if (!targets.length) return
-    window.gsap.fromTo(
-      targets,
-      { opacity: 0, y: 24 },
-      { opacity: 1, y: 0, duration: 0.75, stagger: 0.07, ease: 'power2.out', clearProps: 'opacity,transform' }
-    )
-  }, [heroIdx, mode])
+    const targets = [
+      '.rv-hero__eyebrow',
+      '.rv-hero__h1-pre',
+      '.rv-hero__h1-main',
+      '.rv-hero__h1-sub',
+      '.rv-hero__sub',
+      '.rv-hero__actions',
+      '.rv-hero__trust',
+    ]
+    // Ensure elements are fully visible even without GSAP
+    targets.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        el.style.opacity = '1'
+        el.style.transform = 'none'
+        el.style.clipPath = 'none'
+      })
+    })
+    if (!window.gsap) return
+    window.gsap.killTweensOf(targets.join(', '))
+    const tl = window.gsap.timeline()
+    tl.fromTo('.rv-hero__eyebrow',   { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: 'power3.out' }, 0)
+    tl.fromTo('.rv-hero__h1-pre',    { opacity: 0, y: 18 },  { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 0.08)
+    tl.fromTo('.rv-hero__h1-main',   { opacity: 0, y: 36 },  { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, 0.16)
+    tl.fromTo('.rv-hero__h1-sub',    { opacity: 0, y: 36 },  { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, 0.22)
+    tl.fromTo('.rv-hero__sub',       { opacity: 0, y: 22 },  { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }, 0.32)
+    tl.fromTo('.rv-hero__actions',   { opacity: 0, y: 18 },  { opacity: 1, y: 0, duration: 0.5,  ease: 'power2.out' }, 0.44)
+    tl.fromTo('.rv-hero__trust',     { opacity: 0, y: 14 },  { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, 0.54)
+  }, [heroIdx])
 
   const handleHeroMove = (e) => {
     if (mode !== 'modern' || !window.gsap) return
@@ -1137,8 +1219,9 @@ function HomePage({ mode }) {
   return (
     <>
       {booking && <BookingModal item={booking.item} type={booking.type} onClose={() => setBooking(null)} />}
-      {/* ── HERO (unchanged) ── */}
+      {/* ── HERO ── */}
       <section className="rv-hero" style={{ '--hero-color': active.color }} onMouseMove={handleHeroMove} onMouseLeave={handleHeroLeave}>
+        {/* Slides */}
         <div className="rv-hero__slides">
           {heroItems.map((item, i) => (
             <div key={item.id} className={`rv-hero__slide${i === heroIdx ? ' rv-hero__slide--active' : ''}`}>
@@ -1147,31 +1230,93 @@ function HomePage({ mode }) {
             </div>
           ))}
         </div>
+
+        {/* Noise / grain overlay */}
+        <div className="rv-hero__grain" aria-hidden="true" />
+
+        {/* Content split layout */}
         <div className="rv-hero__content contain">
-          <div className="rv-hero__eyebrow">
-            <span className="rv-hero__dot" />
-            {active.category} · {active.location}
-          </div>
-          <h1 className="rv-hero__h1">
-            <span className="rv-hero__h1-pre">The World's Most</span>
-            <span className="rv-hero__h1-main">Extraordinary Places</span>
-          </h1>
-          <p className="rv-hero__sub">Curated stays, rare experiences and seamlessly crafted journeys — for those who travel to feel, not just to see.</p>
-          <div className="rv-hero__actions">
-            <Link to="/packages" className="rv-hero__cta"><I n="sparkling-2-line" /> Discover Packages</Link>
-            <Link to="/stay" className="rv-hero__ghost">Browse Stays <I n="arrow-right-line" /></Link>
+          <div className="rv-hero__split">
+            {/* LEFT — headline + CTAs */}
+            <div className="rv-hero__split-l">
+              <div className="rv-hero__eyebrow">
+                <span className="rv-hero__dot" />
+                <span className="rv-hero__eyebrow-cat">{active.category}</span>
+                <span className="rv-hero__eyebrow-sep" aria-hidden="true">·</span>
+                <span>{active.location}</span>
+              </div>
+
+              <h1 className="rv-hero__h1">
+                <span className="rv-hero__h1-pre">The World's Most</span>
+                <em className="rv-hero__h1-main">Extraordinary</em>
+                <span className="rv-hero__h1-sub">Places</span>
+              </h1>
+
+              <p className="rv-hero__sub">
+                Curated stays, rare experiences and seamlessly crafted journeys — for those who travel to feel, not just to see.
+              </p>
+
+              <div className="rv-hero__actions">
+                <Link to="/packages" className="rv-hero__cta">
+                  <I n="sparkling-2-line" /> Discover Packages
+                </Link>
+                <Link to="/stay" className="rv-hero__ghost">
+                  Browse Stays <I n="arrow-right-line" />
+                </Link>
+              </div>
+
+              {/* Trust strip */}
+              <div className="rv-hero__trust">
+                {STATS.slice(0, 3).map(s => (
+                  <div key={s.label} className="rv-hero__trust-item">
+                    <strong>{s.value}</strong>
+                    <span>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT — showcase card stack */}
+            <div className="rv-hero__split-r" aria-hidden="true">
+              {/* Back cards for depth */}
+              <div className="rv-hero__showcase-back rv-hero__showcase-back--2" />
+              <div className="rv-hero__showcase-back rv-hero__showcase-back--1" />
+              {/* Active property card */}
+              <div className="rv-hero__showcase">
+                <img src={active.cover} alt={active.name} className="rv-hero__showcase-img" />
+                <div className="rv-hero__showcase-body">
+                  <span className="rv-hero__showcase-cat">{active.category}</span>
+                  <strong className="rv-hero__showcase-name">{active.name}</strong>
+                  <div className="rv-hero__showcase-loc"><I n="map-pin-2-line" />{active.location}</div>
+                  <div className="rv-hero__showcase-foot">
+                    <span className="rv-hero__showcase-stars">{'★'.repeat(5)}</span>
+                    <span className="rv-hero__showcase-price">
+                      from <strong>${active.price.toLocaleString()}</strong>/night
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* Slide dots */}
+              <div className="rv-hero__dots">
+                {heroItems.map((item, i) => (
+                  <button
+                    key={item.id}
+                    className={`rv-hero__dot-btn${i === heroIdx ? ' rv-hero__dot-btn--on' : ''}`}
+                    onClick={() => setHeroIdx(i)}
+                    aria-label={`View ${item.name}`}
+                  >
+                    {i === heroIdx && <span className="rv-hero__dot-fill" style={{ '--dur': '5.5s' }} />}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-        <div className="rv-hero__thumbs">
-          {heroItems.map((item, i) => (
-            <button key={item.id} className={`rv-hero__thumb${i === heroIdx ? ' rv-hero__thumb--active' : ''}`} onClick={() => setHeroIdx(i)}>
-              <img src={item.cover} alt={item.name} />
-              <div className="rv-hero__thumb-info"><strong>{item.name}</strong><span>{item.location}</span></div>
-              <div className="rv-hero__thumb-progress" style={{ '--dur': '5.5s' }} />
-            </button>
-          ))}
-        </div>
-        <div className="rv-hero__scroll-hint" aria-hidden="true"><span>Scroll</span><I n="arrow-down-line" /></div>
+
+        <button className="rv-hero__scroll-hint" aria-label="Scroll down" onClick={() => window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' })}>
+          <span>Scroll</span>
+          <I n="arrow-down-line" />
+        </button>
       </section>
 
       {/* ── BOOKING BAR ── */}
@@ -1199,7 +1344,7 @@ function HomePage({ mode }) {
       </section>
 
       {/* ── DESTINATION CATEGORIES ── */}
-      <section className="vl-section">
+      <section className="vl-section vl-cat-section">
         <div className="contain">
           <Reveal>
             <div className="vl-sec-head">
@@ -1207,18 +1352,23 @@ function HomePage({ mode }) {
                 <span className="vl-eyebrow"><I n="compass-discover-line" /> Explore by Type</span>
                 <h2>Where Does Your Story Begin?</h2>
               </div>
+              <Link to="/stay" className="vl-see-all">Explore All <I n="arrow-right-line" /></Link>
             </div>
           </Reveal>
-          <div className="vl-dest-grid">
+          <div className="vl-cat-grid">
             {DEST_CATEGORIES.map((d, i) => (
-              <Reveal key={d.label} delay={i * 60}>
-                <Link to="/stay" className="vl-dest-card">
-                  <img src={d.img} alt={d.label} loading="lazy" />
-                  <div className="vl-dest-card__veil" />
-                  <div className="vl-dest-card__body">
-                    <I n={d.icon} />
-                    <strong>{d.label}</strong>
-                    <span>{d.count} destinations</span>
+              <Reveal key={d.label} delay={i * 55}>
+                <Link to="/stay" className={`vl-cat-card vl-cat-card--${i}`}>
+                  <div className="vl-cat-card__img">
+                    <img src={d.img} alt={d.label} loading="lazy" />
+                    <div className="vl-cat-card__veil" />
+                  </div>
+                  <div className="vl-cat-card__count">{d.count}</div>
+                  <div className="vl-cat-card__body">
+                    <div className="vl-cat-card__icon"><I n={d.icon} /></div>
+                    <strong className="vl-cat-card__label">{d.label}</strong>
+                    <span className="vl-cat-card__sub">{d.count} destinations</span>
+                    <span className="vl-cat-card__cta">Explore <I n="arrow-right-line" /></span>
                   </div>
                 </Link>
               </Reveal>
@@ -1228,7 +1378,7 @@ function HomePage({ mode }) {
       </section>
 
       {/* ── FEATURED STAYS ── */}
-      <section className="vl-section vl-section--alt">
+      <section className="vl-section vl-section--alt vl-stays-home">
         <div className="contain">
           <Reveal>
             <div className="vl-sec-head">
@@ -1239,12 +1389,49 @@ function HomePage({ mode }) {
               <Link to="/stay" className="vl-see-all">All Stays <I n="arrow-right-line" /></Link>
             </div>
           </Reveal>
-          <div className="vl-stays-grid">
-            {STAYS.slice(0, 3).map((s, i) => (
-              <Reveal key={s.id} delay={i * 80}>
-                <StayCard item={s} featured={i === 0} onBook={s => setBooking({item: s, type: 'stay'})} />
-              </Reveal>
-            ))}
+          <div className="vl-stays-home__grid">
+            {/* Featured large card */}
+            <Reveal className="vl-stays-home__featured" delay={0}>
+              <article className="vl-stay-feat-card">
+                <Link to={`/stay/${STAYS[0].id}`} className="vl-stay-feat-card__img">
+                  <img src={STAYS[0].cover} alt={STAYS[0].name} loading="lazy" />
+                  <div className="vl-stay-feat-card__veil" />
+                  <div className="vl-stay-feat-card__overlays">
+                    {STAYS[0].badge && <span className="vl-badge">{STAYS[0].badge}</span>}
+                    <span className="vl-stay-feat-card__atmo">{STAYS[0].atmosphere}</span>
+                  </div>
+                  <div className="vl-stay-feat-card__price-tag">
+                    <span>from</span>
+                    <strong>${STAYS[0].price.toLocaleString()}</strong>
+                    <span>/night</span>
+                  </div>
+                </Link>
+                <div className="vl-stay-feat-card__body">
+                  <div className="vl-stay-feat-card__meta">
+                    <span className="vl-stay-feat-card__cat"><I n="hotel-line" />{STAYS[0].category}</span>
+                    <div className="vl-stay-feat-card__rating"><Stars n={STAYS[0].rating} /> {STAYS[0].rating}</div>
+                  </div>
+                  <h3><Link to={`/stay/${STAYS[0].id}`}>{STAYS[0].name}</Link></h3>
+                  <div className="vl-stay-feat-card__loc"><I n="map-pin-2-line" />{STAYS[0].location}</div>
+                  <p className="vl-stay-feat-card__tagline">"{STAYS[0].tagline}"</p>
+                  <div className="vl-stay-feat-card__highlights">
+                    {STAYS[0].highlights.slice(0, 3).map(h => <span key={h}><I n="check-double-line" />{h}</span>)}
+                  </div>
+                  <div className="vl-stay-feat-card__foot">
+                    <Link to={`/stay/${STAYS[0].id}`} className="vl-btn-primary">View Stay <I n="arrow-right-line" /></Link>
+                    <button className="vl-btn-ghost" onClick={() => setBooking({item: STAYS[0], type: 'stay'})}>Book Now</button>
+                  </div>
+                </div>
+              </article>
+            </Reveal>
+            {/* 2 smaller cards */}
+            <div className="vl-stays-home__stack">
+              {STAYS.slice(1, 3).map((s, i) => (
+                <Reveal key={s.id} delay={i * 90 + 80}>
+                  <StayCard item={s} onBook={s => setBooking({item: s, type: 'stay'})} />
+                </Reveal>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -1259,7 +1446,7 @@ function HomePage({ mode }) {
       </div>
 
       {/* ── EDITORIAL SPOTLIGHT ── */}
-      <section className="vl-section">
+      <section className="vl-section vl-curators-pick">
         <div className="contain">
           <Reveal>
             <div className="vl-sec-head vl-sec-head--center">
@@ -1269,34 +1456,44 @@ function HomePage({ mode }) {
             </div>
           </Reveal>
           <Reveal delay={100}>
-            <div className="vl-spotlight">
-              <div className="vl-spotlight__img">
+            <div className="vl-cp-card">
+              {/* BG image with parallax feel */}
+              <div className="vl-cp-card__bg">
                 <img src={PACKAGES[1].cover} alt={PACKAGES[1].name} />
-                <div className="vl-spotlight__veil" />
-                <div className="vl-spotlight__label">
-                  <span className="vl-badge">Season Pick</span>
-                  <span><I n="calendar-2-line" /> {PACKAGES[1].duration}</span>
-                </div>
+                <div className="vl-cp-card__bg-veil" />
               </div>
-              <div className="vl-spotlight__body">
-                <span className="vl-eyebrow"><I n="map-pin-2-line" />{PACKAGES[1].location}</span>
-                <h3>{PACKAGES[1].name}</h3>
-                <p className="vl-spotlight__tagline">"{PACKAGES[1].tagline}"</p>
-                <p className="vl-spotlight__desc">{PACKAGES[1].description}</p>
-                <div className="vl-spotlight__includes">
-                  {PACKAGES[1].includes.slice(0, 4).map(inc => (
-                    <span key={inc}><I n="check-line" />{inc}</span>
-                  ))}
-                </div>
-                <div className="vl-spotlight__foot">
-                  <div>
-                    <span className="vl-spotlight__from">From</span>
-                    <strong className="vl-spotlight__price">${PACKAGES[1].price.toLocaleString()}</strong>
-                    <span className="vl-spotlight__per"> /{PACKAGES[1].pricePer}</span>
+              <div className="vl-cp-card__inner">
+                {/* Left editorial block */}
+                <div className="vl-cp-card__left">
+                  <div className="vl-cp-card__badges">
+                    <span className="vl-badge">Season Pick</span>
+                    <span className="vl-cp-card__dur-pill"><I n="calendar-2-line" />{PACKAGES[1].duration}</span>
                   </div>
-                  <Link to={`/packages/${PACKAGES[1].id}`} className="vl-btn-primary">
-                    View Full Itinerary <I n="arrow-right-line" />
-                  </Link>
+                  <span className="vl-cp-card__loc"><I n="map-pin-2-line" />{PACKAGES[1].location}</span>
+                  <h3 className="vl-cp-card__title">{PACKAGES[1].name}</h3>
+                  <p className="vl-cp-card__tagline">"{PACKAGES[1].tagline}"</p>
+                  <p className="vl-cp-card__desc">{PACKAGES[1].description.slice(0, 180)}…</p>
+                </div>
+                {/* Right price + includes block */}
+                <div className="vl-cp-card__right">
+                  <div className="vl-cp-card__price-block">
+                    <span className="vl-cp-card__from">Starting from</span>
+                    <div className="vl-cp-card__price"><strong>${PACKAGES[1].price.toLocaleString()}</strong><span>/{PACKAGES[1].pricePer}</span></div>
+                  </div>
+                  <div className="vl-cp-card__includes">
+                    <span className="vl-cp-card__inc-label"><I n="check-double-line" /> What's included</span>
+                    <ul>
+                      {PACKAGES[1].includes.slice(0, 4).map(inc => (
+                        <li key={inc}><I n="check-line" />{inc}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="vl-cp-card__actions">
+                    <Link to={`/packages/${PACKAGES[1].id}`} className="vl-btn-primary">
+                      View Full Itinerary <I n="arrow-right-line" />
+                    </Link>
+                  </div>
+                  <p className="vl-cp-card__note"><I n="shield-check-line" /> Free cancellation · 24h concierge</p>
                 </div>
               </div>
             </div>
@@ -1305,7 +1502,7 @@ function HomePage({ mode }) {
       </section>
 
       {/* ── FEATURED ACTIVITIES ── */}
-      <section className="vl-section vl-section--alt">
+      <section className="vl-section vl-section--alt vl-activities-home">
         <div className="contain">
           <Reveal>
             <div className="vl-sec-head">
@@ -1316,10 +1513,35 @@ function HomePage({ mode }) {
               <Link to="/experiences" className="vl-see-all">All Activities <I n="arrow-right-line" /></Link>
             </div>
           </Reveal>
-          <div className="vl-exp-grid">
+          <div className="vl-act-grid">
             {EXPERIENCES.slice(0, 4).map((e, i) => (
               <Reveal key={e.id} delay={i * 70}>
-                <ExpCard item={e} onBook={e => setBooking({item: e, type: 'experiences'})} />
+                <article className="vl-act-card">
+                  <Link to={`/experiences/${e.id}`} className="vl-act-card__img">
+                    <img src={e.cover} alt={e.name} loading="lazy" />
+                    <div className="vl-act-card__veil" />
+                    <div className="vl-act-card__top">
+                      {e.badge && <span className="vl-badge">{e.badge}</span>}
+                      <span className={`vl-diff vl-diff--${e.difficulty.toLowerCase()}`}>{e.difficulty}</span>
+                    </div>
+                    <div className="vl-act-card__chips">
+                      <span><I n="time-line" />{e.duration}</span>
+                      <span><I n="group-line" />{e.groupSize}</span>
+                    </div>
+                  </Link>
+                  <div className="vl-act-card__body">
+                    <div className="vl-act-card__row">
+                      <span className="vl-act-card__cat"><I n="compass-3-line" />{e.category}</span>
+                      <span className="vl-act-card__price"><strong>${e.price}</strong>/pp</span>
+                    </div>
+                    <h3><Link to={`/experiences/${e.id}`}>{e.name}</Link></h3>
+                    <div className="vl-act-card__loc"><I n="map-pin-2-line" />{e.location}</div>
+                    <div className="vl-act-card__foot">
+                      <Link to={`/experiences/${e.id}`} className="vl-pill-btn vl-pill-btn--ghost">Details</Link>
+                      <button className="vl-pill-btn" onClick={() => setBooking({item: e, type: 'experiences'})}>Reserve <I n="arrow-right-line" /></button>
+                    </div>
+                  </div>
+                </article>
               </Reveal>
             ))}
           </div>
@@ -1475,33 +1697,62 @@ function AboutPage() {
         </div>
       </section>
 
-      <section className="vl-section">
-        <div className="contain vl-about__intro">
-          <Reveal>
-            <div className="vl-about__text">
-              <h2>Why We Exist</h2>
-              <p>Most travel platforms are built around paid placements and algorithmic recommendations. We're different — every destination, stay, and experience on TERRANOVA has been visited by a member of our team. If we wouldn't go back, we won't list it.</p>
-              <p>Our curators live in the places you dream of visiting. They know the hidden valley restaurant, the guide who'll take you off the beaten path, and the best season to witness something unforgettable.</p>
-            </div>
-          </Reveal>
-          <Reveal delay={100}>
-            <div className="vl-about__stats">
-              {STATS.map(s => (
-                <div key={s.label} className="vl-about__stat">
-                  <strong>{s.value}</strong>
-                  <span>{s.label}</span>
+      {/* BIG STATS STRIP */}
+      <section className="vl-about-stats-strip">
+        <div className="contain">
+          <div className="vl-about-stats-strip__grid">
+            {STATS.map((s, i) => (
+              <Reveal key={s.label} delay={i * 80}>
+                <div className="vl-about-stat-big">
+                  <div className="vl-about-stat-big__icon"><I n={s.icon} /></div>
+                  <strong className="vl-about-stat-big__value">{s.value}</strong>
+                  <span className="vl-about-stat-big__label">{s.label}</span>
                 </div>
-              ))}
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* MISSION STATEMENT */}
+      <section className="vl-section vl-about-mission">
+        <div className="contain">
+          <Reveal>
+            <div className="vl-about-mission__inner">
+              <div className="vl-about-mission__text">
+                <span className="vl-eyebrow"><I n="heart-line" /> Why We Exist</span>
+                <h2>Curation Over Commission</h2>
+                <p>Most travel platforms are built around paid placements and algorithmic recommendations. We're different — every destination, stay, and experience on TERRANOVA has been visited by a member of our team. If we wouldn't go back, we won't list it.</p>
+                <p>Our curators live in the places you dream of visiting. They know the hidden valley restaurant, the guide who'll take you off the beaten path, and the best season to witness something unforgettable.</p>
+                <div className="vl-about-mission__bullets">
+                  {WHY_US.map(w => (
+                    <div key={w.title} className="vl-about-mission__bullet">
+                      <div className="vl-about-mission__bullet-icon"><I n={w.icon} /></div>
+                      <div>
+                        <strong>{w.title}</strong>
+                        <p>{w.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="vl-about-mission__img">
+                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&auto=format&fit=crop" alt="Wild Routes — TERRANOVA" loading="lazy" />
+                <div className="vl-about-mission__img-overlay">
+                  <span className="vl-badge">18 Years of Curation</span>
+                </div>
+              </div>
             </div>
           </Reveal>
         </div>
       </section>
 
+      {/* TEAM GRID */}
       <section className="vl-section vl-section--alt">
         <div className="contain">
           <Reveal>
             <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow">The Team</span>
+              <span className="vl-eyebrow"><I n="team-line" /> The Team</span>
               <h2>Meet Our Curators</h2>
               <p className="vl-sec-sub">Travel obsessives, former guides, and local insiders who live the journeys they create.</p>
             </div>
@@ -1510,10 +1761,16 @@ function AboutPage() {
             {TEAM.map((m, i) => (
               <Reveal key={m.name} delay={i * 80}>
                 <div className="vl-team-card">
-                  <div className="vl-team-card__img"><img src={m.img} alt={m.name} /></div>
-                  <h4>{m.name}</h4>
-                  <span>{m.role}</span>
-                  <p>{m.bio}</p>
+                  <div className="vl-team-card__img">
+                    <img src={m.img} alt={m.name} />
+                    <div className="vl-team-card__img-overlay">
+                      <p>{m.bio}</p>
+                    </div>
+                  </div>
+                  <div className="vl-team-card__body">
+                    <h4>{m.name}</h4>
+                    <span>{m.role}</span>
+                  </div>
                 </div>
               </Reveal>
             ))}
@@ -1521,11 +1778,12 @@ function AboutPage() {
         </div>
       </section>
 
+      {/* PROMISE / WHY US */}
       <section className="vl-section">
         <div className="contain">
           <Reveal>
             <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow">Our Promise</span>
+              <span className="vl-eyebrow"><I n="award-line" /> Our Promise</span>
               <h2>The TERRANOVA Standard</h2>
             </div>
           </Reveal>
@@ -1540,6 +1798,22 @@ function AboutPage() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FULL-BLEED CTA */}
+      <section className="vl-about-cta">
+        <div className="contain">
+          <Reveal>
+            <em className="vl-about-cta__quote">
+              "We don't sell holidays. We architect moments that become the stories you tell for the rest of your life."
+            </em>
+            <div className="vl-about-cta__sig">— Sofia Almeria, Founder</div>
+            <div className="vl-about-cta__actions">
+              <Link to="/packages" className="vl-btn-primary">Browse Packages <I n="arrow-right-line" /></Link>
+              <Link to="/contact" className="vl-btn-ghost">Speak to a Curator</Link>
+            </div>
+          </Reveal>
         </div>
       </section>
     </main>
@@ -1589,13 +1863,61 @@ function StaysPage() {
             </select>
           </div>
         </div>
-        <div className="vl-stays-grid">
-          {shown.map((s, i) => (
-            <Reveal key={s.id} delay={i * 60}>
-              <StayCard item={s} onBook={setBooking} />
-            </Reveal>
-          ))}
-        </div>
+        {/* Featured + grid layout */}
+        {shown.length > 0 && (
+          <div className="vl-stays-list-layout">
+            {shown.length >= 1 && (
+              <Reveal className="vl-stays-list-layout__featured">
+                <article className="vl-stay-hero-card">
+                  <Link to={`/stay/${shown[0].id}`} className="vl-stay-hero-card__img">
+                    <img src={shown[0].cover} alt={shown[0].name} />
+                    <div className="vl-stay-hero-card__veil" />
+                    <div className="vl-stay-hero-card__overlays">
+                      {shown[0].badge && <span className="vl-badge">{shown[0].badge}</span>}
+                      <div className="vl-stay-hero-card__atmo">{shown[0].atmosphere}</div>
+                    </div>
+                  </Link>
+                  <div className="vl-stay-hero-card__body">
+                    <div className="vl-stay-hero-card__meta">
+                      <span className="vl-stay-hero-card__cat"><I n="hotel-line" />{shown[0].category}</span>
+                      <span className="vl-stay-hero-card__region"><I n="globe-line" />{shown[0].region}</span>
+                      <div className="vl-stay-hero-card__rating"><Stars n={shown[0].rating} /> {shown[0].rating} <span>({shown[0].reviews})</span></div>
+                    </div>
+                    <h2><Link to={`/stay/${shown[0].id}`}>{shown[0].name}</Link></h2>
+                    <div className="vl-stay-hero-card__loc"><I n="map-pin-2-line" />{shown[0].location}</div>
+                    <p className="vl-stay-hero-card__tagline">"{shown[0].tagline}"</p>
+                    <div className="vl-stay-hero-card__highlights">
+                      {shown[0].highlights.slice(0, 4).map(h => <span key={h}><I n="check-double-line" />{h}</span>)}
+                    </div>
+                    <div className="vl-stay-hero-card__foot">
+                      <div className="vl-stay-hero-card__price">
+                        <span>from</span><strong>${shown[0].price.toLocaleString()}</strong><span>/night</span>
+                      </div>
+                      <div className="vl-stay-hero-card__btns">
+                        <Link to={`/stay/${shown[0].id}`} className="vl-btn-primary">View Stay <I n="arrow-right-line" /></Link>
+                        <button className="vl-btn-ghost" onClick={() => setBooking(shown[0])}>Book</button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </Reveal>
+            )}
+            <div className="vl-stays-list-layout__grid">
+              {shown.slice(1).map((s, i) => (
+                <Reveal key={s.id} delay={i * 60}>
+                  <StayCard item={s} onBook={setBooking} />
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        )}
+        {shown.length === 0 && (
+          <div className="vl-no-results">
+            <I n="search-line" />
+            <p>No stays match this filter.</p>
+            <button className="vl-btn-ghost" onClick={() => setFilter('All')}>Clear filter</button>
+          </div>
+        )}
       </div>
     </main>
   )
@@ -1617,7 +1939,7 @@ function StayDetailPage() {
     if (!el) return
     const onScroll = () => {
       const y = window.scrollY
-      el.style.transform = `scale(1.08) translateY(${y * 0.25}px)`
+      el.style.transform = `scale(1.08) translateY(${y * 0.22}px)`
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -1626,113 +1948,171 @@ function StayDetailPage() {
   if (!item) return <NotFound />
 
   const related = STAYS.filter(s => s.id !== item.id && s.category === item.category).slice(0, 3)
+  const allImages = item.images || [item.cover]
 
   return (
-    <main className="vl-stay-detail">
+    <main className="vl-sd" style={{ '--ac': item.color }}>
       {booking && <BookingModal item={item} type="stay" onClose={() => setBooking(false)} />}
-      {/* HERO */}
-      <div className="vl-stay-detail__hero-wrap" style={{ '--ac': item.color }}>
-        <div className="vl-stay-detail__hero-img">
-          <img ref={heroRef} src={item.cover} alt={item.name} />
-          <div className="vl-stay-detail__hero-veil" />
+
+      {/* ── FULL-VH PARALLAX HERO ── */}
+      <div className="vl-sd__hero">
+        <img ref={heroRef} src={item.cover} alt={item.name} className="vl-sd__hero-bg" />
+        <div className="vl-sd__hero-veil" />
+
+        <div className="vl-sd__hero-nav contain">
+          <button className="vl-back-btn" onClick={() => nav(-1)}><I n="arrow-left-line" /> All Stays</button>
+          <div className="vl-sd__hero-badges">
+            {item.badge && <span className="vl-badge">{item.badge}</span>}
+            <span className="vl-sd__hero-pill">{item.category}</span>
+            <span className="vl-sd__hero-pill"><I n="globe-line" />{item.region}</span>
+          </div>
         </div>
-        <div className="vl-stay-detail__hero-content contain">
-          <Reveal>
-            <button className="vl-back-btn" onClick={() => nav(-1)}><I n="arrow-left-line" /> All Stays</button>
-            <div className="vl-stay-detail__meta">
-              <span className="vl-badge">{item.badge}</span>
-              <span className="vl-stay-detail__cat">{item.category}</span>
-            </div>
-            <h1>{item.name}</h1>
-            <div className="vl-stay-detail__loc"><I n="map-pin-2-fill" />{item.location}</div>
-            <div className="vl-stay-detail__rating">
-              <Stars n={item.rating} /><span>{item.rating}</span><span className="vl-rev-count">({item.reviews} reviews)</span>
-            </div>
-          </Reveal>
+
+        <div className="vl-sd__hero-foot contain">
+          <div className="vl-sd__hero-atmo">
+            {item.atmosphere.split(' · ').map((a, i) => (
+              <span key={a}>{i > 0 && <em>·</em>}{a}</span>
+            ))}
+          </div>
+          <h1 className="vl-sd__hero-title">{item.name}</h1>
+          <div className="vl-sd__hero-meta">
+            <span className="vl-sd__hero-loc"><I n="map-pin-2-fill" />{item.location}</span>
+            <span className="vl-sd__hero-rating">
+              <I n="star-fill" />{item.rating}
+              <em>({item.reviews} reviews)</em>
+            </span>
+          </div>
+        </div>
+
+        <div className="vl-sd__scroll-hint" aria-hidden="true">
+          <span>Scroll to explore</span>
+          <div className="vl-sd__scroll-line" />
         </div>
       </div>
 
-      {/* GALLERY GRID */}
-      <div className="vl-stay-gallery contain">
-        <div className="vl-stay-gallery__main">
-          <img src={item.images[imgIdx] || item.cover} alt={item.name} />
-          <div className="vl-stay-gallery__dots">
-            {item.images.map((_, i) => (
-              <button key={i} className={`vl-stay-gallery__dot${imgIdx === i ? ' vl-stay-gallery__dot--on' : ''}`} onClick={() => setImgIdx(i)} aria-label={`Image ${i + 1}`} />
-            ))}
+      {/* ── CINEMATIC GALLERY ── */}
+      <div className="vl-sd__gallery contain">
+        <div className="vl-sd__gallery-main">
+          <img src={allImages[imgIdx] || item.cover} alt={item.name} />
+          <div className="vl-sd__gallery-veil" />
+          <button className="vl-sd__gallery-arr vl-sd__gallery-arr--prev"
+            onClick={() => setImgIdx(i => Math.max(0, i - 1))}
+            disabled={imgIdx === 0} aria-label="Previous">
+            <I n="arrow-left-s-line" />
+          </button>
+          <button className="vl-sd__gallery-arr vl-sd__gallery-arr--next"
+            onClick={() => setImgIdx(i => Math.min(allImages.length - 1, i + 1))}
+            disabled={imgIdx === allImages.length - 1} aria-label="Next">
+            <I n="arrow-right-s-line" />
+          </button>
+          <div className="vl-sd__gallery-counter">
+            <I n="image-line" /> {imgIdx + 1} / {allImages.length}
           </div>
         </div>
-        <div className="vl-stay-gallery__side">
-          {item.images.slice(1, 3).map((img, i) => (
-            <button key={i} className="vl-stay-gallery__side-img" onClick={() => setImgIdx(i + 1)}>
-              <img src={img} alt={`View ${i + 2}`} loading="lazy" />
+        <div className="vl-sd__gallery-rail">
+          {allImages.map((img, i) => (
+            <button key={i}
+              className={`vl-sd__gallery-thumb${imgIdx === i ? ' --on' : ''}`}
+              onClick={() => setImgIdx(i)}>
+              <img src={img} alt={`View ${i + 1}`} loading="lazy" />
+              {imgIdx === i && <div className="vl-sd__gallery-thumb-sel" />}
             </button>
           ))}
         </div>
       </div>
 
-      {/* BODY */}
-      <div className="vl-stay-detail__body contain">
-        <div className="vl-stay-detail__main">
-          {/* ATMOSPHERE TAGS */}
+      {/* ── BODY ── */}
+      <div className="vl-sd__body contain">
+        <div className="vl-sd__main">
+
           <Reveal>
-            <div className="vl-atmosphere">
-              {item.atmosphere.split(' · ').map(a => <span key={a} className="vl-atmo-tag">{a}</span>)}
+            <blockquote className="vl-sd__quote">"{item.tagline}"</blockquote>
+            <p className="vl-sd__desc">{item.description}</p>
+          </Reveal>
+
+          {/* HIGHLIGHTS — numbered list with editorial styling */}
+          <Reveal delay={60}>
+            <h3 className="vl-sd__section-h"><I n="star-line" /> Why You'll Love It</h3>
+            <div className="vl-sd__hl-list">
+              {item.highlights.map((h, i) => (
+                <div key={h} className="vl-sd__hl-row">
+                  <span className="vl-sd__hl-num">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="vl-sd__hl-text">{h}</span>
+                </div>
+              ))}
             </div>
           </Reveal>
 
-          <Reveal delay={60}>
-            <p className="vl-stay-detail__tagline">"{item.tagline}"</p>
-            <p className="vl-stay-detail__desc">{item.description}</p>
-          </Reveal>
-
-          {/* HIGHLIGHTS */}
-          <Reveal delay={80}>
-            <h3>Highlights</h3>
-            <ul className="vl-highlights-list">
-              {item.highlights.map(h => <li key={h}><I n="check-double-line" />{h}</li>)}
-            </ul>
-          </Reveal>
-
           {/* AMENITIES */}
-          <Reveal delay={100}>
-            <h3>Amenities</h3>
-            <div className="vl-amenities-grid">
+          <Reveal delay={80}>
+            <h3 className="vl-sd__section-h"><I n="service-line" /> Amenities</h3>
+            <div className="vl-sd__amenities">
               {item.amenities.map(a => (
-                <span key={a} className="vl-amenity"><I n="check-line" />{a}</span>
+                <span key={a} className="vl-sd__amenity">
+                  <I n="checkbox-circle-fill" />{a}
+                </span>
               ))}
+            </div>
+          </Reveal>
+
+          {/* ATMOSPHERIC MID-IMAGE */}
+          <Reveal delay={100}>
+            <div className="vl-sd__mid-img">
+              <img src={allImages[1] || item.cover} alt={item.name} loading="lazy" />
+              <div className="vl-sd__mid-img-veil" />
+              <div className="vl-sd__mid-img-caption">
+                <I n="map-pin-line" />{item.location}
+              </div>
             </div>
           </Reveal>
         </div>
 
-        {/* BOOKING PANEL */}
-        <aside className="vl-stay-detail__book-panel">
-          <div className="vl-book-panel">
-            <div className="vl-book-panel__price">
-              <span>From</span>
-              <strong>${item.price.toLocaleString()}</strong>
-              <span>/night</span>
+        {/* ── STICKY BOOKING CARD ── */}
+        <aside className="vl-sd__aside">
+          <div className="vl-sd__book-card">
+            <div className="vl-sd__book-top">
+              <div className="vl-sd__book-price">
+                <span>From</span>
+                <strong>${item.price.toLocaleString()}</strong>
+                <small>/night</small>
+              </div>
+              <div className="vl-sd__book-badge">
+                <Stars n={item.rating} />
+                <span>{item.rating}</span>
+              </div>
             </div>
-            <div className="vl-book-panel__region"><I n="globe-line" />{item.region}</div>
-            <div className="vl-book-panel__rating"><Stars n={item.rating} /> {item.rating} · {item.reviews} reviews</div>
-            <hr />
-            <ul className="vl-book-panel__features">
-              {item.highlights.slice(0, 3).map(h => <li key={h}><I n="check-line" />{h}</li>)}
+            <div className="vl-sd__book-meta">
+              <span><I n="globe-line" />{item.region}</span>
+              <span><I n="hotel-line" />{item.category}</span>
+              <span><I n="group-line" />{item.reviews} reviews</span>
+            </div>
+            <div className="vl-sd__book-divider" />
+            <ul className="vl-sd__book-perks">
+              {item.highlights.slice(0, 4).map(h => (
+                <li key={h}><I n="check-line" />{h}</li>
+              ))}
             </ul>
-            <button className="vl-btn-primary vl-btn-primary--full" onClick={() => setBooking(true)}>
+            <button className="vl-btn-primary vl-btn-primary--full vl-sd__book-cta" onClick={() => setBooking(true)}>
               <I n="calendar-check-line" /> Book This Stay
             </button>
-            <p className="vl-book-panel__note">Free cancellation within 48 hours</p>
+            <Link to={`/book/stay/${item.id}`} className="vl-sd__book-onboard">
+              <I n="sparkling-2-line" /> Full booking experience
+            </Link>
+            <div className="vl-sd__book-trust">
+              <span><I n="shield-check-line" />Free cancel 48h</span>
+              <span><I n="customer-service-2-line" />24/7 support</span>
+            </div>
           </div>
         </aside>
       </div>
 
-      {/* RELATED */}
+      {/* ── RELATED ── */}
       {related.length > 0 && (
-        <section className="vl-section vl-section--alt">
+        <section className="vl-sd__related">
           <div className="contain">
             <Reveal>
               <div className="vl-sec-head">
+                <span className="vl-eyebrow"><I n="hotel-line" /> More Like This</span>
                 <h3>You Might Also Love</h3>
               </div>
             </Reveal>
@@ -1790,110 +2170,193 @@ function ExperiencesPage() {
             ))}
           </div>
         </div>
-        <div className="vl-exp-grid">
+        <div className="vl-exp-masonry">
           {shown.map((e, i) => (
-            <Reveal key={e.id} delay={i * 60}>
-              <ExpCard item={e} onBook={setBooking} />
+            <Reveal key={e.id} delay={i * 55}>
+              <article className="vl-exp-masonry__card">
+                <Link to={`/experiences/${e.id}`} className="vl-exp-masonry__img">
+                  <img src={e.cover} alt={e.name} loading="lazy" />
+                  <div className="vl-exp-masonry__veil" />
+                  <div className="vl-exp-masonry__top">
+                    {e.badge && <span className="vl-badge">{e.badge}</span>}
+                    <span className={`vl-diff vl-diff--${e.difficulty.toLowerCase()}`}>{e.difficulty}</span>
+                  </div>
+                  <div className="vl-exp-masonry__meta-row">
+                    <span><I n="time-line" />{e.duration}</span>
+                    <span><I n="group-line" />{e.groupSize}</span>
+                  </div>
+                </Link>
+                <div className="vl-exp-masonry__body">
+                  <div className="vl-exp-masonry__header">
+                    <span className="vl-exp-masonry__cat"><I n="compass-3-line" />{e.category}</span>
+                    <span className="vl-exp-masonry__price"><strong>${e.price}</strong>/pp</span>
+                  </div>
+                  <h3><Link to={`/experiences/${e.id}`}>{e.name}</Link></h3>
+                  <div className="vl-exp-masonry__loc"><I n="map-pin-2-line" />{e.location}</div>
+                  <p className="vl-exp-masonry__tagline">{e.tagline}</p>
+                  <div className="vl-exp-masonry__foot">
+                    <Link to={`/experiences/${e.id}`} className="vl-pill-btn vl-pill-btn--ghost">Details</Link>
+                    <button className="vl-pill-btn" onClick={() => setBooking(e)}>Reserve <I n="arrow-right-line" /></button>
+                  </div>
+                </div>
+              </article>
             </Reveal>
           ))}
         </div>
+        {shown.length === 0 && (
+          <div className="vl-no-results">
+            <I n="search-line" />
+            <p>No activities match this filter.</p>
+            <button className="vl-btn-ghost" onClick={() => { setFilter('All'); setDiff('All') }}>Clear filters</button>
+          </div>
+        )}
       </div>
     </main>
   )
 }
 
 /* ═══════════════════════════════
-   EXPERIENCE DETAIL — Event Poster Style
+   EXPERIENCE DETAIL — Expedition Style
 ═══════════════════════════════ */
 function ExperienceDetailPage() {
   const { id } = useParams()
   const nav = useNavigate()
   const item = EXPERIENCES.find(e => e.id === id)
   const [booking, setBooking] = useState(false)
+  const [activeImg, setActiveImg] = useState(0)
 
   if (!item) return <NotFound />
 
   return (
-    <main className="vl-exp-detail" style={{ '--ac': item.color }}>
+    <main className="vl-xd" style={{ '--ac': item.color }}>
       {booking && <BookingModal item={item} type="experiences" onClose={() => setBooking(false)} />}
-      {/* DARK DRAMATIC HERO */}
-      <div className="vl-exp-detail__hero">
-        <img src={item.cover} alt={item.name} />
-        <div className="vl-exp-detail__hero-veil" />
-        <div className="contain vl-exp-detail__hero-content">
-          <Reveal>
-            <button className="vl-back-btn" onClick={() => nav(-1)}><I n="arrow-left-line" /> All Activities</button>
-          </Reveal>
-          <Reveal delay={80}>
+
+      {/* ── CINEMATIC HERO ── */}
+      <div className="vl-xd__hero">
+        <img src={item.cover} alt={item.name} className="vl-xd__hero-bg" />
+        <div className="vl-xd__hero-veil" />
+        <div className="contain vl-xd__hero-inner">
+          <button className="vl-back-btn" onClick={() => nav(-1)}><I n="arrow-left-line" /> All Activities</button>
+          <div className="vl-xd__badges">
             <span className={`vl-diff vl-diff--${item.difficulty.toLowerCase()}`}>{item.difficulty}</span>
-            <span className="vl-badge" style={{ marginLeft: '0.5rem' }}>{item.badge}</span>
-          </Reveal>
-          <Reveal delay={120}>
-            <h1 className="vl-exp-detail__title">{item.name}</h1>
-            <div className="vl-exp-detail__loc"><I n="map-pin-2-fill" />{item.location}</div>
-          </Reveal>
+            {item.badge && <span className="vl-badge">{item.badge}</span>}
+            <span className="vl-xd__cat-pill"><I n="compass-3-line" />{item.category}</span>
+          </div>
+          <h1 className="vl-xd__hero-title">{item.name}</h1>
+          <p className="vl-xd__hero-loc"><I n="map-pin-2-fill" />{item.location}</p>
         </div>
-        <div className="vl-exp-detail__infobar">
-          <div className="vl-exp-detail__chip"><I n="time-line" /><span>{item.duration}</span></div>
-          <div className="vl-exp-detail__chip"><I n="group-line" /><span>{item.groupSize}</span></div>
-          <div className="vl-exp-detail__chip"><I n="map-pin-line" /><span>{item.location}</span></div>
-          <div className="vl-exp-detail__chip vl-exp-detail__chip--price"><I n="price-tag-3-line" /><strong>${item.price.toLocaleString()}</strong><span>/person</span></div>
+        {/* Glass info bar */}
+        <div className="vl-xd__infobar">
+          <div className="vl-xd__stat">
+            <I n="time-line" />
+            <span>Duration</span>
+            <strong>{item.duration}</strong>
+          </div>
+          <div className="vl-xd__stat">
+            <I n="group-line" />
+            <span>Group Size</span>
+            <strong>{item.groupSize}</strong>
+          </div>
+          <div className="vl-xd__stat">
+            <I n="bar-chart-box-line" />
+            <span>Difficulty</span>
+            <strong>{item.difficulty}</strong>
+          </div>
+          <div className="vl-xd__stat vl-xd__stat--price">
+            <I n="price-tag-3-line" />
+            <span>From</span>
+            <strong>${item.price.toLocaleString()}/pp</strong>
+          </div>
         </div>
       </div>
 
-      {/* BODY */}
-      <div className="vl-exp-detail__body contain">
-        <div className="vl-exp-detail__col-main">
+      {/* ── GALLERY ── */}
+      <div className="vl-xd__gallery contain">
+        <div className="vl-xd__gallery-main">
+          <img src={item.images[activeImg] || item.cover} alt={item.name} />
+          <div className="vl-xd__gallery-dots">
+            {item.images.map((_, i) => (
+              <button key={i}
+                className={`vl-xd__gallery-dot${activeImg === i ? ' --on' : ''}`}
+                onClick={() => setActiveImg(i)} aria-label={`Photo ${i + 1}`} />
+            ))}
+          </div>
+        </div>
+        <div className="vl-xd__gallery-rail">
+          {item.images.map((img, i) => (
+            <button key={i}
+              className={`vl-xd__gallery-thumb${activeImg === i ? ' --on' : ''}`}
+              onClick={() => setActiveImg(i)}>
+              <img src={img} alt={`View ${i + 1}`} loading="lazy" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── BODY ── */}
+      <div className="vl-xd__body contain">
+        <div className="vl-xd__main">
           <Reveal>
-            <p className="vl-exp-detail__tagline">"{item.tagline}"</p>
-            <p className="vl-exp-detail__desc">{item.description}</p>
+            <blockquote className="vl-xd__quote">"{item.tagline}"</blockquote>
+            <p className="vl-xd__desc">{item.description}</p>
           </Reveal>
 
-          {/* WHAT TO EXPECT TIMELINE */}
-          <Reveal delay={80}>
-            <h3>What to Expect</h3>
+          {/* JOURNEY STEPS */}
+          <Reveal delay={60}>
+            <h3 className="vl-xd__section-h"><I n="route-line" /> Your Journey</h3>
           </Reveal>
-          <div className="vl-timeline">
+          <div className="vl-xd__journey">
             {item.whatToExpect.map((step, i) => (
-              <Reveal key={i} delay={i * 60}>
-                <div className="vl-timeline__item">
-                  <div className="vl-timeline__marker">{i + 1}</div>
-                  <div className="vl-timeline__content">{step}</div>
+              <Reveal key={i} delay={i * 50}>
+                <div className="vl-xd__step">
+                  <div className="vl-xd__step-marker">
+                    <div className="vl-xd__step-dot">{i + 1}</div>
+                    {i < item.whatToExpect.length - 1 && <div className="vl-xd__step-line" />}
+                  </div>
+                  <div className="vl-xd__step-content">{step}</div>
                 </div>
               </Reveal>
             ))}
           </div>
-
-          {/* SECOND IMAGE */}
-          <Reveal delay={100}>
-            <div className="vl-exp-detail__mid-img">
-              <img src={item.images[1] || item.cover} alt={item.name} loading="lazy" />
-            </div>
-          </Reveal>
         </div>
 
-        <aside className="vl-exp-detail__col-side">
-          {/* INCLUDES */}
+        {/* ── SIDEBAR ── */}
+        <aside className="vl-xd__aside">
           <Reveal>
-            <div className="vl-exp-detail__includes-box">
-              <h4>What's Included</h4>
+            <div className="vl-xd__includes-card">
+              <h4><I n="gift-2-line" /> What's Included</h4>
               <ul>
                 {item.includes.map(inc => <li key={inc}><I n="check-double-line" />{inc}</li>)}
               </ul>
             </div>
           </Reveal>
 
-          {/* BOOK */}
+          <Reveal delay={50}>
+            <div className="vl-xd__facts-card">
+              <h4>Quick Facts</h4>
+              <div className="vl-xd__facts-grid">
+                <div><I n="time-line" /><span>Duration</span><strong>{item.duration}</strong></div>
+                <div><I n="group-line" /><span>Group Size</span><strong>{item.groupSize}</strong></div>
+                <div><I n="bar-chart-box-line" /><span>Difficulty</span><strong>{item.difficulty}</strong></div>
+                <div><I n="map-pin-line" /><span>Location</span><strong>{item.location}</strong></div>
+              </div>
+            </div>
+          </Reveal>
+
           <Reveal delay={80}>
-            <div className="vl-exp-detail__book-box">
-              <div className="vl-exp-detail__book-price">
+            <div className="vl-xd__book-card">
+              <div className="vl-xd__book-price">
+                <span>From</span>
                 <strong>${item.price.toLocaleString()}</strong>
-                <span>/person</span>
+                <small>/person</small>
               </div>
               <button className="vl-btn-primary vl-btn-primary--full" onClick={() => setBooking(true)}>
                 <I n="calendar-check-line" /> Reserve Spot
               </button>
-              <p className="vl-book-panel__note">Small group — spots fill fast</p>
+              <Link to={`/book/experience/${item.id}`} className="vl-xd__book-link">
+                <I n="sparkling-2-line" /> Full booking experience
+              </Link>
+              <p className="vl-xd__book-note"><I n="group-line" /> Small group — spots fill fast</p>
             </div>
           </Reveal>
         </aside>
@@ -1932,13 +2395,63 @@ function PackagesPage() {
             ))}
           </div>
         </div>
-        <div className="vl-pkg-list-grid">
-          {shown.map((p, i) => (
-            <Reveal key={p.id} delay={i * 80}>
-              <PkgCard item={p} onBook={setBooking} />
+
+        {/* Featured hero package */}
+        {shown.length > 0 && (
+          <>
+            <Reveal>
+              <article className="vl-pkg-hero-card">
+                <div className="vl-pkg-hero-card__img">
+                  <img src={shown[0].cover} alt={shown[0].name} />
+                  <div className="vl-pkg-hero-card__veil" />
+                  <div className="vl-pkg-hero-card__meta-overlay">
+                    {shown[0].badge && <span className="vl-badge">{shown[0].badge}</span>}
+                    <span className="vl-pkg-hero-card__dur"><I n="calendar-2-line" />{shown[0].duration}</span>
+                  </div>
+                </div>
+                <div className="vl-pkg-hero-card__body">
+                  <div className="vl-pkg-hero-card__loc"><I n="map-pin-2-line" />{shown[0].location}</div>
+                  <h2><Link to={`/packages/${shown[0].id}`}>{shown[0].name}</Link></h2>
+                  <p className="vl-pkg-hero-card__tagline">"{shown[0].tagline}"</p>
+                  <p className="vl-pkg-hero-card__desc">{shown[0].description.slice(0, 200)}…</p>
+                  <div className="vl-pkg-hero-card__includes">
+                    {shown[0].includes.slice(0, 4).map(inc => (
+                      <span key={inc}><I n="check-line" />{inc.split(',')[0]}</span>
+                    ))}
+                  </div>
+                  <div className="vl-pkg-hero-card__foot">
+                    <div className="vl-pkg-hero-card__price">
+                      <span>from</span><strong>${shown[0].price.toLocaleString()}</strong><span>/{shown[0].pricePer}</span>
+                    </div>
+                    <div className="vl-pkg-hero-card__btns">
+                      <Link to={`/packages/${shown[0].id}`} className="vl-btn-primary">View Itinerary <I n="arrow-right-line" /></Link>
+                      <button className="vl-btn-ghost" onClick={() => setBooking(shown[0])}>Request</button>
+                    </div>
+                  </div>
+                </div>
+              </article>
             </Reveal>
-          ))}
-        </div>
+
+            {/* Remaining grid */}
+            {shown.length > 1 && (
+              <div className="vl-pkg-list-grid">
+                {shown.slice(1).map((p, i) => (
+                  <Reveal key={p.id} delay={i * 80}>
+                    <PkgCard item={p} onBook={setBooking} />
+                  </Reveal>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {shown.length === 0 && (
+          <div className="vl-no-results">
+            <I n="search-line" />
+            <p>No packages match this filter.</p>
+            <button className="vl-btn-ghost" onClick={() => setFilter('All')}>Clear filter</button>
+          </div>
+        )}
       </div>
     </main>
   )
@@ -1952,55 +2465,81 @@ function PackageDetailPage() {
   const nav = useNavigate()
   const item = PACKAGES.find(p => p.id === id)
   const [booking, setBooking] = useState(false)
+  const [openDay, setOpenDay] = useState(0)
 
   if (!item) return <NotFound />
 
   const stayData = STAYS.find(s => s.id === item.stay)
 
   return (
-    <main className="vl-pkg-detail" style={{ '--ac': item.color }}>
+    <main className="vl-pd" style={{ '--ac': item.color }}>
       {booking && <BookingModal item={item} type="packages" onClose={() => setBooking(false)} />}
-      {/* HERO */}
-      <div className="vl-pkg-detail__hero">
-        <img src={item.cover} alt={item.name} />
-        <div className="vl-pkg-detail__hero-veil" />
-        <div className="contain vl-pkg-detail__hero-content">
-          <Reveal>
-            <button className="vl-back-btn" onClick={() => nav(-1)}><I n="arrow-left-line" /> All Packages</button>
-          </Reveal>
-          <Reveal delay={80}>
-            <span className="vl-badge">{item.badge}</span>
-            <span className="vl-pkg-detail__dur"><I n="calendar-2-line" />{item.duration}</span>
-          </Reveal>
-          <Reveal delay={140}>
-            <h1>{item.name}</h1>
-            <div className="vl-pkg-detail__loc"><I n="map-pin-2-fill" />{item.location}</div>
-          </Reveal>
+
+      {/* ── FULL-VH HERO ── */}
+      <div className="vl-pd__hero">
+        <img src={item.cover} alt={item.name} className="vl-pd__hero-bg" />
+        <div className="vl-pd__hero-veil" />
+        <div className="contain vl-pd__hero-inner">
+          <button className="vl-back-btn" onClick={() => nav(-1)}><I n="arrow-left-line" /> All Packages</button>
+          <div className="vl-pd__badges">
+            {item.badge && <span className="vl-badge">{item.badge}</span>}
+            <span className="vl-pd__hero-dur"><I n="calendar-2-line" />{item.duration}</span>
+          </div>
+          <h1 className="vl-pd__hero-title">{item.name}</h1>
+          <p className="vl-pd__hero-loc"><I n="map-pin-2-fill" />{item.location}</p>
+        </div>
+        <div className="vl-pd__statsbar">
+          <div className="vl-pd__stat"><I n="calendar-2-line" /><span>Duration</span><strong>{item.duration}</strong></div>
+          <div className="vl-pd__stat"><I n="map-pin-line" /><span>Destination</span><strong>{item.location}</strong></div>
+          <div className="vl-pd__stat"><I n="check-double-line" /><span>Inclusions</span><strong>{item.includes.length} items</strong></div>
+          <div className="vl-pd__stat vl-pd__stat--price">
+            <I n="price-tag-3-line" /><span>From</span>
+            <strong>${item.price.toLocaleString()}</strong>
+            <em>/{item.pricePer}</em>
+          </div>
         </div>
       </div>
 
-      {/* BODY */}
-      <div className="vl-pkg-detail__body contain">
-        <div className="vl-pkg-detail__main">
+      {/* ── IMAGE MOSAIC ── */}
+      <div className="vl-pd__mosaic contain">
+        {item.images.slice(0, 3).map((img, i) => (
+          <div key={i} className={`vl-pd__mosaic-cell vl-pd__mosaic-cell--${i}`}>
+            <img src={img} alt={`${item.name} — ${i + 1}`} loading={i > 0 ? 'lazy' : 'eager'} />
+            <div className="vl-pd__mosaic-veil" />
+          </div>
+        ))}
+      </div>
+
+      {/* ── BODY ── */}
+      <div className="vl-pd__body contain">
+        <div className="vl-pd__main">
+
           <Reveal>
-            <p className="vl-pkg-detail__tagline">"{item.tagline}"</p>
-            <p className="vl-pkg-detail__desc">{item.description}</p>
+            <blockquote className="vl-pd__quote">"{item.tagline}"</blockquote>
+            <p className="vl-pd__desc">{item.description}</p>
           </Reveal>
 
-          {/* ITINERARY */}
+          {/* VISUAL ITINERARY */}
           <Reveal delay={60}>
-            <h3>Day-by-Day Itinerary</h3>
+            <h3 className="vl-pd__section-h"><I n="route-line" /> Day-by-Day Itinerary</h3>
           </Reveal>
-          <div className="vl-itinerary">
+          <div className="vl-pd__itinerary">
             {item.itinerary.map((day, i) => (
-              <Reveal key={day.day} delay={i * 55}>
-                <div className="vl-itinerary__item">
-                  <div className="vl-itinerary__num">
-                    <span className="vl-itinerary__circle">{day.day}</span>
-                    <span className="vl-itinerary__day-label">Day</span>
-                  </div>
-                  <div className="vl-itinerary__content">
-                    <h4>{day.title}</h4>
+              <Reveal key={day.day} delay={i * 40}>
+                <div className={`vl-pd__day${openDay === i ? ' vl-pd__day--open' : ''}`}>
+                  <button className="vl-pd__day-btn" onClick={() => setOpenDay(openDay === i ? null : i)}>
+                    <div className="vl-pd__day-left">
+                      <div className="vl-pd__day-num">
+                        <span>Day</span>
+                        <strong>{day.day}</strong>
+                      </div>
+                      <span className="vl-pd__day-title">{day.title}</span>
+                    </div>
+                    <div className={`vl-pd__day-toggle${openDay === i ? ' --open' : ''}`}>
+                      <I n="add-line" />
+                    </div>
+                  </button>
+                  <div className="vl-pd__day-body">
                     <p>{day.desc}</p>
                   </div>
                 </div>
@@ -2008,27 +2547,34 @@ function PackageDetailPage() {
             ))}
           </div>
 
+          {/* INCLUDED ACTIVITIES */}
           {item.experiences && item.experiences.length > 0 && (
             <>
               <Reveal delay={80}>
-                <h3>Activities Included</h3>
+                <h3 className="vl-pd__section-h"><I n="compass-3-line" /> Activities Included</h3>
               </Reveal>
-              <div className="vl-pkg-exp-list">
+              <div className="vl-pd__activities">
                 {item.experiences.map(expId => {
                   const e = EXPERIENCES.find(x => x.id === expId)
                   return e ? (
-                    <Reveal key={expId} delay={60}>
-                      <div className="vl-pkg-exp-chip">
-                        <div className="vl-pkg-exp-chip__img">
+                    <Reveal key={expId} delay={50}>
+                      <Link to={`/experiences/${e.id}`} className="vl-pd__act-card">
+                        <div className="vl-pd__act-card__img">
                           <img src={e.cover} alt={e.name} loading="lazy" />
+                          <div className="vl-pd__act-card__veil" />
+                          <span className={`vl-diff vl-diff--${e.difficulty.toLowerCase()}`}>{e.difficulty}</span>
                         </div>
-                        <div className="vl-pkg-exp-chip__body">
-                          <span className="vl-pkg-exp-chip__cat"><I n="compass-3-line" />{e.category}</span>
-                          <Link to={`/experiences/${e.id}`} className="vl-pkg-exp-chip__name">{e.name}</Link>
-                          <span className="vl-pkg-exp-chip__loc"><I n="map-pin-line" />{e.location}</span>
+                        <div className="vl-pd__act-card__body">
+                          <div className="vl-pd__act-card__chips">
+                            <span><I n="time-line" />{e.duration}</span>
+                            <span><I n="group-line" />{e.groupSize}</span>
+                          </div>
+                          <h4>{e.name}</h4>
+                          <p className="vl-pd__act-card__loc"><I n="map-pin-line" />{e.location}</p>
+                          <p className="vl-pd__act-card__tag">{e.tagline}</p>
                         </div>
-                        <Link to={`/experiences/${e.id}`} className="vl-pkg-exp-chip__arrow"><I n="arrow-right-line" /></Link>
-                      </div>
+                        <div className="vl-pd__act-card__arrow"><I n="arrow-right-line" /></div>
+                      </Link>
                     </Reveal>
                   ) : null
                 })}
@@ -2037,38 +2583,54 @@ function PackageDetailPage() {
           )}
         </div>
 
-        <aside className="vl-pkg-detail__side">
-          {/* PRICE BOX */}
+        {/* ── STICKY ASIDE ── */}
+        <aside className="vl-pd__aside">
           <Reveal>
-            <div className="vl-pkg-price-box">
-              <div className="vl-pkg-price-box__header">
+            <div className="vl-pd__price-card">
+              <div className="vl-pd__price-card__top">
                 <div>
-                  <span className="vl-pkg-price-box__from">From</span>
-                  <div className="vl-pkg-price-box__price">
+                  <span className="vl-pd__price-card__from">From</span>
+                  <div className="vl-pd__price-card__amount">
                     <strong>${item.price.toLocaleString()}</strong>
                     <span>/{item.pricePer}</span>
                   </div>
                 </div>
-                <div className="vl-pkg-price-box__dur"><I n="calendar-2-line" />{item.duration}</div>
+                <div className="vl-pd__price-card__dur">
+                  <I n="calendar-2-line" />{item.duration}
+                </div>
               </div>
-              <hr />
-              <h4>What's Included</h4>
-              <ul>
+              <div className="vl-pd__price-card__sep" />
+              <h5>What's Included</h5>
+              <ul className="vl-pd__price-card__list">
                 {item.includes.map(inc => <li key={inc}><I n="check-double-line" />{inc}</li>)}
               </ul>
               <button className="vl-btn-primary vl-btn-primary--full" onClick={() => setBooking(true)}>
                 <I n="send-plane-line" /> Request This Journey
               </button>
-              <p className="vl-book-panel__note">Personalised quote within 24 hours</p>
+              <Link to={`/book/package/${item.id}`} className="vl-pd__price-card__link">
+                <I n="sparkling-2-line" /> Full booking experience
+              </Link>
+              <p className="vl-pd__price-card__note">
+                <I n="shield-check-line" /> Personalised quote within 24 hours
+              </p>
             </div>
           </Reveal>
 
-          {/* FEATURED STAY CARD */}
           {stayData && (
             <Reveal delay={80}>
-              <div className="vl-pkg-stay-pullout">
-                <h4>Your Stay</h4>
-                <StayCard item={stayData} />
+              <div className="vl-pd__stay-box">
+                <div className="vl-pd__stay-box__label"><I n="hotel-line" /> Your Stay</div>
+                <Link to={`/stay/${stayData.id}`} className="vl-pd__stay-link">
+                  <div className="vl-pd__stay-img">
+                    <img src={stayData.cover} alt={stayData.name} loading="lazy" />
+                  </div>
+                  <div className="vl-pd__stay-info">
+                    <span className="vl-pd__stay-cat">{stayData.category}</span>
+                    <h5>{stayData.name}</h5>
+                    <span className="vl-pd__stay-loc"><I n="map-pin-line" />{stayData.location}</span>
+                    <span className="vl-pd__stay-rating"><I n="star-fill" />{stayData.rating}</span>
+                  </div>
+                </Link>
               </div>
             </Reveal>
           )}
@@ -2084,60 +2646,95 @@ function PackageDetailPage() {
 function SiteFooter() {
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
+  const [colRef, colsVisible] = useFadeIn(0.08)
   const handleSub = e => { e.preventDefault(); if (email) setSubscribed(true) }
 
   return (
     <footer className="vl-footer">
-      <div className="vl-footer__glow" aria-hidden="true">
-        <div className="vl-footer__glow-1" />
-        <div className="vl-footer__glow-2" />
+      {/* Journal / Newsletter band */}
+      <div className="vl-footer__journal">
+        <div className="contain vl-footer__journal-inner">
+          <div className="vl-footer__journal-text">
+            <span className="vl-eyebrow vl-eyebrow--light"><I n="newspaper-line" /> The TERRANOVA Journal</span>
+            <h3>Rare destinations.<br />Delivered weekly.</h3>
+          </div>
+          {subscribed ? (
+            <p className="vl-footer__subbed"><I n="check-double-line" /> You're on the list. Expect something extraordinary.</p>
+          ) : (
+            <form className="vl-footer__journal-form" onSubmit={handleSub}>
+              <div className="vl-footer__journal-input">
+                <I n="mail-send-line" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                  aria-label="Email for journal"
+                />
+              </div>
+              <button type="submit">
+                Join the Journal <I n="arrow-right-line" />
+              </button>
+            </form>
+          )}
+        </div>
       </div>
+
+      {/* Main footer grid */}
       <div className="vl-footer__glass">
-        <div className="contain vl-footer__inner">
+        <div
+          className={`contain vl-footer__inner${colsVisible ? ' vl-footer__inner--on' : ''}`}
+          ref={colRef}
+        >
           {/* BRAND */}
-          <div className="vl-footer__brand">
+          <div className="vl-footer__brand vl-footer__col-fade" style={{ '--col-delay': '0ms' }}>
             <TerranovaLogo />
             <p>Building unforgettable journeys for those who seek the extraordinary — not just the expected.</p>
             <ul className="vl-footer__social">
               <li><a href="#" aria-label="Instagram"><I n="instagram-line" /></a></li>
               <li><a href="#" aria-label="Pinterest"><I n="pinterest-line" /></a></li>
-              <li><a href="#" aria-label="Twitter"><I n="twitter-x-line" /></a></li>
+              <li><a href="#" aria-label="Twitter/X"><I n="twitter-x-line" /></a></li>
               <li><a href="#" aria-label="YouTube"><I n="youtube-line" /></a></li>
               <li><a href="#" aria-label="Facebook"><I n="facebook-line" /></a></li>
             </ul>
+            <div className="vl-footer__trust">
+              <span><I n="award-line" /> Best Luxury Travel 2025</span>
+              <span><I n="shield-star-line" /> Verified &amp; Trusted</span>
+            </div>
           </div>
 
           {/* EXPLORE */}
-          <div className="vl-footer__col">
+          <div className="vl-footer__col vl-footer__col-fade" style={{ '--col-delay': '80ms' }}>
             <h5>Explore</h5>
             <ul>
-              <li><Link to="/stay"><I n="hotel-line" /> Stays</Link></li>
-              <li><Link to="/experiences"><I n="compass-3-line" /> Activities</Link></li>
-              <li><Link to="/packages"><I n="gift-2-line" /> Packages</Link></li>
-              <li><Link to="/about"><I n="team-line" /> About Us</Link></li>
-              <li><Link to="/contact"><I n="mail-line" /> Contact</Link></li>
+              <li><Link to="/stay"><I n="arrow-right-s-line" />Stays</Link></li>
+              <li><Link to="/experiences"><I n="arrow-right-s-line" />Activities</Link></li>
+              <li><Link to="/packages"><I n="arrow-right-s-line" />Packages</Link></li>
+              <li><Link to="/about"><I n="arrow-right-s-line" />About Us</Link></li>
+              <li><Link to="/contact"><I n="arrow-right-s-line" />Contact</Link></li>
             </ul>
           </div>
 
           {/* HELPFUL */}
-          <div className="vl-footer__col">
+          <div className="vl-footer__col vl-footer__col-fade" style={{ '--col-delay': '160ms' }}>
             <h5>Helpful</h5>
             <ul>
-              <li><a href="#"><I n="question-answer-line" /> FAQs</a></li>
-              <li><a href="#"><I n="customer-service-2-line" /> Support</a></li>
+              <li><a href="#"><I n="arrow-right-s-line" />FAQs</a></li>
+              <li><a href="#"><I n="arrow-right-s-line" />Support</a></li>
               <li>
                 <a href="#" className="vl-footer__live-link">
-                  <I n="chat-1-line" /> Live Chat
+                  <I n="arrow-right-s-line" />Live Chat
                   <span className="vl-footer__ping"><span /><span /></span>
                 </a>
               </li>
-              <li><a href="#"><I n="shield-check-line" /> Privacy</a></li>
-              <li><a href="#"><I n="file-text-line" /> Terms</a></li>
+              <li><a href="#"><I n="arrow-right-s-line" />Privacy</a></li>
+              <li><a href="#"><I n="arrow-right-s-line" />Terms</a></li>
             </ul>
           </div>
 
-          {/* CONTACT + NEWSLETTER */}
-          <div className="vl-footer__col vl-footer__col--contact">
+          {/* CONTACT */}
+          <div className="vl-footer__col vl-footer__col--contact vl-footer__col-fade" style={{ '--col-delay': '240ms' }}>
             <h5>Contact Us</h5>
             <ul className="vl-footer__contact-list">
               <li>
@@ -2152,25 +2749,34 @@ function SiteFooter() {
                 <span className="vl-footer__ci"><I n="map-pin-2-line" /></span>
                 <address>12 Curator Lane, Geneva</address>
               </li>
+              <li>
+                <span className="vl-footer__ci"><I n="time-line" /></span>
+                <span>Mon–Sat · 08:00–20:00 CET</span>
+              </li>
             </ul>
-            <div className="vl-footer__newsletter">
-              <p>The TERRANOVA Journal — rare destinations delivered.</p>
-              {subscribed ? (
-                <p className="vl-footer__subbed"><I n="check-double-line" /> You're on the list.</p>
-              ) : (
-                <form className="vl-footer__form" onSubmit={handleSub}>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required aria-label="Email" />
-                  <button type="submit"><I n="send-plane-fill" /></button>
-                </form>
-              )}
-            </div>
           </div>
         </div>
 
+        {/* Bottom bar */}
         <div className="vl-footer__bottom">
-          <div className="contain">
-            <span>All rights reserved.</span>
-            <span>&copy; {new Date().getFullYear()} TERRANOVA &middot; Wild Routes</span>
+          <div className="contain vl-footer__bottom-inner">
+            <span className="vl-footer__bottom-cr">
+              &copy; {new Date().getFullYear()} TERRANOVA &middot; Wild Routes
+            </span>
+            <div className="vl-footer__bottom-links">
+              <a href="#">Privacy Policy</a>
+              <span aria-hidden="true">·</span>
+              <a href="#">Terms</a>
+              <span aria-hidden="true">·</span>
+              <a href="#">Sitemap</a>
+            </div>
+            <button
+              className="vl-footer__top-btn"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              aria-label="Back to top"
+            >
+              <I n="arrow-up-line" />
+            </button>
           </div>
         </div>
       </div>
@@ -2205,13 +2811,54 @@ function ContactPage() {
         </div>
       </section>
 
-      {/* MAIN GRID */}
+      {/* CONTACT CARDS STRIP */}
+      <section className="vl-contact-cards-strip">
+        <div className="contain">
+          <div className="vl-contact-cards-strip__grid">
+            <Reveal delay={0}>
+              <div className="vl-contact-info-card">
+                <div className="vl-contact-info-card__icon"><I n="mail-line" /></div>
+                <h4>Email</h4>
+                <a href="mailto:hello@terranova.travel">hello@terranova.travel</a>
+                <span>We reply within 24h</span>
+              </div>
+            </Reveal>
+            <Reveal delay={60}>
+              <div className="vl-contact-info-card">
+                <div className="vl-contact-info-card__icon"><I n="phone-line" /></div>
+                <h4>Phone</h4>
+                <a href="tel:+18005550199">+1 800 555 0199</a>
+                <span>Mon–Sat 08:00–20:00 CET</span>
+              </div>
+            </Reveal>
+            <Reveal delay={120}>
+              <div className="vl-contact-info-card">
+                <div className="vl-contact-info-card__icon"><I n="map-pin-2-line" /></div>
+                <h4>Address</h4>
+                <address>12 Curator Lane, Geneva</address>
+                <span>Switzerland</span>
+              </div>
+            </Reveal>
+            <Reveal delay={180}>
+              <div className="vl-contact-info-card">
+                <div className="vl-contact-info-card__icon"><I n="customer-service-2-line" /></div>
+                <h4>Live Chat</h4>
+                <a href="#">Start a conversation</a>
+                <span className="vl-contact-info-card__live"><span className="vl-live-dot" />Online now</span>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* MAIN GRID — form + map */}
       <section className="vl-section">
         <div className="contain vl-contact__grid">
           {/* FORM */}
           <Reveal>
             <div className="vl-contact__form-wrap">
               <h2>Send Us a Message</h2>
+              <p className="vl-contact__form-sub">Tell us what you dream of. We'll make it real.</p>
               {sent ? (
                 <div className="vl-contact__success">
                   <div className="vl-contact__success-icon"><I n="check-double-line" /></div>
@@ -2221,22 +2868,22 @@ function ContactPage() {
               ) : (
                 <form className="vl-contact__form" onSubmit={handleSubmit}>
                   <div className="vl-contact__row">
-                    <label>
+                    <label className="vl-float-label">
+                      <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder=" " required />
                       <span>Full Name</span>
-                      <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your name" required />
                     </label>
-                    <label>
-                      <span>Email</span>
-                      <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="your@email.com" required />
+                    <label className="vl-float-label">
+                      <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder=" " required />
+                      <span>Email Address</span>
                     </label>
                   </div>
-                  <label>
+                  <label className="vl-float-label">
+                    <input type="text" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder=" " />
                     <span>Subject</span>
-                    <input type="text" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="How can we help?" />
                   </label>
-                  <label>
-                    <span>Message</span>
-                    <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} rows={6} placeholder="Tell us about your dream journey..." required />
+                  <label className="vl-float-label">
+                    <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} rows={6} placeholder=" " required />
+                    <span>Tell us about your dream journey...</span>
                   </label>
                   <button type="submit" className="vl-btn-primary">
                     <I n="send-plane-line" /> Send Message
@@ -2246,42 +2893,22 @@ function ContactPage() {
             </div>
           </Reveal>
 
-          {/* INFO */}
+          {/* MAP + INFO */}
           <Reveal delay={100}>
             <div className="vl-contact__info">
-              <div className="vl-contact__info-card">
-                <div className="vl-contact__info-icon"><I n="mail-line" /></div>
-                <div>
-                  <h4>Email</h4>
-                  <a href="mailto:hello@terranova.travel">hello@terranova.travel</a>
-                </div>
-              </div>
-              <div className="vl-contact__info-card">
-                <div className="vl-contact__info-icon"><I n="phone-line" /></div>
-                <div>
-                  <h4>Phone</h4>
-                  <a href="tel:+18005550199">+1 800 555 0199</a>
-                  <span>Mon–Sat, 08:00–20:00 CET</span>
-                </div>
-              </div>
-              <div className="vl-contact__info-card">
-                <div className="vl-contact__info-icon"><I n="map-pin-2-line" /></div>
-                <div>
-                  <h4>Address</h4>
-                  <address>12 Curator Lane<br />Geneva, Switzerland</address>
-                </div>
-              </div>
-              <div className="vl-contact__info-card">
-                <div className="vl-contact__info-icon"><I n="time-line" /></div>
-                <div>
-                  <h4>Office Hours</h4>
-                  <span>Mon–Fri: 08:00–18:00 CET</span>
-                  <span>Sat: 09:00–14:00 CET</span>
-                </div>
-              </div>
               <div className="vl-contact__map">
-                <img src="https://images.unsplash.com/photo-1527004013197-933b977c48c1?w=600&auto=format&fit=crop" alt="Geneva, Switzerland office location" loading="lazy" />
+                <img src="https://images.unsplash.com/photo-1527004013197-933b977c48c1?w=800&auto=format&fit=crop" alt="Geneva, Switzerland office location" loading="lazy" />
                 <div className="vl-contact__map-pin"><I n="map-pin-fill" /></div>
+                <div className="vl-contact__map-label">Geneva HQ</div>
+              </div>
+              <div className="vl-contact__social-strip">
+                <span>Follow Our Journey</span>
+                <div className="vl-contact__socials">
+                  <a href="#" aria-label="Instagram"><I n="instagram-line" /></a>
+                  <a href="#" aria-label="Pinterest"><I n="pinterest-line" /></a>
+                  <a href="#" aria-label="Twitter/X"><I n="twitter-x-line" /></a>
+                  <a href="#" aria-label="YouTube"><I n="youtube-line" /></a>
+                </div>
               </div>
             </div>
           </Reveal>
@@ -2312,6 +2939,359 @@ function ContactPage() {
           </div>
         </div>
       </section>
+    </main>
+  )
+}
+
+/* ═══════════════════════════════
+   BOOKING PAGE
+═══════════════════════════════ */
+function BookingPage() {
+  const { type, id } = useParams()
+  const navigate = useNavigate()
+
+  /* Resolve item from correct data array */
+  const item = type === 'stay'
+    ? STAYS.find(s => s.id === id)
+    : type === 'experience'
+      ? EXPERIENCES.find(e => e.id === id)
+      : PACKAGES.find(p => p.id === id)
+
+  const [step, setStep] = useState(1)
+  const [form, setForm] = useState({
+    checkin: '', checkout: '', guests: 2,
+    firstName: '', lastName: '', email: '', phone: '',
+    specialRequests: '', room: ''
+  })
+  const [submitted, setSubmitted] = useState(false)
+  const containerRef = useRef(null)
+  const [bookingRef] = useState(() => Math.random().toString(36).slice(2, 10).toUpperCase())
+
+  const TOTAL_STEPS = 4
+
+  const nights = form.checkin && form.checkout
+    ? Math.max(0, Math.round((new Date(form.checkout) - new Date(form.checkin)) / 86400000))
+    : 0
+
+  const priceBase = item?.price || 0
+  const subtotal = type === 'stay' ? nights * priceBase : priceBase * form.guests
+  const taxes = Math.round(subtotal * 0.14)
+  const total = subtotal + taxes
+
+  const canStep1 = type === 'stay' ? (form.checkin && form.checkout && nights > 0) : !!form.checkin
+  const canStep2 = form.firstName && form.lastName && form.email
+
+  /* GSAP transition between steps */
+  const goStep = (next) => {
+    const el = containerRef.current
+    if (el && window.gsap) {
+      window.gsap.fromTo(el, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out' })
+    }
+    setStep(next)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleSubmit = () => {
+    setSubmitted(true)
+    goStep(4)
+  }
+
+  if (!item) {
+    return (
+      <main className="vl-404">
+        <div className="vl-404__inner">
+          <span className="vl-404__code">404</span>
+          <h1>Booking not found</h1>
+          <Link to="/" className="vl-btn-primary"><I n="home-4-line" /> Back to Home</Link>
+        </div>
+      </main>
+    )
+  }
+
+  const STEP_LABELS = ['Preview', 'Dates & Guests', 'Your Details', 'Confirm & Pay']
+
+  return (
+    <main className="vl-book-page">
+
+      {/* ── TOP PROGRESS BAR ── */}
+      <div className="vl-book-progress">
+        <div className="vl-book-progress__bar">
+          <div className="vl-book-progress__fill" style={{ width: `${((step - 1) / (TOTAL_STEPS - 1)) * 100}%` }} />
+        </div>
+        <div className="vl-book-progress__steps">
+          {STEP_LABELS.map((label, i) => (
+            <div
+              key={i}
+              className={`vl-book-progress__step${step === i + 1 ? ' --on' : step > i + 1 ? ' --done' : ''}`}
+            >
+              <div className="vl-book-progress__step-dot">
+                {step > i + 1 ? <I n="check-line" /> : i + 1}
+              </div>
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── CONTENT ── */}
+      <div className="vl-book-layout contain" ref={containerRef}>
+
+        {/* ════ STEP 1: PREVIEW ════ */}
+        {step === 1 && (
+          <div className="vl-book-step">
+            <div className="vl-book-step__hero">
+              <div className="vl-book-step__hero-img">
+                <img src={item.cover} alt={item.name} />
+                <div className="vl-book-step__hero-veil" />
+                {item.badge && <span className="vl-badge">{item.badge}</span>}
+              </div>
+              <div className="vl-book-step__hero-info">
+                <span className="vl-eyebrow">
+                  <I n={type === 'stay' ? 'hotel-line' : type === 'experience' ? 'compass-3-line' : 'route-line'} />
+                  {type === 'stay' ? item.category : type === 'experience' ? 'Experience' : 'Package'}
+                </span>
+                <h1>{item.name}</h1>
+                <p className="vl-book-step__loc"><I n="map-pin-2-line" /> {item.location}</p>
+                {item.tagline && <p className="vl-book-step__tagline">{item.tagline}</p>}
+                <p className="vl-book-step__desc">{item.description?.slice(0, 260)}…</p>
+                <div className="vl-book-step__highlights">
+                  {(item.highlights || item.includes || []).slice(0, 4).map((h, i) => (
+                    <span key={i}><I n="check-line" /> {h}</span>
+                  ))}
+                </div>
+                <div className="vl-book-step__price-row">
+                  <div className="vl-book-step__price">
+                    <span>From</span>
+                    <strong>${item.price?.toLocaleString()}</strong>
+                    <span>{type === 'stay' ? '/ night' : type === 'package' ? item.pricePer || '/ person' : '/ person'}</span>
+                  </div>
+                  {item.rating && (
+                    <div className="vl-book-step__rating">
+                      <I n="star-fill" /> {item.rating}
+                      {item.reviews && <span>({item.reviews} reviews)</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Gallery strip */}
+            {item.images?.length > 1 && (
+              <div className="vl-book-gallery-strip">
+                {item.images.slice(1).map((img, i) => (
+                  <div key={i} className="vl-book-gallery-strip__thumb">
+                    <img src={img} alt="" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="vl-book-step__foot">
+              <button className="vl-btn-ghost" onClick={() => navigate(-1)}><I n="arrow-left-line" /> Back</button>
+              <button className="vl-btn-primary vl-book-step__cta" onClick={() => goStep(2)}>
+                Select Dates &amp; Guests <I n="arrow-right-line" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ════ STEP 2: DATES + GUESTS ════ */}
+        {step === 2 && (
+          <div className="vl-book-step vl-book-step--form">
+            <div className="vl-book-form-area">
+              <h2 className="vl-book-form-area__title"><I n="calendar-2-line" /> {type === 'stay' ? 'Check-in & Check-out' : 'Experience Date'}</h2>
+
+              {type === 'stay' ? (
+                <div className="vl-book-date-grid">
+                  <div className="vl-book-field">
+                    <label>Check In</label>
+                    <MiniCalendar
+                      value={form.checkin}
+                      onChange={v => setForm(f => ({ ...f, checkin: v, checkout: f.checkout && new Date(f.checkout) <= new Date(v) ? '' : f.checkout }))}
+                      label="Select date"
+                    />
+                  </div>
+                  <div className="vl-book-field">
+                    <label>Check Out</label>
+                    <MiniCalendar value={form.checkout} onChange={v => setForm(f => ({ ...f, checkout: v }))} label="Select date" minDate={form.checkin} />
+                  </div>
+                </div>
+              ) : (
+                <div className="vl-book-field">
+                  <label>Experience Date</label>
+                  <MiniCalendar value={form.checkin} onChange={v => setForm(f => ({ ...f, checkin: v }))} label="Select date" />
+                </div>
+              )}
+
+              {nights > 0 && type === 'stay' && (
+                <div className="vl-book-night-badge"><I n="moon-line" /> {nights} {nights === 1 ? 'night' : 'nights'}</div>
+              )}
+
+              <h2 className="vl-book-form-area__title" style={{ marginTop: '2rem' }}><I n="group-line" /> Guest Count</h2>
+
+              <div className="vl-book-counter">
+                <button type="button" className="vl-book-counter__btn" onClick={() => setForm(f => ({ ...f, guests: Math.max(1, f.guests - 1) }))} aria-label="Decrease guests">−</button>
+                <span className="vl-book-counter__val"><I n="user-line" /> {form.guests} {form.guests === 1 ? 'Guest' : 'Guests'}</span>
+                <button type="button" className="vl-book-counter__btn" onClick={() => setForm(f => ({ ...f, guests: Math.min(20, f.guests + 1) }))} aria-label="Increase guests">+</button>
+              </div>
+
+              {type === 'stay' && (
+                <div className="vl-book-field" style={{ marginTop: '1.5rem' }}>
+                  <label>Room / Suite preference <span>(optional)</span></label>
+                  <input
+                    type="text"
+                    className="vl-book-input"
+                    placeholder="e.g. Ocean view suite, ground floor…"
+                    value={form.room}
+                    onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="vl-book-sidebar">
+              <div className="vl-book-summary">
+                <div className="vl-book-summary__img"><img src={item.cover} alt={item.name} /></div>
+                <div className="vl-book-summary__body">
+                  <p className="vl-book-summary__name">{item.name}</p>
+                  <p className="vl-book-summary__loc"><I n="map-pin-2-line" /> {item.location}</p>
+                  {type === 'stay' && nights > 0 && (
+                    <div className="vl-book-summary__line"><span>{nights} nights × ${priceBase}</span><strong>${(nights * priceBase).toLocaleString()}</strong></div>
+                  )}
+                  {type !== 'stay' && (
+                    <div className="vl-book-summary__line"><span>{form.guests} guest × ${priceBase}</span><strong>${(form.guests * priceBase).toLocaleString()}</strong></div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="vl-book-step__foot vl-book-step__foot--wide">
+              <button className="vl-btn-ghost" onClick={() => goStep(1)}><I n="arrow-left-line" /> Back</button>
+              <button className="vl-btn-primary vl-book-step__cta" onClick={() => goStep(3)} disabled={!canStep1}>
+                Continue to Details <I n="arrow-right-line" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ════ STEP 3: PERSONAL DETAILS ════ */}
+        {step === 3 && (
+          <div className="vl-book-step vl-book-step--form">
+            <div className="vl-book-form-area">
+              <h2 className="vl-book-form-area__title"><I n="user-line" /> Traveller Details</h2>
+
+              <div className="vl-book-field-grid">
+                <div className="vl-book-field">
+                  <label>First Name <span>*</span></label>
+                  <input className="vl-book-input" type="text" placeholder="Jean" value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} />
+                </div>
+                <div className="vl-book-field">
+                  <label>Last Name <span>*</span></label>
+                  <input className="vl-book-input" type="text" placeholder="Dupont" value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} />
+                </div>
+                <div className="vl-book-field vl-book-field--full">
+                  <label>Email Address <span>*</span></label>
+                  <input className="vl-book-input" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div className="vl-book-field vl-book-field--full">
+                  <label>Phone Number <span>(optional)</span></label>
+                  <input className="vl-book-input" type="tel" placeholder="+1 (555) 000-0000" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                </div>
+                <div className="vl-book-field vl-book-field--full">
+                  <label>Special Requests <span>(optional)</span></label>
+                  <textarea className="vl-book-input" rows={4} placeholder="Dietary requirements, accessibility needs, celebration details…" value={form.specialRequests} onChange={e => setForm(f => ({ ...f, specialRequests: e.target.value }))} />
+                </div>
+              </div>
+
+              <div className="vl-book-trust-strip">
+                <span><I n="shield-check-line" /> SSL secured</span>
+                <span><I n="lock-line" /> Data protected</span>
+                <span><I n="customer-service-2-line" /> 24/7 concierge support</span>
+              </div>
+            </div>
+
+            <div className="vl-book-sidebar">
+              <div className="vl-book-summary">
+                <div className="vl-book-summary__img"><img src={item.cover} alt={item.name} /></div>
+                <div className="vl-book-summary__body">
+                  <p className="vl-book-summary__name">{item.name}</p>
+                  <p className="vl-book-summary__loc"><I n="map-pin-2-line" /> {item.location}</p>
+                  {type === 'stay' && nights > 0 && (
+                    <>
+                      <div className="vl-book-summary__line"><span>Check-in</span><strong>{form.checkin}</strong></div>
+                      <div className="vl-book-summary__line"><span>Check-out</span><strong>{form.checkout}</strong></div>
+                      <div className="vl-book-summary__line"><span>{nights} nights</span><strong>${(nights * priceBase).toLocaleString()}</strong></div>
+                    </>
+                  )}
+                  <div className="vl-book-summary__line"><span>{form.guests} {form.guests === 1 ? 'guest' : 'guests'}</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="vl-book-step__foot vl-book-step__foot--wide">
+              <button className="vl-btn-ghost" onClick={() => goStep(2)}><I n="arrow-left-line" /> Back</button>
+              <button className="vl-btn-primary vl-book-step__cta" onClick={handleSubmit} disabled={!canStep2}>
+                Review &amp; Confirm <I n="arrow-right-line" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ════ STEP 4: CONFIRM / SUCCESS ════ */}
+        {step === 4 && (
+          <div className="vl-book-step vl-book-step--confirm">
+            {submitted ? (
+              <div className="vl-book-success">
+                <div className="vl-book-success__icon"><I n="checkbox-circle-line" /></div>
+                <h2>Booking Request Sent!</h2>
+                <p>Thank you, <strong>{form.firstName}</strong>. Your reservation for <strong>{item.name}</strong> has been submitted. Our concierge team will reach out to <strong>{form.email}</strong> within 24 hours to confirm all details.</p>
+                <div className="vl-book-success__ref">Ref #{bookingRef}</div>
+                <div className="vl-book-success__actions">
+                  <Link to="/" className="vl-btn-primary"><I n="home-4-line" /> Back to Home</Link>
+                  <Link to={`/${type === 'stay' ? 'stay' : type === 'experience' ? 'experiences' : 'packages'}`} className="vl-btn-ghost">Browse More</Link>
+                </div>
+              </div>
+            ) : (
+              <div className="vl-book-review">
+                <h2>Review Your Booking</h2>
+
+                <div className="vl-book-review__card">
+                  <img src={item.cover} alt={item.name} className="vl-book-review__img" />
+                  <div className="vl-book-review__info">
+                    <h3>{item.name}</h3>
+                    <p className="vl-book-review__loc"><I n="map-pin-2-line" /> {item.location}</p>
+                  </div>
+                </div>
+
+                <div className="vl-book-review__details">
+                  {form.checkin && <div className="vl-book-review__row"><span><I n="calendar-check-line" /> Date(s)</span><strong>{form.checkin}{form.checkout ? ` → ${form.checkout}` : ''}</strong></div>}
+                  {nights > 0 && <div className="vl-book-review__row"><span><I n="moon-line" /> Duration</span><strong>{nights} nights</strong></div>}
+                  <div className="vl-book-review__row"><span><I n="group-line" /> Guests</span><strong>{form.guests}</strong></div>
+                  <div className="vl-book-review__row"><span><I n="user-line" /> Lead Guest</span><strong>{form.firstName} {form.lastName}</strong></div>
+                  <div className="vl-book-review__row"><span><I n="mail-line" /> Email</span><strong>{form.email}</strong></div>
+                  {form.phone && <div className="vl-book-review__row"><span><I n="phone-line" /> Phone</span><strong>{form.phone}</strong></div>}
+                  {form.specialRequests && <div className="vl-book-review__row"><span><I n="message-2-line" /> Requests</span><strong className="vl-book-review__req">{form.specialRequests}</strong></div>}
+                </div>
+
+                <div className="vl-book-review__price-box">
+                  <div className="vl-book-review__price-row"><span>Subtotal</span><strong>${subtotal.toLocaleString()}</strong></div>
+                  <div className="vl-book-review__price-row"><span>Taxes &amp; Fees (14%)</span><strong>${taxes.toLocaleString()}</strong></div>
+                  <div className="vl-book-review__price-row vl-book-review__price-row--total"><span>Total</span><strong>${total.toLocaleString()}</strong></div>
+                  <p className="vl-book-review__note"><I n="information-line" /> No payment is charged now. Our team will contact you to arrange payment securely.</p>
+                </div>
+
+                <div className="vl-book-step__foot">
+                  <button className="vl-btn-ghost" onClick={() => goStep(3)}><I n="arrow-left-line" /> Edit Details</button>
+                  <button className="vl-btn-primary vl-book-step__cta" onClick={handleSubmit}>
+                    <I n="sparkling-2-line" /> Confirm Booking
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
     </main>
   )
 }
@@ -2385,6 +3365,7 @@ function AppShell() {
           <Route path="/experiences/:id" element={<ExperienceDetailPage />} />
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/packages/:id" element={<PackageDetailPage />} />
+          <Route path="/book/:type/:id" element={<BookingPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
