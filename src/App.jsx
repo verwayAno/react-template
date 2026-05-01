@@ -1,3377 +1,1796 @@
 ﻿import { useState, useEffect, useRef, Component } from 'react'
-import { createPortal } from 'react-dom'
-import { Routes, Route, Link, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom'
+import { Routes, Route, Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
 
-const I = ({ n, className }) => <i className={`ri-${n} ${className || ''}`} />
+/* ─── Icon helper ─────────────────────────────────────── */
+const I = ({ n, className = '' }) => <i className={`ri-${n} ${className}`} aria-hidden="true" />
 
-/* ── Intersection-observer fade-in hook ── */
-function useFadeIn(threshold = 0.12) {
+/* ─── Intersection-observer fade-in ───────────────────── */
+function useFadeIn(threshold = 0.1) {
   const ref = useRef(null)
   const [visible, setVisible] = useState(false)
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } }, { threshold })
+    const el = ref.current; if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } },
+      { threshold }
+    )
     obs.observe(el)
     return () => obs.disconnect()
   }, [threshold])
   return [ref, visible]
 }
 
+/* ─── Reveal wrapper ──────────────────────────────────── */
+function Reveal({ children, delay = 0, className = '', direction = 'up' }) {
+  const [ref, visible] = useFadeIn()
+  return (
+    <div
+      ref={ref}
+      className={`oz-reveal oz-reveal--${direction}${visible ? ' oz-reveal--in' : ''} ${className}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/* ─── Error Boundary ──────────────────────────────────── */
 class ErrorBoundary extends Component {
-  constructor(props) { super(props); this.state = { error: null } }
-  static getDerivedStateFromError(e) { return { error: e } }
+  constructor(p) { super(p); this.state = { err: null } }
+  static getDerivedStateFromError(e) { return { err: e } }
   render() {
-    if (this.state.error) return (
-      <div style={{ padding: '3rem', minHeight: '100vh', fontFamily: 'monospace', background: 'var(--bg)', color: 'var(--text)' }}>
-        <h2 style={{ color: 'var(--accent)' }}>Error — check console</h2>
-        <pre style={{ color: 'var(--text-muted)', whiteSpace: 'pre-wrap' }}>{String(this.state.error)}</pre>
+    if (this.state.err) return (
+      <div style={{ padding: '4rem 2rem', minHeight: '60vh', color: 'var(--text)' }}>
+        <h2 style={{ color: 'var(--accent)' }}>Something went wrong</h2>
+        <pre style={{ opacity: 0.5 }}>{String(this.state.err)}</pre>
       </div>
     )
     return this.props.children
   }
 }
 
-/* ═══════════════════════════════
-   DATA
-═══════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   THEME MODES
+═══════════════════════════════════════════════════════ */
+const MODES = [
+  { id: 'light',   icon: 'sun-line',       label: 'Light'   },
+  { id: 'dark',    icon: 'moon-line',       label: 'Dark'    },
+  { id: 'classic', icon: 'drop-line',       label: 'Classic' },
+  { id: 'modern',  icon: 'flashlight-line', label: 'Modern'  },
+]
+
+/* ═══════════════════════════════════════════════════════
+   DATA — STAYS
+═══════════════════════════════════════════════════════ */
 const STAYS = [
   {
-    id: 'cliff-villa', name: 'Cliff Edge Villa', location: 'Santorini, Greece',
-    category: 'Villa', rating: 4.97, reviews: 238, price: 820,
-    tagline: 'Infinity pool suspended above the caldera',
-    description: 'Perched on the volcanic rim of Santorini, this private villa offers uninterrupted caldera views from every room. The 18m infinity pool appears to dissolve into the Aegean Sea at sunrise. White-washed minimalism meets locally sourced stone and hand-carved furniture by Cycladic artisans.',
-    highlights: ['Private infinity pool', 'Personal chef on request', 'Direct caldera access', 'Butler service 24/7', 'Helipad access'],
-    amenities: ['3 bedrooms', 'Sea-view terrace', 'Outdoor shower', 'Private wine cellar', 'In-villa spa'],
-    cover: 'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=1200&auto=format&fit=crop',
+    id: 'royal-riad',
+    name: 'Royal Riad Suite',
+    location: 'Marrakech Medina, Morocco',
+    category: 'Riad Suite',
+    badge: "Signature Stay",
+    rating: 4.98, reviews: 342, price: 680,
+    tagline: 'A 17th-century palace, reimagined for the modern era',
+    description: 'Nestled within the ancient walls of the Marrakech Medina, the Royal Riad Suite is a masterwork of Andalusian architecture. Mosaic zellige floors, hand-carved cedarwood ceilings, and a private courtyard with a rose-water fountain surround you. In the evening, the candlelit terrace reveals the Koutoubia minaret gilded by the setting sun.',
+    highlights: ['Private rose-water courtyard', 'Traditional hammam suite', 'Personal in-riad chef', 'Rooftop terrace & plunge pool', 'Guided medina exploration'],
+    amenities: ['3 ensuite bedrooms', 'Private courtyard', 'Hammam & steam room', 'Roof plunge pool', '24/7 butler service'],
+    cover: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=1200&auto=format&fit=crop',
     images: [
-      'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1602343168117-bb8ffe3e2e9f?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=900&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1548013146-72479768bada?w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=900&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1531088009183-5ff5b7c95f91?w=900&auto=format&fit=crop',
     ],
-    color: '#0891b2', badge: "Editor's Pick", region: 'Europe',
-    atmosphere: 'Intimate · Romantic · Views',
+    atmosphere: 'Opulent · Historic · Enchanting',
   },
   {
-    id: 'forest-lodge', name: 'Canopy Forest Lodge', location: 'Monteverde, Costa Rica',
-    category: 'Lodge', rating: 4.94, reviews: 312, price: 390,
-    tagline: 'Wake up inside a cloud forest',
-    description: 'Elevated on stilts among century-old trees, Canopy Lodge blends sustainability with raw luxury. Floor-to-ceiling glass walls dissolve the boundary between room and rainforest. Solar-powered, water-positive, and carbon-neutral — without sacrificing a single comfort.',
-    highlights: ['Private tree-line deck', 'Cloud forest canopy walks', 'On-site naturalist guide', 'Farm-to-table dining', 'Zero-carbon operation'],
-    amenities: ['King jungle-view bed', 'Rain shower', 'Fire pit terrace', 'Yoga deck', 'Wildlife observation tower'],
-    cover: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&auto=format&fit=crop',
+    id: 'sahara-pavilion',
+    name: 'Sahara Star Pavilion',
+    location: 'Merzouga Dunes, Morocco',
+    category: 'Desert Tent',
+    badge: 'Most Unique',
+    rating: 4.96, reviews: 218, price: 520,
+    tagline: 'A billion stars above, infinity sands below',
+    description: "Raised on hardwood platforms at the foot of the Erg Chebbi dunes, our Sahara Star Pavilions redefine desert luxury. Hand-loomed Berber wool rugs, copper lanterns, and a four-poster bed draped in indigo silk wait inside. Step onto your private deck to witness the most spectacular night sky in the northern hemisphere.",
+    highlights: ['Astronomy guide & telescope', 'Dawn camel trek to the dune crest', 'Berber sunset drumming circle', 'Private fire pit terrace', 'Pre-sunrise breakfast basket'],
+    amenities: ['King canopy bed', 'Copper soaking tub', 'Private desert deck', 'Heated Berber rug floors', 'In-tent sommelier'],
+    cover: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?w=1200&auto=format&fit=crop',
     images: [
-      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&auto=format&fit=crop',
-    ],
-    color: '#059669', badge: 'Eco Certified', region: 'Americas',
-    atmosphere: 'Wild · Sustainable · Immersive',
-  },
-  {
-    id: 'desert-retreat', name: 'Red Dune Retreat', location: 'Wadi Rum, Jordan',
-    category: 'Desert Camp', rating: 4.96, reviews: 187, price: 610,
-    tagline: 'Luxury tented camp under a billion stars',
-    description: "Wadi Rum's silence is unlike anywhere else on Earth. This tented retreat offers opulent canvas suites with hand-knotted rugs, copper bathtubs, and a private viewing deck for the most extraordinary night skies you will ever witness. Bedouin guides lead dawn camel treks through rose-red canyons.",
-    highlights: ['Private stargazing deck', 'Bedouin-hosted dinners', 'Dawn camel trek included', 'Desert yoga at sunrise', 'Hot air balloon option'],
-    amenities: ['King brass bed', 'Copper soaking tub', 'Heated floors', 'Private fire pit', 'Telescope & star map'],
-    cover: 'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1512100356356-de1b84283e18?w=1200&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=900&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=900&auto=format&fit=crop',
     ],
-    color: '#d97706', badge: 'Most Unique', region: 'Middle East',
     atmosphere: 'Mystical · Silent · Starlit',
   },
   {
-    id: 'ryokan', name: 'Hinoki Ryokan', location: 'Hakone, Japan',
-    category: 'Ryokan', rating: 4.99, reviews: 156, price: 740,
-    tagline: 'Centuries of ritual, reimagined for today',
-    description: 'A 200-year-old ryokan tradition meets considered modern luxury. Hinoki (cypress) wood interiors fill the rooms with a clean, meditative scent. Private onsen with Mt Fuji views, kaiseki dinner prepared tableside, and yukata-clad service that anticipates every need before it arises.',
-    highlights: ['Private onsen with Fuji view', 'Kaiseki multi-course dinner', 'Tea ceremony session', 'Bamboo meditation garden', 'Traditional ikebana workshop'],
-    amenities: ['Futon beds on tatami', 'Hinoki wood bath', 'Shoji screen interiors', 'Kimono lending', 'Sake & matcha bar'],
-    cover: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1545459720-aac8509eb02c?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1480796927426-f609979314bd?w=900&auto=format&fit=crop',
-    ],
-    color: '#db2777', badge: 'Culturally Immersive', region: 'Asia',
-    atmosphere: 'Meditative · Cultural · Refined',
-  },
-  {
-    id: 'overwater-bungalow', name: 'Lagoon Bungalow', location: 'Bora Bora, French Polynesia',
-    category: 'Overwater Bungalow', rating: 4.98, reviews: 203, price: 1100,
-    tagline: 'Your floor is the Pacific Ocean',
-    description: 'The most iconic accommodation on Earth, perfected. Glass floor panels reveal the living coral reef below while your private deck extends over turquoise water you can dive directly into. Sunrise from your sun lounger, snorkelling before breakfast, and the kind of quiet that resets a nervous system.',
-    highlights: ['Glass floor panel over reef', 'Direct ocean entry ladder', 'Coral garden snorkelling', 'Sunset cocktail service', 'Overwater breakfast by request'],
-    amenities: ['Overwater deck with loungers', 'Glass floor panels', 'Hammam shower', 'Snorkel equipment', 'Kayak & paddleboard'],
-    cover: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=900&auto=format&fit=crop',
-    ],
-    color: '#0284c7', badge: 'Iconic', region: 'Pacific',
-    atmosphere: 'Tropical · Secluded · Crystalline',
-  },
-  {
-    id: 'alpine-chalet', name: 'Altitude Chalet', location: 'Verbier, Switzerland',
-    category: 'Chalet', rating: 4.95, reviews: 94, price: 960,
-    tagline: 'Ski-in ski-out, fireplace, and Michelin-level food',
-    description: "Verbier's highest private chalet sits directly on the ski run at 2,200m. Stone and reclaimed timber interiors hold a library, wine cellar, and a cinema room. The resident chef holds a Michelin star. Heated floors, a private sauna, and a hot tub carved into the south-facing balcony complete the picture.",
-    highlights: ['Ski-in / ski-out access', 'Michelin-starred in-house chef', 'Private wine cellar (300 labels)', 'Hot tub on ski run balcony', 'Snowcat tours on request'],
-    amenities: ['6 ensuite bedrooms', 'Cinema room', 'Ski boot room', 'Finnish sauna', 'Library & billiards'],
-    cover: 'https://images.unsplash.com/photo-1548703818-f7ceaaac4e28?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1548703818-f7ceaaac4e28?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1533923156502-be31530547c4?w=900&auto=format&fit=crop',
-    ],
-    color: '#7c3aed', badge: 'Winter Favourite', region: 'Europe',
-    atmosphere: 'Alpine · Cozy · Exclusive',
-  },
-]
-
-const EXPERIENCES = [
-  {
-    id: 'deep-sea-dive', name: 'Deep Sea Photography Dive', location: 'Great Barrier Reef, Australia',
-    category: 'Underwater', duration: '6 hours', groupSize: 'Max 4', price: 280, difficulty: 'Intermediate',
-    tagline: 'Photograph coral gardens untouched by tourism',
-    description: 'Led by a National Geographic underwater photographer, this private dive explores a section of the Great Barrier Reef accessible only by private charter. You will photograph manta rays, humphead wrasse, and coral formations that have taken 500 years to grow. All images edited and delivered within 48 hours.',
-    includes: ['Private boat charter', 'Full equipment rental', 'NatGeo photographer guide', 'Underwater camera loan', 'Edited photo gallery delivered in 48h'],
-    cover: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1621361365424-06f0e1eb5c49?w=900&auto=format&fit=crop',
-    ],
-    color: '#0284c7', badge: 'Exclusive',
-    whatToExpect: ['Private boat departure at 6am', 'Two dives totalling approx. 100 min', 'Surface lunch on the water', 'Image selection & editing session', 'Transfer back to resort'],
-  },
-  {
-    id: 'aurora-trek', name: 'Northern Lights Trek', location: 'Tromsø, Norway',
-    category: 'Adventure', duration: '8 hours', groupSize: 'Max 6', price: 340, difficulty: 'Easy',
-    tagline: 'Chase the aurora into the Norwegian wilderness',
-    description: 'An expert guide with 15 years of aurora forecasting takes your group by snowmobile into terrain no tour bus will ever reach. A wilderness camp awaits with a roaring fire, reindeer stew, and a clear sky horizon. When the lights appear — and they will — a professional astrophotographer captures the moment.',
-    includes: ['Snowmobile & full kit', 'Aurora photography session', 'Wilderness camp dinner', 'Expert guide & forecasting', 'Printed photograph'],
-    cover: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1518135714426-c18f5ffb6f4d?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=900&auto=format&fit=crop',
-    ],
-    color: '#7c3aed', badge: 'Bucket List',
-    whatToExpect: ['Hotel pick-up at 7pm', 'Snowmobile briefing & practice', 'Drive 45km into wilderness', 'Camp dinner by fire', 'Aurora window 10pm–2am', 'Return by midnight'],
-  },
-  {
-    id: 'truffle-hunt', name: 'Private Truffle Hunt & Feast', location: 'Périgord, France',
-    category: 'Culinary', duration: '5 hours', groupSize: 'Max 8', price: 420, difficulty: 'Easy',
-    tagline: 'Hunt truffles at dawn, eat them for lunch',
-    description: "Join a third-generation trufficulteur and their trained Lagotto dog in the misty Périgord oak forests at dawn. You will unearth black truffles from the earth yourself, then carry them directly to a Michelin-starred chef's kitchen for a 5-course dégustation built entirely around your morning's harvest.",
-    includes: ['Expert trufficulteur guide', 'Truffle dog session', 'Michelin-starred lunch (5 courses)', 'Wine pairing by sommelier', 'Truffle souvenir jar'],
-    cover: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900&auto=format&fit=crop',
-    ],
-    color: '#92400e', badge: 'Sensory',
-    whatToExpect: ['Meet at 6am in forest clearing', 'Hunt with trufficulteur & dog (2h)', 'Market visit with your harvest', 'Michelin kitchen tour', '5-course lunch with pairings', 'Gift jar of preserved truffles'],
-  },
-  {
-    id: 'helicopter-summit', name: 'Helicopter Summit Heli-Ski', location: 'Chamonix, France',
-    category: 'Adventure', duration: '7 hours', groupSize: 'Max 4', price: 890, difficulty: 'Expert',
-    tagline: 'First tracks on a glacier only helicopters can reach',
-    description: 'A certified guide and private helicopter take your group to untouched powder fields in the Mont Blanc massif. The runs you ski today have never been skied before. An alpine lunch is prepared at a hut accessible only on foot or by air. Return to Chamonix with thighs burning and stories no resort skier will ever have.',
-    includes: ['Private helicopter transfer', 'IFMGA-certified mountain guide', 'Avalanche safety equipment', 'Alpine hut lunch', 'GoPro footage'],
-    cover: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1573607217032-18299406d100?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&auto=format&fit=crop',
-    ],
-    color: '#0891b2', badge: 'Adrenaline',
-    whatToExpect: ['Safety briefing at helipad 8am', 'Helicopter ascent to 3800m', 'Multiple descent runs (4–6)', 'Alpine hut lunch', 'Snowfall dependent rebooking policy', 'GoPro footage sent same evening'],
-  },
-  {
-    id: 'hot-air-balloon', name: 'Dawn Balloon Over Cappadocia', location: 'Göreme, Turkey',
-    category: 'Sky', duration: '3 hours', groupSize: 'Max 16', price: 195, difficulty: 'Easy',
-    tagline: 'Drift over fairy chimneys as the sun rises',
-    description: "Cappadocia from above is a sight that makes grown adults go silent. Your balloon lifts off before sunrise, reaching elevation just as the first light turns the tuff formations gold. A champagne breakfast is served on landing, and your pilot — with 2,000 hours over these valleys — narrates every moment.",
-    includes: ['Sunrise flight (60–90 min)', 'Champagne landing breakfast', 'Certificate of flight', 'Hotel pick-up & drop-off', 'In-flight photography'],
-    cover: 'https://images.unsplash.com/photo-1565689157206-0fddef7589a2?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1565689157206-0fddef7589a2?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=900&auto=format&fit=crop',
-    ],
-    color: '#f59e0b', badge: 'Most Popular',
-    whatToExpect: ['4:30am hotel pick-up', 'Inflate & briefing (45 min)', 'Flight at first light (75 min)', 'Champagne toast on landing', 'Transfer back to hotel', 'Certificate & photo package'],
-  },
-  {
-    id: 'whale-sail', name: 'Whale Migration Sail', location: 'Azores, Portugal',
-    category: 'Wildlife', duration: '9 hours', groupSize: 'Max 10', price: 310, difficulty: 'Easy',
-    tagline: 'Sail alongside blue whales in the Atlantic migration route',
-    description: 'The Azores sit directly in the Atlantic migration corridor for blue, sperm, and fin whales. Your private yacht follows a marine biologist guide who monitors cetacean radio tags in real time, placing you exactly where the whales will surface. This is not a tour — it is a scientific expedition you get to join.',
-    includes: ['Private yacht charter', 'Marine biologist guide', 'Whale radio-tag tracking', 'Underwater hydrophone listening', 'Gourmet picnic lunch'],
-    cover: 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=900&auto=format&fit=crop',
-    ],
-    color: '#0891b2', badge: 'Conservation',
-    whatToExpect: ['Marina departure 7am', 'Biologist briefing & sonar setup', 'First whale sightings (avg 2h)', 'Hydrophone listening session', 'Picnic lunch at sea', 'Return to marina by 4pm'],
-  },
-]
-
-const PACKAGES = [
-  {
-    id: 'aegean-immersion', name: 'Aegean Immersion', location: 'Santorini + Mykonos, Greece',
-    duration: '7 nights', price: 6800, pricePer: 'per person',
-    tagline: 'The definitive Greek island experience',
-    badge: 'Bestseller',
-    description: 'Begin with 4 nights in the Cliff Edge Villa overlooking the Santorini caldera, then transfer by private yacht to 3 nights in a secluded Mykonos villa. Includes a private cooking class with a Cycladic chef, a sunset catamaran cruise, and every transfer handled seamlessly.',
-    stay: 'cliff-villa',
-    experiences: ['hot-air-balloon', 'whale-sail'],
-    includes: [
-      '4 nights Cliff Edge Villa, Santorini',
-      '3 nights Private Mykonos Villa',
-      'Private yacht island transfer',
-      'Cycladic cooking class',
-      'Sunset catamaran cruise',
-      'All airport & inter-island transfers',
-      'Personal concierge throughout',
-    ],
-    itinerary: [
-      { day: 1, title: 'Arrival in Santorini', desc: 'Private transfer from airport. Welcome aperitivo at the villa overlooking the caldera.' },
-      { day: 2, title: 'Caldera Day', desc: 'Morning cooking class with local chef. Afternoon at leisure. Sunset dinner on the terrace.' },
-      { day: 3, title: 'Oia & Fira Exploration', desc: 'Private guided walk through Oia village. Wine tasting at Santo Winery with caldera views.' },
-      { day: 4, title: 'Catamaran Cruise', desc: 'Full-day sunset catamaran cruise around the island. Swimming, snorkelling, champagne.' },
-      { day: 5, title: 'Yacht to Mykonos', desc: 'Private luxury yacht transfer (3.5 hours). Afternoon arrival and villa welcome.' },
-      { day: 6, title: 'Mykonos Day', desc: 'Private beach club access. Mykonos Town exploration. Sunset cocktails at Little Venice.' },
-      { day: 7, title: 'Final Morning', desc: 'Farewell breakfast. Airport transfer for departure.' },
-    ],
-    cover: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=900&auto=format&fit=crop',
-    ],
-    color: '#0891b2',
-  },
-  {
-    id: 'japan-ritual', name: 'Japan Ritual Circuit', location: 'Tokyo + Kyoto + Hakone, Japan',
-    duration: '10 nights', price: 9400, pricePer: 'per person',
-    tagline: 'Urban energy, ancient ceremony, volcanic stillness',
-    badge: "Editor's Choice",
-    description: '3 nights in a design hotel in Tokyo, 4 nights in a Kyoto machiya townhouse, and 3 nights at Hinoki Ryokan in Hakone with private onsen and Mount Fuji views. Includes a private geisha performance, Arashiyama bamboo forest sunrise photography, and a Nishiki Market private tour with a sake master.',
-    stay: 'ryokan',
-    experiences: ['truffle-hunt'],
-    includes: [
-      '3 nights boutique hotel, Tokyo',
-      '4 nights private machiya, Kyoto',
-      '3 nights Hinoki Ryokan, Hakone',
-      'Private tea ceremony',
-      'Geisha dinner performance',
-      'Sunrise bamboo forest session',
-      'Sake master private tour',
-      'All shinkansen & transfers',
-    ],
-    itinerary: [
-      { day: 1, title: 'Arrive Tokyo', desc: 'Private airport transfer. Evening rooftop dinner in Shinjuku.' },
-      { day: 2, title: 'Tokyo Deep Dive', desc: 'Private Tsukiji market tour. Shibuya & Harajuku with a local guide. Izakaya dinner.' },
-      { day: 3, title: 'Tokyo to Kyoto', desc: 'Morning shinkansen. Afternoon in Fushimi Inari shrine at closing time.' },
-      { day: 4, title: 'Kyoto Ceremonies', desc: 'Private tea ceremony at dawn. Bamboo forest sunrise photography session.' },
-      { day: 5, title: 'Geisha Evening', desc: 'Nishiki Market private tour. Exclusive geisha dinner performance in Gion.' },
-      { day: 6, title: 'Arashiyama & Nijo', desc: 'Boat ride on Oi River. Nijo Castle private tour after closing.' },
-      { day: 7, title: 'Sake Master Day', desc: 'Morning sake brewery tour with master. Afternoon free. Train to Hakone.' },
-      { day: 8, title: 'Hakone Arrival', desc: 'Check in to Hinoki Ryokan. Private onsen at sunset with Fuji views.' },
-      { day: 9, title: 'Fuji & Stillness', desc: 'Morning Fuji lake boat. Kaiseki dinner prepared at the table.' },
-      { day: 10, title: 'Departure', desc: 'Final onsen breakfast. Shinkansen back to Tokyo for departure.' },
-    ],
-    cover: 'https://images.unsplash.com/photo-1480796927426-f609979314bd?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1480796927426-f609979314bd?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1545459720-aac8509eb02c?w=900&auto=format&fit=crop',
-    ],
-    color: '#db2777',
-  },
-  {
-    id: 'arctic-wonder', name: 'Arctic Wonder Week', location: 'Tromsø + Svalbard, Norway',
-    duration: '8 nights', price: 11200, pricePer: 'per person',
-    tagline: 'Aurora, polar bears, and absolute silence',
-    badge: 'Extreme Luxury',
-    description: '4 nights aurora hunting in Tromsø — including our Northern Lights Trek — then a private small aircraft to Svalbard for 4 nights in a luxury expedition lodge. A wildlife guide takes you in search of polar bears, arctic foxes, and reindeer on the sea ice, with zodiac excursions to glacier faces.',
-    stay: 'forest-lodge',
-    experiences: ['aurora-trek'],
-    includes: [
-      '4 nights Tromsø glass-cabin lodge',
-      '4 nights Svalbard expedition lodge',
-      'Northern Lights Trek',
-      'Private Svalbard flight',
-      'Polar bear zodiac excursion',
-      'Dog sled half-day',
-      'Arctic cuisine by Michelin chef',
-    ],
-    itinerary: [
-      { day: 1, title: 'Arrive Tromsø', desc: 'Arctic glass cabin check-in. First aurora forecast briefing.' },
-      { day: 2, title: 'Aurora Trek Night 1', desc: 'Snowmobile trek into wilderness. First aurora hunt begins.' },
-      { day: 3, title: 'Dog Sled Day', desc: 'Half-day dog sledding through fjord valley. Sauna & recovery evening.' },
-      { day: 4, title: 'Aurora Night 2', desc: 'Second aurora window. Astrophotographer session.' },
-      { day: 5, title: 'Fly to Svalbard', desc: 'Private aircraft to Longyearbyen. Expedition lodge arrival.' },
-      { day: 6, title: 'Polar Wildlife', desc: 'Zodiac excursion: polar bear tracking at glacier edge.' },
-      { day: 7, title: 'Sea Ice Day', desc: 'Guided sea ice walk. Arctic fox observation. Michelin dinner.' },
-      { day: 8, title: 'Departure', desc: 'Final morning at the lodge. Flight south.' },
-    ],
-    cover: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1518135714426-c18f5ffb6f4d?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=900&auto=format&fit=crop',
-    ],
-    color: '#7c3aed',
-  },
-  {
-    id: 'desert-soul', name: 'Desert Soul Journey', location: 'Wadi Rum + Petra + Dead Sea, Jordan',
-    duration: '6 nights', price: 5600, pricePer: 'per person',
-    tagline: 'From rose-red canyons to the lowest point on Earth',
-    badge: 'Off-beaten Path',
-    description: '2 nights at Red Dune Retreat in Wadi Rum, 2 nights in a boutique cave hotel in Petra, and 2 nights at a luxury Dead Sea resort. Private archaeologist-guided Petra tour at dawn before any tourists arrive, a Bedouin feast under the stars, and a mineral float therapy session at the Dead Sea.',
-    stay: 'desert-retreat',
-    experiences: ['hot-air-balloon'],
-    includes: [
-      '2 nights Red Dune Retreat, Wadi Rum',
-      '2 nights cave hotel, Petra',
-      '2 nights Dead Sea resort',
-      'Private dawn Petra tour with archaeologist',
-      'Bedouin feast with live music',
-      'Dead Sea float therapy',
-      'All 4WD transfers',
-    ],
-    itinerary: [
-      { day: 1, title: 'Arrive Wadi Rum', desc: '4WD desert pick-up. Sunset camel trek. Bedouin star-gazing feast.' },
-      { day: 2, title: 'Wadi Rum Depths', desc: 'Morning jeep safari in red canyons. Afternoon at camp under the sun.' },
-      { day: 3, title: 'Petra Arrival', desc: 'Drive to Petra. Cave hotel check-in. Evening walk through the Siq.' },
-      { day: 4, title: 'Petra at Dawn', desc: 'Private archaeologist tour before gates open (5am). Full day exploring.' },
-      { day: 5, title: 'Dead Sea Transfer', desc: 'Morning drive to Dead Sea. Resort arrival. Float therapy session.' },
-      { day: 6, title: 'Departure', desc: 'Final float, mineral spa, and transfer to Amman airport.' },
-    ],
+    id: 'atlas-lodge',
+    name: 'Atlas Mountain Lodge',
+    location: 'Imlil Valley, High Atlas',
+    category: 'Mountain Lodge',
+    badge: 'Nature Retreat',
+    rating: 4.95, reviews: 173, price: 430,
+    tagline: 'Snow-capped peaks at your window every morning',
+    description: "Perched at 2,100 metres in the Imlil Valley, this secluded stone lodge commands views of Jbel Toubkal — North Africa's highest peak. A wood-burning fireplace, hand-woven blankets, and the sound of the Assif Aït Mizane river compose the soundtrack to a singular mountain escape.",
+    highlights: ['Jbel Toubkal summit treks', 'Private wood-fire hot tub', 'Argan oil wellness rituals', 'Berber village morning walks', 'Traditional Amazigh cooking'],
+    amenities: ['Panoramic mountain suite', 'Wood fireplace', 'Outdoor hot tub', 'Yoga deck at altitude', 'Private chef'],
     cover: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&auto=format&fit=crop',
     images: [
       'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=900&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=900&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=900&auto=format&fit=crop',
     ],
-    color: '#d97706',
+    atmosphere: 'Alpine · Serene · Majestic',
+  },
+  {
+    id: 'coastal-kasbah',
+    name: 'Atlantic Kasbah',
+    location: 'Essaouira Coast, Morocco',
+    category: 'Coastal Kasbah',
+    badge: 'Coastal Gem',
+    rating: 4.93, reviews: 196, price: 560,
+    tagline: 'Ocean winds, whitewashed ramparts, timeless blue',
+    description: "Essaouira's fortified medina meets the Atlantic with a drama that inspired Jimi Hendrix and Orson Welles. Our Kasbah occupies a restored 18th-century Portuguese fortification, blending blue-washed walls, gnaoua music at sunset, and the freshest seafood imaginable.",
+    highlights: ['Rooftop pool above the ramparts', 'Private kitesurf lessons', 'Fresh harbor seafood grill', 'Gnaoua sunset music ceremony', 'Historic medina walking tour'],
+    amenities: ['Ocean-view suite', 'Rooftop infinity pool', 'Spa & hammam', 'Private pier access', 'Library & bar terrace'],
+    cover: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=1200&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=900&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=900&auto=format&fit=crop',
+    ],
+    atmosphere: 'Breezy · Artistic · Coastal',
+  },
+  {
+    id: 'palmeraie-villa',
+    name: 'Palmeraie Garden Villa',
+    location: 'Palmeraie, Marrakech',
+    category: 'Private Villa',
+    badge: 'Family Favourite',
+    rating: 4.97, reviews: 289, price: 890,
+    tagline: 'A 5-acre oasis of palms, jasmine, and silence',
+    description: "Sequestered within Marrakech's legendary Palmeraie — a grove of 150,000 date palms — this private villa combines Berber grandeur with contemporary design. Four suites open onto a 25-metre palm-fringed pool. A resident botanist tends the aromatic gardens.",
+    highlights: ['25m private palm pool', 'Orchard-to-table dining', 'Hammam & holistic spa', 'Horse trekking through palms', 'Electric bike Palmeraie tour'],
+    amenities: ['4 private suites', 'Palm pool', 'Private spa complex', 'Tennis court', 'Cinema room'],
+    cover: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=1200&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=900&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&auto=format&fit=crop',
+    ],
+    atmosphere: 'Lush · Private · Elegant',
+  },
+  {
+    id: 'fes-palace',
+    name: 'Fes Medina Palace',
+    location: 'Fes el-Bali, Morocco',
+    category: 'Heritage Palace',
+    badge: 'UNESCO Heritage',
+    rating: 4.99, reviews: 134, price: 760,
+    tagline: "The world's oldest medina as your private sanctuary",
+    description: "The Fes el-Bali medina has been continuously inhabited for over 1,200 years. Our restored 14th-century palace immerses you in this living museum — carved stucco galleries, a grand central courtyard with an 8-metre mosaic fountain, and hand-painted tiles that took six craftsmen two years to lay.",
+    highlights: ['Tannery private viewing balcony', 'Medina artisan workshop tours', 'Quranic geometric tile masterclass', 'Roof terrace with medina panorama', 'Muqarnas ceiling restoration tour'],
+    amenities: ['3 palace suites', 'Mosaic courtyard fountain', 'Hammam & argan rituals', 'Private rooftop terrace', 'Library of Moroccan manuscripts'],
+    cover: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=1200&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1548013146-72479768bada?w=900&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1577717903315-1691ae25ab3f?w=900&auto=format&fit=crop',
+    ],
+    atmosphere: 'Ancient · Scholarly · Transcendent',
   },
 ]
 
-const TEAM = [
-  { name: 'Sofia Almeria', role: 'Founder & Head Curator', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&auto=format&fit=crop', bio: "Former Condé Nast Traveller editor. 20 years sourcing the world's most exceptional hidden stays." },
-  { name: 'Kenji Watanabe', role: 'Asia & Pacific Director', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop', bio: 'Based between Tokyo and Bali. Specialises in slow travel itineraries across Japan, Indonesia and Sri Lanka.' },
-  { name: 'Amara Diallo', role: 'Africa & Middle East', img: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&auto=format&fit=crop', bio: 'Safari specialist and wilderness guide with 15 years across East Africa, Morocco and Jordan.' },
-  { name: 'Lars Eriksson', role: 'Arctic & Alpine Specialist', img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop', bio: 'Expedition mountaineer turned luxury travel curator. Knows every heli-ski corridor in the Alps and Scandinavia.' },
+/* ═══════════════════════════════════════════════════════
+   DATA — ACTIVITIES
+═══════════════════════════════════════════════════════ */
+const ACTIVITIES = [
+  {
+    id: 'sunrise-camel-trek',
+    name: 'Sunrise Sahara Camel Trek',
+    category: 'Desert',
+    duration: '3 hours', groupSize: 'Max 6', difficulty: 'Easy', price: 140,
+    badge: 'Most Requested',
+    tagline: 'Ascend the dune crest as the Sahara ignites at dawn',
+    description: "Your Berber guide — whose family has navigated these dunes for five generations — leads your small group by camel to the high ridge of Erg Chebbi as the sun tears through the horizon. The silence, the colour, and the scale are unlike anything in the natural world. Mint tea and fresh msemen await at the summit camp.",
+    includes: ['Private camel per guest', 'Berber guide (English/French)', 'Summit sunrise breakfast', 'Traditional blue robes provided', 'Photography assistance'],
+    cover: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1200&auto=format&fit=crop',
+    whatToExpect: ['4:45am departure from resort', 'Camel mount and trek briefing', '45-minute ascent to dune crest', 'Sunrise ceremony & photography', 'Hot breakfast at summit camp', 'Descent and return by 9am'],
+  },
+  {
+    id: 'hammam-ritual',
+    name: 'Royal Hammam Ritual',
+    category: 'Wellness',
+    duration: '2.5 hours', groupSize: 'Private', difficulty: 'Easy', price: 220,
+    badge: 'Guest Favourite',
+    tagline: 'A thousand years of Moroccan wellness in one ceremony',
+    description: "The hammam is not a spa — it is a ritual. Beginning with a Savon Beldi black soap scrub that removes layers of the outside world, your therapist follows a sequence practiced in Moroccan hammams since the Almoravid era. Argan oil, rhassoul clay, and rose water complete a restoration that works from the skin inward.",
+    includes: ['Full hammam circuit (steam, scrub, wrap)', 'Argan oil full-body massage', 'Rhassoul clay mask', 'Rose water & orange blossom rinse', 'Moroccan mint tea ceremony after'],
+    cover: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&auto=format&fit=crop',
+    whatToExpect: ['Arrival & robe fitting in marble vestibule', 'Steam chamber (20 min)', 'Black soap exfoliation', 'Rhassoul clay envelopment', 'Argan oil massage (45 min)', 'Mint tea ritual in cooling room'],
+  },
+  {
+    id: 'tajine-masterclass',
+    name: 'Private Tajine Masterclass',
+    category: 'Culinary',
+    duration: '4 hours', groupSize: 'Max 4', difficulty: 'Easy', price: 195,
+    badge: 'Sell-Out',
+    tagline: 'Unlock the geometry of Moroccan flavour',
+    description: "Chef Fatima takes you through the architecture of a perfect tajine: the spice layering, the braising patience, the way steam and stone work together. You shop for ingredients in the medina souk at dawn, cook over charcoal, and eat what you created under the riad courtyard arches.",
+    includes: ['Medina souk shopping tour', 'All ingredients provided', 'Private instruction with Chef Fatima', 'Three-course Moroccan lunch', 'Handwritten recipe cards'],
+    cover: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&auto=format&fit=crop',
+    whatToExpect: ['Meet at spice souk 8am', 'Select spices, vegetables & protein', 'Return to riad kitchen by 10am', 'Two-hour guided cooking session', 'Sit-down Moroccan lunch', 'Recipe booklet presentation'],
+  },
+  {
+    id: 'stargazing-night',
+    name: 'Ouzaft Stargazing Night',
+    category: 'Astronomy',
+    duration: '3 hours', groupSize: 'Max 8', difficulty: 'Easy', price: 165,
+    badge: 'Unmissable',
+    tagline: 'The Milky Way, undimmed, over 5,000 years of human history below',
+    description: "Morocco's Sahara ranks among the world's top three dark-sky destinations. Our resident astrophysicist, Dr. Youssef Benali, guides your group through the night sky with a research-grade telescope, laser pointer narration, and thermal recliners positioned precisely for the optimal field of view.",
+    includes: ['Research-grade telescope session', 'Astrophysicist guide Dr. Benali', 'Constellation laser-pointer tour', 'Thermal recliners & Berber blankets', 'Shooting star & ISS alerts'],
+    cover: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&auto=format&fit=crop',
+    whatToExpect: ['Sunset departure to observation platform', 'Desert silence acclimatisation', 'Telescope focus & calibration', 'Deep-sky object tour (90 min)', 'Astrophotography session', 'Return under the stars at midnight'],
+  },
+  {
+    id: 'medina-craft-walk',
+    name: 'Medina Artisan Walk',
+    category: 'Cultural',
+    duration: '4 hours', groupSize: 'Max 6', difficulty: 'Easy', price: 120,
+    badge: 'Cultural Gem',
+    tagline: 'Follow the sound of hammers into the oldest living craft city on Earth',
+    description: "Fes el-Bali has changed little in 700 years. Your guide takes you through the tanneries where leather has been dyed the same way since the 11th century, into the fondouks where copper-smiths beat geometric patterns, and finally to a master calligrapher who inscribes your name in Kufic script.",
+    includes: ['Expert medina guide (local historian)', 'Tannery private viewing balcony', 'Copper-smith & tile-maker workshops', 'Kufic calligraphy keepsake', 'Moroccan lunch in a fondouk courtyard'],
+    cover: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=1200&auto=format&fit=crop',
+    whatToExpect: ['Meet at Bab Bou Jeloud gate 9am', 'Medina orientation & history', 'Tannery terrace visit', 'Artisan workshop tour (3 stops)', 'Calligraphy session', 'Lunch & debrief in fondouk'],
+  },
+  {
+    id: 'dune-quad-adventure',
+    name: 'Sahara Quad & Oasis Trail',
+    category: 'Adventure',
+    duration: '5 hours', groupSize: 'Max 10', difficulty: 'Moderate', price: 175,
+    badge: 'Adrenaline',
+    tagline: 'The Sahara at full throttle, then ancient oasis at full stillness',
+    description: "Begin with a guided quad circuit across the dramatic Erg Chebbi dunes — descending crests and crossing dry river beds. The route climaxes at a hidden oasis fed by an ancient foggara irrigation channel, where you cool down in spring water and eat lunch under centuries-old palms.",
+    includes: ['Full quad safety briefing & equipment', 'Guided dune circuit (2 hours)', 'Foggara oasis visit', 'Riverside Berber lunch', 'GoPro footage of your run'],
+    cover: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=1200&auto=format&fit=crop',
+    whatToExpect: ['9am quad briefing at resort garage', 'Dune circuit departure (2h)', 'Ridge viewpoint stop (photos)', 'Descent to oasis valley', 'Spring swim & lunch', 'Return by 3pm'],
+  },
 ]
 
+/* ═══════════════════════════════════════════════════════
+   DATA — PACKAGES
+═══════════════════════════════════════════════════════ */
+const PACKAGES = [
+  {
+    id: 'desert-romance',
+    name: 'Sahara Romance Escape',
+    location: 'Merzouga Desert, Morocco',
+    duration: '4 nights', price: 3200, pricePer: 'per couple',
+    badge: 'Bestseller',
+    tagline: 'The most romantic desert on Earth, perfectly curated',
+    description: 'Four nights in the Sahara Star Pavilion, combined with a private sunset camel trek, a rooftop hammam under the stars, and a chef-prepared candlelit dinner on your own private dune. Every detail — from arrival transfer to departure jasmine garland — has been considered.',
+    cover: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?w=1200&auto=format&fit=crop',
+    includes: ['4 nights Sahara Star Pavilion', 'Private camel sunset & sunrise trek', 'Royal Hammam Ritual for two', 'Chef-prepared private dune dinner', 'Berber drumming ceremony access', 'All ground transfers from Errachidia', 'Dedicated concierge throughout'],
+    itinerary: [
+      { day: 1, title: 'Arrival & Welcome', desc: 'Private 4WD transfer. Champagne & rose petals on your pavilion deck. Sunset mint tea ceremony.' },
+      { day: 2, title: 'Sunrise on the Dunes', desc: 'Pre-dawn camel ascent to the Erg Chebbi crest. Private sunrise breakfast. Return for spa morning.' },
+      { day: 3, title: 'Hammam & Dune Dinner', desc: 'Morning at leisure. Afternoon Royal Hammam Ritual. Candlelit private dinner on your personal dune.' },
+      { day: 4, title: 'Berber Culture Day', desc: 'Morning foggara oasis walk. Afternoon pottery workshop in a Berber village. Gnaoua music evening.' },
+      { day: 5, title: 'Farewell Sahara', desc: 'Final sunrise from your deck. Transfer to airport with a jasmine garland send-off.' },
+    ],
+  },
+  {
+    id: 'imperial-grand-tour',
+    name: 'Imperial Cities Grand Tour',
+    location: 'Marrakech · Fes · Chefchaouen',
+    duration: '8 nights', price: 7400, pricePer: 'per person',
+    badge: 'Signature',
+    tagline: "Morocco's three most extraordinary cities, one seamless journey",
+    description: "Begin in Marrakech with 3 nights in the Royal Riad Suite. A private train journey takes you to Fes for 3 nights in the Palace. A scenic mountain drive delivers you to the blue city of Chefchaouen for 2 nights.",
+    cover: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=1200&auto=format&fit=crop',
+    includes: ['3 nights Royal Riad Suite, Marrakech', '3 nights Fes Medina Palace', '2 nights Chefchaouen Blue Kasbah', 'Private guides in all three cities', 'Artisan workshop masterclass', 'All inter-city private transfers', 'Airport arrivals & departures'],
+    itinerary: [
+      { day: 1, title: 'Arrive Marrakech', desc: 'Private airport transfer. Check-in to Royal Riad. Rooftop welcome aperitivo.' },
+      { day: 2, title: 'Marrakech Deep Dive', desc: 'Dawn souk market walk. Tajine masterclass with Chef Fatima.' },
+      { day: 3, title: 'Hammam Day', desc: 'Morning hammam ritual. Afternoon Jardin Majorelle. Sunset on Jemaa el-Fna.' },
+      { day: 4, title: 'Marrakech → Fes', desc: 'Private drive through the Middle Atlas — cedar forests, mountain passes.' },
+      { day: 5, title: 'Fes Medina', desc: 'Full-day medina artisan walk. Tannery, copper souks, Koranic manuscripts.' },
+      { day: 6, title: 'Fes at Your Pace', desc: 'Morning calligraphy masterclass. Rooftop dinner above the medina at dusk.' },
+      { day: 7, title: 'Fes → Chefchaouen', desc: 'Scenic drive through the Rif mountains. Sunset cocktails on the kasbah terrace.' },
+      { day: 8, title: 'Blue City Wander', desc: 'Guided Chefchaouen photography walk. Lunch in a blue-walled courtyard.' },
+      { day: 9, title: 'Farewell', desc: 'Private transfer to Tangier or Fes airport.' },
+    ],
+  },
+  {
+    id: 'atlas-adventure',
+    name: 'Atlas & Desert Adventure',
+    location: 'Atlas Mountains · Merzouga',
+    duration: '6 nights', price: 4900, pricePer: 'per person',
+    badge: 'Adventure',
+    tagline: 'Snow peaks at dawn, star dunes at dusk',
+    description: "Three nights at the Atlas Mountain Lodge in the Imlil Valley — summit hiking, Berber villages, and waterfall walks. Then a dramatic desert road to 3 nights in a Sahara Star Pavilion. The elevation difference between your two beds is over 1,800 metres.",
+    cover: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&auto=format&fit=crop',
+    includes: ['3 nights Atlas Mountain Lodge, Imlil', '3 nights Sahara Star Pavilion, Merzouga', 'Guided Jbel Toubkal day trek', 'Sunrise Sahara Camel Trek', 'Sahara Quad & Oasis Trail', 'Scenic desert road private transfer', 'All meals at both properties'],
+    itinerary: [
+      { day: 1, title: 'Arrive Atlas', desc: 'Transfer from Marrakech into the High Atlas. Arrive Imlil Lodge as the sun catches the snowfields.' },
+      { day: 2, title: 'Toubkal Summit Trek', desc: 'Full-day guided ascent toward Jbel Toubkal. Berber refuge lunch. Panoramic descent.' },
+      { day: 3, title: 'Valley & Village', desc: 'Morning Amazigh village walk. Argan oil wellness afternoon. Wood-fire dinner.' },
+      { day: 4, title: 'Atlas → Sahara', desc: 'Scenic drive through Ait Benhaddou, Draa Valley oasis, into the Sahara.' },
+      { day: 5, title: 'Desert Awakening', desc: 'Dawn camel trek up the Erg Chebbi dune crest. Stargazing night session.' },
+      { day: 6, title: 'Quad & Oasis', desc: 'Morning Sahara quad & foggara oasis adventure. Afternoon hammam recovery.' },
+      { day: 7, title: 'Departure', desc: 'Breakfast on your desert deck. Transfer to Errachidia airport.' },
+    ],
+  },
+  {
+    id: 'coastal-serenity',
+    name: 'Atlantic Coastal Serenity',
+    location: 'Essaouira · Agadir Coast',
+    duration: '5 nights', price: 3800, pricePer: 'per couple',
+    badge: 'Coastal',
+    tagline: 'Salt air, Atlantic surf, and the art of doing nothing beautifully',
+    description: "Five nights in the Atlantic Kasbah — days of kitesurf lessons, morning hammam rituals, fresh seafood at the harbor, and evenings on the roof terrace as gnaoua musicians play against the sound of the ocean.",
+    cover: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=1200&auto=format&fit=crop',
+    includes: ['5 nights Atlantic Kasbah, Essaouira', 'Private kitesurf lessons (3 sessions)', 'Royal Hammam Ritual for two', 'Harbor seafood private dinner', 'Gnaoua sunset music ceremony', 'Argan grove & cooperative visit', 'Airport arrivals & departures'],
+    itinerary: [
+      { day: 1, title: 'Arrive by the Sea', desc: "Transfer to Essaouira. First dinner on the kasbah roof." },
+      { day: 2, title: 'Kitesurf Introduction', desc: 'Morning kitesurf lesson. Afternoon medina wander. Gnaoua music at sunset.' },
+      { day: 3, title: 'Hammam & Ramparts', desc: 'Morning hammam ritual. Afternoon historic ramparts walk.' },
+      { day: 4, title: 'Argan Grove & Free Day', desc: 'Morning argan cooperative visit. Afternoon entirely free.' },
+      { day: 5, title: 'Advanced Kitesurf', desc: 'Third kitesurf session. Afternoon harbor seafood lunch.' },
+      { day: 6, title: 'Farewell Ocean', desc: 'Final breakfast with the Atlantic. Airport transfer.' },
+    ],
+  },
+]
+
+/* ═══════════════════════════════════════════════════════
+   DATA — TESTIMONIALS
+═══════════════════════════════════════════════════════ */
 const TESTIMONIALS = [
-  {
-    name: 'Charlotte & Marcus Webb', role: 'Anniversary trip, Bora Bora',
-    img: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&auto=format&fit=crop',
-    text: 'TERRANOVA knew our anniversary was approaching before we did. The overwater bungalow had rose petals on the deck, a private chef, and a bottle of wine from the year we met. We cried. Twice.',
-    rating: 5, location: 'Bora Bora, French Polynesia',
-  },
-  {
-    name: 'Takeshi Mori', role: 'Japan Ritual Circuit',
-    img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop',
-    text: "I have been to Japan four times. TERRANOVA's Japan circuit showed me a country I had never seen before. Private geisha dinner, bamboo forest at dawn with no one else — it felt like having Japan as a private estate.",
-    rating: 5, location: 'Hakone, Japan',
-  },
-  {
-    name: 'Priya Nair', role: 'Arctic Wonder Week',
-    img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop',
-    text: 'Seeing polar bears from a zodiac ten metres away, then eating an eight-course dinner in a heated glass lodge under the northern lights the same evening. I still don\'t believe it happened.',
-    rating: 5, location: 'Svalbard, Norway',
-  },
+  { name: 'Isabelle Fontaine', role: 'Travel Writer, Condé Nast', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&auto=format&fit=crop', rating: 5, text: "I have stayed in over 400 hotels across 90 countries. The Sahara Star Pavilion at Ouzaft is, without qualification, the most transcendent accommodation I have ever experienced. The silence alone is worth the journey." },
+  { name: 'Raphael Svensson', role: 'Architect, Stockholm', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop', rating: 5, text: "As an architect I am deeply attentive to space and material. The Royal Riad Suite made me weep — genuinely weep — at the mastery of Moroccan craft. Every carved surface is a conversation with human ingenuity across centuries." },
+  { name: 'Amara Diallo', role: 'Wellness Entrepreneur, Lagos', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=120&auto=format&fit=crop', rating: 5, text: "The Royal Hammam Ritual reset me in ways that three months of therapy had not. My therapist told me afterward that I carry less in my body. I return every year for this ritual alone." },
+  { name: 'Ji-woo Park', role: 'Documentary Filmmaker, Seoul', avatar: 'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=120&auto=format&fit=crop', rating: 5, text: "I came to Ouzaft to film the Sahara. I left having filmed the best material of my career — and having decided to move my entire life closer to silence. Dr. Benali's stargazing session will stay with me forever." },
+  { name: 'Dr. Emma Blackwell', role: 'Marine Biologist, Cambridge', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop', rating: 5, text: "Chef Fatima's tajine masterclass was a genuine act of cultural transmission. We shopped, cooked, ate, and talked for six hours. It was the best meal I've ever had — partly because I made it." },
+  { name: 'Marco Vitale', role: 'Hotelier, Florence', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop', rating: 5, text: "As someone who runs luxury hotels, I came to Ouzaft as a critic. I left as a convert. The Atlas Mountain Lodge has flawless attention to detail — I couldn't find a single thing I would change." },
 ]
 
+/* ═══════════════════════════════════════════════════════
+   DATA — TEAM
+═══════════════════════════════════════════════════════ */
+const TEAM = [
+  { name: 'Karim El Ouazzani', role: 'Founder & Host Director', bio: 'Born in the Draa Valley, Karim spent 20 years in hotel design before returning to build the Ouzaft he had always imagined.', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop' },
+  { name: 'Fatima Benhassi', role: 'Head Chef & Culinary Guide', bio: 'Trained in Marrakech and Lyon, Fatima creates menus that honour the geometry of Moroccan spice with a contemporary sensibility.', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&auto=format&fit=crop' },
+  { name: 'Dr. Youssef Benali', role: 'Resident Astrophysicist', bio: 'A member of the International Astronomical Union, Youssef joins guests each night to turn the Sahara sky into a personal observatory.', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&auto=format&fit=crop' },
+  { name: 'Aicha Tijani', role: 'Wellness & Hammam Director', bio: 'Aicha has studied traditional Moroccan healing arts for 18 years, drawing from Andalusian, Sub-Saharan, and Ottoman wellness lineages.', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&auto=format&fit=crop' },
+]
+
+/* ═══════════════════════════════════════════════════════
+   DATA — STATS
+═══════════════════════════════════════════════════════ */
 const STATS = [
-  { value: '140+', label: 'Curated Destinations', icon: 'map-pin-2-fill' },
-  { value: '98%',  label: 'Guest Return Rate',    icon: 'heart-fill'          },
-  { value: '18yrs',label: 'Curating Experiences', icon: 'calendar-check-fill' },
-  { value: '52',   label: 'Countries',            icon: 'earth-line'          },
+  { icon: 'building-line',               value: '6',    label: 'Iconic Properties'     },
+  { icon: 'star-fill',                   value: '4.97', label: 'Average Guest Rating'  },
+  { icon: 'award-line',                  value: '12',   label: 'International Awards'  },
+  { icon: 'global-line',                 value: '48',   label: 'Countries Represented' },
+  { icon: 'heart-line',                  value: '94%',  label: 'Guest Return Rate'     },
+  { icon: 'leaf-line',                   value: '100%', label: 'Carbon Neutral'        },
 ]
 
-const THEME_MODES = [
-  { id: 'light',   icon: 'sun-fill',         label: 'Light' },
-  { id: 'dark',    icon: 'moon-fill',        label: 'Dark' },
-  { id: 'classic', icon: 'compass-3-fill',   label: 'Classic' },
-  { id: 'modern',  icon: 'sparkling-2-fill', label: 'Modern' },
+/* ═══════════════════════════════════════════════════════
+   DATA — BLOG POSTS
+═══════════════════════════════════════════════════════ */
+const BLOG_POSTS = [
+  { id: 'art-of-the-tajine',   title: 'The Architecture of a Perfect Tajine',         excerpt: 'Chef Fatima explains why the tajine is not a dish but a philosophy — and why patience is its most essential ingredient.', category: 'Culinary',  date: 'April 12, 2026', readTime: '6 min',  author: 'Fatima Benhassi',     cover: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop' },
+  { id: 'dark-sky-merzouga',   title: 'Why Merzouga Has the Darkest Sky in Africa',   excerpt: "Dr. Benali explains the atmospheric science behind the Sahara's extraordinary night sky and which months offer the best viewing.", category: 'Science',   date: 'March 28, 2026',  readTime: '8 min',  author: 'Dr. Youssef Benali',  cover: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800&auto=format&fit=crop' },
+  { id: 'zellige-craft',        title: 'Inside the Last Zellige Ateliers of Fes',      excerpt: 'A morning inside one of the six remaining workshops producing hand-cut zellige tiles in the ancient Fes el-Bali medina.',    category: 'Culture',   date: 'March 10, 2026',  readTime: '10 min', author: 'Karim El Ouazzani',   cover: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&auto=format&fit=crop' },
+  { id: 'hammam-history',       title: 'A Thousand Years of the Moroccan Hammam',      excerpt: 'Aicha Tijani traces the hammam from its Andalusian-Maghrebi origins to the contemporary wellness ritual.',                  category: 'Wellness',  date: 'Feb 22, 2026',    readTime: '7 min',  author: 'Aicha Tijani',        cover: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&auto=format&fit=crop' },
+  { id: 'atlas-spring',         title: 'The High Atlas in Spring: Everything Changes', excerpt: 'April through June, snow-melt rivers turn the Imlil Valley into a vertical garden.',                                          category: 'Nature',    date: 'Feb 5, 2026',     readTime: '5 min',  author: 'Karim El Ouazzani',   cover: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop' },
+  { id: 'essaouira-wind',       title: 'Why the Wind Made Essaouira Great',            excerpt: "The alizé winds that frustrated Portuguese sailors and thrilled Jimi Hendrix shaped every aspect of this coastal city.",       category: 'Culture',   date: 'Jan 18, 2026',    readTime: '9 min',  author: 'Karim El Ouazzani',   cover: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=800&auto=format&fit=crop' },
 ]
 
-const DEST_CATEGORIES = [
-  { label: 'Beach & Ocean', icon: 'sun-line', img: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=600&auto=format&fit=crop', count: 24 },
-  { label: 'Mountain & Snow', icon: 'landscape-line', img: 'https://images.unsplash.com/photo-1548703818-f7ceaaac4e28?w=600&auto=format&fit=crop', count: 18 },
-  { label: 'Desert & Dunes', icon: 'ancient-pavilion-line', img: 'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=600&auto=format&fit=crop', count: 12 },
-  { label: 'Jungle & Forest', icon: 'plant-line', img: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&auto=format&fit=crop', count: 16 },
-  { label: 'Cultural Cities', icon: 'building-2-line', img: 'https://images.unsplash.com/photo-1480796927426-f609979314bd?w=600&auto=format&fit=crop', count: 30 },
-  { label: 'Arctic & Polar', icon: 'snowy-line', img: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&auto=format&fit=crop', count: 8 },
+/* ═══════════════════════════════════════════════════════
+   DATA — WHY OUZAFT
+═══════════════════════════════════════════════════════ */
+const WHY_ITEMS = [
+  { icon: 'compass-3-line',              title: 'Expert Local Guides',    desc: 'Every guide is born from the land they navigate — carrying family knowledge, not tour scripts.' },
+  { icon: 'leaf-line',                   title: 'Carbon-Neutral Promise', desc: 'Every stay offsets three times its carbon footprint through Atlas reforestation and solar projects.' },
+  { icon: 'customer-service-2-line',     title: '24/7 Concierge',        desc: 'One dedicated person — not a call centre — manages every detail of your stay before and during.' },
+  { icon: 'artboard-2-line',             title: 'Craft-First Design',     desc: 'Every property features exclusively Moroccan artisans: zellige, carved cedarwood, hand-loomed textiles.' },
+  { icon: 'heart-pulse-line',            title: 'Wellness as Heritage',   desc: 'Our hammam rituals and argan wellness programmes draw from unbroken Moroccan traditions.' },
+  { icon: 'shield-check-line',           title: 'Private & Secure',       desc: 'All our stays feature private access — no shared lobbies, no tour groups, no compromises.' },
 ]
 
-const WHY_US = [
-  { icon: 'shield-check-line', title: 'No paid placements', desc: 'Every stay, experience and package is listed on merit alone. No commercial relationships influence our selection.' },
-  { icon: 'user-star-line',    title: 'In-country curators', desc: 'Each region is managed by a specialist who lives there and visits every property in person, every year.' },
-  { icon: 'service-line',      title: 'One point of contact', desc: 'A single concierge handles your entire journey — from first enquiry to post-trip follow-up.' },
-  { icon: 'award-line',        title: 'Guaranteed as described', desc: 'If a property or experience falls short of our description, we make it right at our own cost.' },
+/* ═══════════════════════════════════════════════════════
+   DATA — HERO SLIDES
+═══════════════════════════════════════════════════════ */
+const HERO_SLIDES = [
+  { id: 0, headline: ['Where the Sahara', 'Meets Splendour'], sub: "Morocco's most exceptional stays, curated by those who love it most", ctaLabel: 'Discover Stays', ctaTo: '/stay', img: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?w=1800&auto=format&fit=crop' },
+  { id: 1, headline: ['Ancient Cities,', 'Living Craft'],     sub: 'Step inside the medinas of Marrakech and Fes — 1,200 years of unbroken beauty',    ctaLabel: 'View Packages',    ctaTo: '/packages',   img: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=1800&auto=format&fit=crop' },
+  { id: 2, headline: ['Peaks, Palms', '& Open Sky'],          sub: 'Atlas mountains at dawn. Desert dunes at dusk. One seamless adventure.',              ctaLabel: 'All Activities',   ctaTo: '/activities', img: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1800&auto=format&fit=crop' },
 ]
 
-const AMENITIES = [
-  { icon: 'customer-service-2-line', title: '24/7 Concierge',     desc: 'Round-the-clock personal assistance — from restaurant bookings to last-minute itinerary changes.' },
-  { icon: 'car-line',               title: 'Private Transfers',  desc: 'Chauffeured arrivals and departures in luxury vehicles, coordinated seamlessly with your schedule.' },
-  { icon: 'restaurant-2-line',      title: 'Curated Dining',     desc: 'Access to private chef\'s tables and reservations at otherwise inaccessible venues worldwide.' },
-  { icon: 'flight-takeoff-line',    title: 'Flight Assistance',  desc: 'Business and first-class flight booking with lounge access and priority check-in coordination.' },
-  { icon: 'health-book-line',       title: 'Travel Insurance',   desc: 'Comprehensive coverage built into every package — medical, cancellation, and evacuation included.' },
-  { icon: 'camera-lens-line',       title: 'Private Photography', desc: 'Professional photographers available at select destinations to capture your journey beautifully.' },
+/* ═══════════════════════════════════════════════════════
+   DATA — FAQ
+═══════════════════════════════════════════════════════ */
+const FAQ = [
+  { q: 'What is the best time to visit the Sahara?', a: 'October through April offers ideal temperatures — warm days (24–28°C) and cool nights perfect for stargazing. July and August are hot but offer extreme dune photography opportunities at dawn.' },
+  { q: 'How do I reach Merzouga from Marrakech?', a: 'We arrange private 4WD transfers (8 hours scenic drive) or domestic flights to Errachidia followed by a 90-minute private desert road transfer. Both options are handled seamlessly by our team.' },
+  { q: 'Are children welcome at Ouzaft properties?', a: 'Children are warmly welcomed at all properties. Age-appropriate activities — junior camel treks, cookie-decorating sessions, and stargazing — are available on request.' },
+  { q: 'What should I pack for a desert stay?', a: 'We provide Berber robes and thermal blankets. Bring sunscreen, UV sunglasses, a warm layer for evenings, and comfortable closed-toe shoes.' },
+  { q: 'What languages do your guides speak?', a: 'All guides are fluent in Arabic, French, and English. Darija and Tamazight guides are available on request. Private translation for other languages can be arranged.' },
+  { q: 'Can I book a property exclusively?', a: 'Yes — all our riads, villas, and pavilions can be booked on an exclusive-use basis. Contact our concierge team for bespoke pricing and a private itinerary.' },
 ]
 
-const FAQ_ITEMS = [
-  { q: 'How far in advance should I book?', a: 'For peak seasons and luxury properties, 3–6 months in advance is recommended. Last-minute journeys are possible but subject to availability.' },
-  { q: 'Do you handle visa and documentation?', a: 'We provide guidance and connect you with specialist visa services for complex destinations, though legal responsibility remains with the traveller.' },
-  { q: "What if a property doesn't match the description?", a: 'Our Guaranteed as Described policy means we will rehouse you in a comparable or superior property at our cost — no questions asked.' },
-  { q: 'Can I customise a package itinerary?', a: 'Every journey is customisable. Use our packages as a starting point — your concierge will adapt any detail to your preferences.' },
-  { q: 'What currencies do you accept?', a: 'We quote in USD but accept all major currencies and international bank transfers. Cryptocurrency available on request.' },
-  { q: 'Is solo travel catered for?', a: 'Absolutely. Solo travellers are a significant part of our clientele. Single supplements and solo-friendly itineraries are available across all listings.' },
-]
+/* ═══════════════════════════════════════════════════════
+   UTILITY COMPONENTS
+═══════════════════════════════════════════════════════ */
+function Stars({ n = 5 }) {
+  return (
+    <span className="oz-stars">
+      {[1,2,3,4,5].map(i => <I key={i} n={i <= n ? 'star-fill' : i - 0.5 <= n ? 'star-half-line' : 'star-line'} />)}
+    </span>
+  )
+}
 
-/* ═══════════════════════════════
+function OrnamentDivider({ className = '' }) {
+  return (
+    <div className={`oz-ornament ${className}`} aria-hidden="true">
+      <span className="oz-ornament__line" />
+      <span className="oz-ornament__gem">◆</span>
+      <span className="oz-ornament__dot">·</span>
+      <span className="oz-ornament__gem">◆</span>
+      <span className="oz-ornament__line" />
+    </div>
+  )
+}
+
+function SectionHead({ eyebrow, title, body, center = false, light = false }) {
+  return (
+    <div className={`oz-sec-head${center ? ' oz-sec-head--center' : ''}${light ? ' oz-sec-head--light' : ''}`}>
+      {eyebrow && (
+        <p className="oz-eyebrow">
+          <OrnamentDivider /><span>{eyebrow}</span><OrnamentDivider />
+        </p>
+      )}
+      <h2 className="oz-sec-title">{title}</h2>
+      {body && <p className="oz-sec-body">{body}</p>}
+    </div>
+  )
+}
+
+function PageHero({ title, subtitle, image, breadcrumb }) {
+  return (
+    <section className="oz-page-hero" style={{ '--hero-bg': `url(${image})` }}>
+      <div className="oz-page-hero__veil" />
+      <div className="oz-page-hero__content contain">
+        {breadcrumb && (
+          <nav className="oz-breadcrumb" aria-label="Breadcrumb">
+            <Link to="/">Home</Link>
+            <I n="arrow-right-s-line" />
+            <span>{breadcrumb}</span>
+          </nav>
+        )}
+        <h1>{title}</h1>
+        {subtitle && <p>{subtitle}</p>}
+      </div>
+      <div className="oz-page-hero__arc" />
+    </section>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
    THEME SWITCHER
-═══════════════════════════════ */
+═══════════════════════════════════════════════════════ */
 function ThemeSwitcher({ mode, setMode }) {
   return (
-    <div className="vl-theme-sw">
-      {THEME_MODES.map(({ id, icon, label }) => (
-        <button key={id}
-          className={`vl-theme-btn${mode === id ? ' vl-theme-btn--on' : ''}`}
-          onClick={() => { setMode(id); localStorage.setItem('terranova-mode', id) }}
-          title={label} aria-label={`${label} mode`}>
-          <I n={icon} />
+    <div className="oz-theme-sw" role="group" aria-label="Color theme">
+      {MODES.map(m => (
+        <button
+          key={m.id}
+          className={`oz-theme-btn${mode === m.id ? ' oz-theme-btn--on' : ''}`}
+          onClick={() => { setMode(m.id); localStorage.setItem('ouzaft-mode', m.id) }}
+          title={m.label}
+          aria-label={`${m.label} mode`}
+          aria-pressed={mode === m.id}
+        >
+          <I n={m.icon} />
         </button>
       ))}
     </div>
   )
 }
 
-/* ═══════════════════════════════
-  TERRANOVA LOGO MARK
-═══════════════════════════════ */
-function TerranovaLogo({ size = 'md', onClick }) {
+/* ═══════════════════════════════════════════════════════
+   BRAND LOGO
+═══════════════════════════════════════════════════════ */
+function OuzaftLogo({ onClick }) {
   return (
-    <Link to="/" className={`vl-logo vl-logo--${size}`} onClick={onClick}>
-      <span className="vl-logo__mark" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M14 2L26 8V20L14 26L2 20V8L14 2Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-          <path d="M14 7L21 11V17L14 21L7 17V11L14 7Z" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="1" />
-          <circle cx="14" cy="14" r="2.5" fill="currentColor" />
+    <Link to="/" className="oz-logo" onClick={onClick} aria-label="Ouzaft Home">
+      <span className="oz-logo__mark" aria-hidden="true">
+        <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
+          <polygon points="19,2 22,14 35,14 25,23 29,36 19,28 9,36 13,23 3,14 16,14"
+            stroke="currentColor" strokeWidth="1.4" fill="none" opacity="0.55" />
+          <polygon points="19,8 21,15 28,15 23,19 25,27 19,23 13,27 15,19 10,15 17,15"
+            fill="currentColor" opacity="0.18" />
+          <circle cx="19" cy="19" r="3.5" fill="currentColor" />
         </svg>
       </span>
-      <span className="vl-logo__text">
-        <span className="vl-logo__name">TERRANOVA</span>
-        <span className="vl-logo__tagline">Wild Routes</span>
+      <span className="oz-logo__wordmark">
+        <span className="oz-logo__name">OUZAFT</span>
+        <span className="oz-logo__sub">Luxury Stays Morocco</span>
       </span>
     </Link>
   )
 }
 
-/* ═══════════════════════════════
+/* ═══════════════════════════════════════════════════════
    SITE HEADER
-═══════════════════════════════ */
+═══════════════════════════════════════════════════════ */
+const NAV_LINKS = [
+  { label: 'Stay',       to: '/stay',       icon: 'hotel-line'      },
+  { label: 'Packages',   to: '/packages',   icon: 'gift-2-line'     },
+  { label: 'Activities', to: '/activities', icon: 'compass-3-line'  },
+  { label: 'About',      to: '/about',      icon: 'team-line'       },
+  { label: 'Contact',    to: '/contact',    icon: 'mail-send-line'  },
+]
+
 function SiteHeader({ mode, setMode }) {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [progress, setProgress] = useState(0)
+  const location = useLocation()
 
   useEffect(() => {
-    const h = () => {
-      setScrolled(window.scrollY > 60)
-      const max = document.body.scrollHeight - window.innerHeight
-      setProgress(max > 0 ? Math.round((window.scrollY / max) * 100) : 0)
-    }
+    const h = () => setScrolled(window.scrollY > 50)
     window.addEventListener('scroll', h, { passive: true })
     return () => window.removeEventListener('scroll', h)
   }, [])
 
-  const navLinks = [
-    { label: 'Home',        to: '/',            icon: 'home-5-line'    },
-    { label: 'Stays',       to: '/stay',        icon: 'hotel-line'     },
-    { label: 'Activities',  to: '/experiences', icon: 'compass-3-line' },
-    { label: 'Packages',    to: '/packages',    icon: 'gift-2-line'    },
-    { label: 'About',       to: '/about',       icon: 'team-line'      },
-    { label: 'Contact',     to: '/contact',     icon: 'mail-line'      },
-  ]
+  useEffect(() => { setOpen(false) }, [location.pathname])
 
   return (
-    <header className={`vl-header${scrolled ? ' vl-header--scrolled' : ''}`}>
-      {/* Scroll progress bar */}
-      <div className="vl-header__progress" aria-hidden="true">
-        <div className="vl-header__progress-fill" style={{ width: `${progress}%` }} />
-      </div>
+    <header className={`oz-header${scrolled ? ' oz-header--scrolled' : ''}${open ? ' oz-header--open' : ''}`}>
+      <div className="oz-header__inner contain">
+        <OuzaftLogo onClick={() => setOpen(false)} />
 
-      <div className="vl-header__inner contain">
-        <TerranovaLogo onClick={() => setOpen(false)} />
-
-        <nav className="vl-nav" aria-label="Primary">
-          {navLinks.map(l => (
+        <nav className="oz-nav" aria-label="Primary navigation">
+          {NAV_LINKS.map(l => (
             <NavLink key={l.to} to={l.to}
-              className={({ isActive }) => `vl-nav__link${isActive ? ' vl-nav__link--on' : ''}`}>
+              className={({ isActive }) => `oz-nav__link${isActive ? ' oz-nav__link--on' : ''}`}>
               {l.label}
             </NavLink>
           ))}
         </nav>
 
-        <div className="vl-header__right">
+        <div className="oz-header__right">
           <ThemeSwitcher mode={mode} setMode={setMode} />
-          <Link to="/packages" className="vl-book-btn">
-            <I n="calendar-check-line" />
-            <span>Book Now</span>
+          <Link to="/packages" className="oz-btn oz-btn--reserve">
+            <I n="calendar-check-line" /><span>Reserve</span>
           </Link>
-          <button className="vl-burger" onClick={() => setOpen(v => !v)} aria-expanded={open} aria-label="Menu">
-            <span className={`vl-burger__bar${open ? ' vl-burger__bar--x' : ''}`}><span/><span/><span/></span>
+          <button className={`oz-burger${open ? ' oz-burger--x' : ''}`}
+            onClick={() => setOpen(v => !v)}
+            aria-expanded={open} aria-label={open ? 'Close menu' : 'Open menu'}>
+            <span /><span /><span />
           </button>
         </div>
       </div>
 
-      {/* Mobile drawer */}
-      {open && <button className="vl-overlay" onClick={() => setOpen(false)} aria-label="Close menu" />}
-      <div className={`vl-drawer${open ? ' vl-drawer--open' : ''}`}>
-        <div className="vl-drawer__head">
-          <TerranovaLogo onClick={() => setOpen(false)} />
-          <button onClick={() => setOpen(false)} className="vl-drawer__close" aria-label="Close"><I n="close-line" /></button>
+      {open && <button className="oz-overlay" onClick={() => setOpen(false)} aria-label="Close menu" />}
+
+      <div className={`oz-drawer${open ? ' oz-drawer--open' : ''}`} aria-hidden={!open}>
+        <div className="oz-drawer__head">
+          <OuzaftLogo onClick={() => setOpen(false)} />
+          <button onClick={() => setOpen(false)} className="oz-drawer__close" aria-label="Close">
+            <I n="close-line" />
+          </button>
         </div>
-        <nav className="vl-drawer__nav">
-          {navLinks.map(l => (
-            <NavLink key={l.to} to={l.to} className="vl-drawer__link" onClick={() => setOpen(false)}>
+        <OrnamentDivider className="oz-drawer__divider" />
+        <nav className="oz-drawer__nav">
+          {NAV_LINKS.map(l => (
+            <NavLink key={l.to} to={l.to} className="oz-drawer__link" onClick={() => setOpen(false)}>
               <I n={l.icon} />
               <span>{l.label}</span>
-              <I n="arrow-right-s-line" className="vl-drawer__arrow" />
+              <I n="arrow-right-s-line" className="oz-drawer__arr" />
             </NavLink>
           ))}
         </nav>
-        <div className="vl-drawer__foot">
+        <div className="oz-drawer__foot">
           <ThemeSwitcher mode={mode} setMode={setMode} />
-          <Link to="/packages" className="vl-book-btn vl-book-btn--full" onClick={() => setOpen(false)}>
-            <I n="calendar-check-line" /> Book Now
+          <Link to="/packages" className="oz-btn oz-btn--reserve oz-btn--full" onClick={() => setOpen(false)}>
+            <I n="calendar-check-line" /> Reserve Now
           </Link>
+          <div className="oz-drawer__contacts">
+            <a href="tel:+212522000000"><I n="phone-line" /> +212 522 00 00 00</a>
+            <a href="mailto:stay@ouzaft.ma"><I n="mail-line" /> stay@ouzaft.ma</a>
+          </div>
         </div>
       </div>
     </header>
   )
 }
 
-/* ═══════════════════════════════
-   FADE-IN WRAPPER
-═══════════════════════════════ */
-function Reveal({ children, delay = 0, className = '' }) {
-  const [ref, visible] = useFadeIn()
-  return (
-    <div ref={ref} className={`vl-reveal${visible ? ' vl-reveal--on' : ''} ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}>
-      {children}
-    </div>
-  )
-}
-
-/* ═══════════════════════════════
-   CARD COMPONENTS
-═══════════════════════════════ */
-function StayCard({ item, onBook }) {
-  return (
-    <article className="vl-stay-card">
-      <Link to={`/stay/${item.id}`} className="vl-stay-card__img-wrap">
-        <img src={item.cover} alt={item.name} loading="lazy" />
-        <div className="vl-stay-card__img-veil" />
-        {item.badge && <span className="vl-badge vl-stay-card__badge">{item.badge}</span>}
-        <span className="vl-stay-card__region-tag"><I n="map-pin-line" />{item.region}</span>
-        <div className="vl-stay-card__price-tag">
-          <span>from</span><strong>${item.price.toLocaleString()}</strong><span>/night</span>
-        </div>
-        <div className="vl-stay-card__overlay">
-          <span className="vl-stay-card__atmo">{item.atmosphere}</span>
-        </div>
-      </Link>
-      <div className="vl-stay-card__body">
-        <div className="vl-stay-card__header">
-          <span className="vl-stay-card__cat">{item.category}</span>
-          <div className="vl-stay-card__rat"><I n="star-fill" /><strong>{item.rating}</strong><span>({item.reviews})</span></div>
-        </div>
-        <h3><Link to={`/stay/${item.id}`}>{item.name}</Link></h3>
-        <div className="vl-stay-card__loc"><I n="map-pin-2-line" />{item.location}</div>
-        <p className="vl-stay-card__tagline">{item.tagline}</p>
-        <div className="vl-stay-card__foot">
-          <div className="vl-stay-card__price">
-            <strong>${item.price.toLocaleString()}</strong><span>/night</span>
-          </div>
-          <div className="vl-stay-card__foot-btns">
-            <Link to={`/stay/${item.id}`} className="vl-pill-btn vl-pill-btn--ghost">View</Link>
-            {onBook && <button className="vl-pill-btn" onClick={() => onBook(item)}>Book <I n="arrow-right-line" /></button>}
-          </div>
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function ExpCard({ item, onBook }) {
-  return (
-    <article className="vl-exp-card">
-      <Link to={`/experiences/${item.id}`} className="vl-exp-card__img">
-        <img src={item.cover} alt={item.name} loading="lazy" />
-        <div className="vl-exp-card__veil" />
-        <div className="vl-exp-card__top">
-          {item.badge && <span className="vl-badge">{item.badge}</span>}
-          <span className={`vl-diff vl-diff--${item.difficulty.toLowerCase()}`}>{item.difficulty}</span>
-        </div>
-        <div className="vl-exp-card__meta">
-          <span className="vl-exp-card__meta-pill"><I n="time-line" />{item.duration}</span>
-          <span className="vl-exp-card__meta-pill"><I n="group-line" />{item.groupSize}</span>
-        </div>
-      </Link>
-      <div className="vl-exp-card__body">
-        <div className="vl-exp-card__header">
-          <span className="vl-exp-card__cat"><I n="compass-3-line" />{item.category}</span>
-          <span className="vl-exp-card__price"><strong>${item.price}</strong>/pp</span>
-        </div>
-        <h3><Link to={`/experiences/${item.id}`}>{item.name}</Link></h3>
-        <div className="vl-exp-card__loc"><I n="map-pin-2-line" />{item.location}</div>
-        <p>{item.tagline}</p>
-        <div className="vl-exp-card__foot-btns">
-          <Link to={`/experiences/${item.id}`} className="vl-pill-btn vl-pill-btn--ghost vl-pill-btn--full">View</Link>
-          {onBook && <button className="vl-pill-btn vl-pill-btn--full" onClick={() => onBook(item)}>Book <I n="arrow-right-line" /></button>}
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function PkgCard({ item, onBook }) {
-  return (
-    <article className="vl-pkg-card">
-      <Link to={`/packages/${item.id}`} className="vl-pkg-card__img">
-        <img src={item.cover} alt={item.name} loading="lazy" />
-        <div className="vl-pkg-card__veil" />
-        {item.badge && <span className="vl-badge">{item.badge}</span>}
-      </Link>
-      <div className="vl-pkg-card__body">
-        <div className="vl-pkg-card__meta">
-          <span className="vl-pkg-card__dur"><I n="calendar-2-line" />{item.duration}</span>
-          <span className="vl-pkg-card__loc-tag"><I n="map-pin-line" />{item.location}</span>
-        </div>
-        <h3><Link to={`/packages/${item.id}`}>{item.name}</Link></h3>
-        <p className="vl-pkg-card__tagline">{item.tagline}</p>
-        <div className="vl-pkg-card__includes">
-          {item.includes.slice(0, 3).map(inc => (
-            <span key={inc} className="vl-pkg-card__inc-tag"><I n="check-line" />{inc.split(',')[0]}</span>
-          ))}
-        </div>
-        <div className="vl-pkg-card__foot">
-          <div className="vl-pkg-card__price">
-            <span>from</span><strong>${item.price.toLocaleString()}</strong><span>/{item.pricePer}</span>
-          </div>
-          <div className="vl-pkg-card__foot-btns">
-            <Link to={`/packages/${item.id}`} className="vl-pill-btn vl-pill-btn--ghost">View</Link>
-            {onBook && <button className="vl-pill-btn" onClick={() => onBook(item)}>Book <I n="arrow-right-line" /></button>}
-          </div>
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function Stars({ n }) {
-  return <span className="vl-stars">{'★'.repeat(Math.floor(n))}</span>
-}
-
-/* ═══════════════════════════════
-   MINI CALENDAR PICKER
-═══════════════════════════════ */
-function MiniCalendar({ value, onChange, label, minDate }) {
-  const today = new Date()
-  const initial = value ? new Date(value) : (minDate ? new Date(minDate) : today)
-  const [viewYear, setViewYear] = useState(initial.getFullYear())
-  const [viewMonth, setViewMonth] = useState(initial.getMonth())
-  const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState({ top: 0, left: 0 })
-  const wrapRef = useRef(null)
-  const trigRef = useRef(null)
-  const popRef = useRef(null)
-
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa']
-
-  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
-  const cells = [...Array(firstDay).fill(null), ...Array.from({length: daysInMonth}, (_, i) => i + 1)]
-
-  const min = minDate ? new Date(minDate) : null
-  min && min.setHours(0,0,0,0)
-
-  const isDisabled = (d) => {
-    if (!d) return true
-    const dt = new Date(viewYear, viewMonth, d)
-    dt.setHours(0,0,0,0)
-    if (min && dt < min) return true
-    const now = new Date(); now.setHours(0,0,0,0)
-    if (dt < now) return true
-    return false
-  }
-
-  const isSelected = (d) => {
-    if (!d || !value) return false
-    const v = new Date(value)
-    return v.getFullYear() === viewYear && v.getMonth() === viewMonth && v.getDate() === d
-  }
-
-  const select = (d) => {
-    if (isDisabled(d)) return
-    const dt = new Date(viewYear, viewMonth, d)
-    const iso = dt.toISOString().split('T')[0]
-    onChange(iso)
-    setOpen(false)
-  }
-
-  const fmt = (iso) => {
-    if (!iso) return ''
-    const [y, m, d] = iso.split('-')
-    return `${MONTHS[parseInt(m)-1]} ${parseInt(d)}, ${y}`
-  }
-
-  const openCalendar = () => {
-    if (!trigRef.current) { setOpen(v => !v); return }
-    const r = trigRef.current.getBoundingClientRect()
-    const popW = Math.min(290, window.innerWidth - 16)
-    const spaceBelow = window.innerHeight - r.bottom
-    const openUp = spaceBelow < 340 && r.top > 340
-    const left = Math.max(8, Math.min(r.left, window.innerWidth - popW - 8))
-    setPos({
-      left,
-      ...(openUp
-        ? { bottom: window.innerHeight - r.top + 6, top: 'auto' }
-        : { top: r.bottom + 6, bottom: 'auto' })
-    })
-    setOpen(v => !v)
-  }
-
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e) => {
-      if (
-        (popRef.current && popRef.current.contains(e.target)) ||
-        (trigRef.current && trigRef.current.contains(e.target))
-      ) return
-      setOpen(false)
-    }
-    const onClose = () => setOpen(false)
-    document.addEventListener('mousedown', onDown)
-    window.addEventListener('scroll', onClose, true)
-    window.addEventListener('resize', onClose)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      window.removeEventListener('scroll', onClose, true)
-      window.removeEventListener('resize', onClose)
-    }
-  }, [open])
-
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
-    else setViewMonth(m => m - 1)
-  }
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
-    else setViewMonth(m => m + 1)
-  }
-
-  const popup = open ? createPortal(
-    <div className="vl-cal__popup" ref={popRef} style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, left: pos.left, zIndex: 99999 }}>
-      <div className="vl-cal__nav">
-        <button type="button" onClick={prevMonth} aria-label="Previous month"><I n="arrow-left-s-line" /></button>
-        <span>{MONTHS[viewMonth]} {viewYear}</span>
-        <button type="button" onClick={nextMonth} aria-label="Next month"><I n="arrow-right-s-line" /></button>
-      </div>
-      <div className="vl-cal__grid">
-        {DAYS.map(d => <span key={d} className="vl-cal__day-name">{d}</span>)}
-        {cells.map((d, i) => (
-          <button key={i} type="button"
-            className={`vl-cal__day${d ? '' : ' vl-cal__day--empty'}${isSelected(d) ? ' vl-cal__day--sel' : ''}${isDisabled(d) ? ' vl-cal__day--dis' : ''}`}
-            onClick={() => select(d)}
-            disabled={isDisabled(d)}
-            aria-label={d ? `${MONTHS[viewMonth]} ${d}, ${viewYear}` : undefined}
-          >{d || ''}</button>
-        ))}
-      </div>
-    </div>,
-    document.body
-  ) : null
-
-  return (
-    <div className="vl-cal" ref={wrapRef}>
-      <button type="button" className="vl-cal__trigger" ref={trigRef} onClick={openCalendar} aria-label={label}>
-        <I n="calendar-2-line" />
-        <span>{value ? fmt(value) : label}</span>
-        <I n="arrow-down-s-line" className="vl-cal__chevron" />
-      </button>
-      {popup}
-    </div>
-  )
-}
-
-/* ═══════════════════════════════
-   MULTI-STEP BOOKING MODAL
-═══════════════════════════════ */
-function BookingModal({ item, type = 'stay', onClose }) {
-  const [step, setStep] = useState(1)
-  const [form, setForm] = useState({
-    checkin: '', checkout: '', guests: 2,
-    firstName: '', lastName: '', email: '', phone: '',
-    specialRequests: ''
-  })
-  const [submitted, setSubmitted] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    const h = (e) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', h)
-    document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', h); document.body.style.overflow = '' }
-  }, [onClose])
-
-  const nights = form.checkin && form.checkout
-    ? Math.max(0, Math.round((new Date(form.checkout) - new Date(form.checkin)) / 86400000))
-    : 0
-
-  const priceBase = item?.price || 0
-  const total = type === 'stay' ? nights * priceBase * form.guests / 2 : priceBase * form.guests
-
-  const canNext1 = type === 'stay' ? (form.checkin && form.checkout && nights > 0) : true
-  const canNext2 = form.firstName && form.lastName && form.email
-
-  const STEPS = [
-    { label: 'Dates & Guests', icon: 'calendar-2-line' },
-    { label: 'Your Details',   icon: 'user-line'        },
-    { label: 'Confirmation',   icon: 'check-double-line' },
-  ]
-
-  return (
-    <div className="vl-modal-overlay" role="dialog" aria-modal="true" aria-label="Booking" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="vl-modal" ref={ref}>
-        {/* Header */}
-        <div className="vl-modal__head">
-          <div className="vl-modal__title">
-            <I n="sparkling-2-line" />
-            <span>Book — {item?.name}</span>
-          </div>
-          <button className="vl-modal__close" onClick={onClose} aria-label="Close"><I n="close-line" /></button>
-        </div>
-
-        {/* Step indicator */}
-        <div className="vl-modal__steps">
-          {STEPS.map((s, i) => (
-            <div key={i} className={`vl-modal__step${step > i + 1 ? ' vl-modal__step--done' : step === i + 1 ? ' vl-modal__step--on' : ''}`}>
-              <div className="vl-modal__step-num">
-                {step > i + 1 ? <I n="check-line" /> : i + 1}
-              </div>
-              <span>{s.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Body */}
-        <div className="vl-modal__body">
-          {!submitted && step === 1 && (
-            <div className="vl-modal__section">
-              <h4>When are you travelling?</h4>
-              {type === 'stay' && (
-                <div className="vl-modal__date-row">
-                  <div className="vl-modal__field">
-                    <label>Check In</label>
-                    <MiniCalendar value={form.checkin} onChange={v => setForm(f => ({...f, checkin: v, checkout: f.checkout && new Date(f.checkout) <= new Date(v) ? '' : f.checkout}))} label="Pick date" />
-                  </div>
-                  <div className="vl-modal__field">
-                    <label>Check Out</label>
-                    <MiniCalendar value={form.checkout} onChange={v => setForm(f => ({...f, checkout: v}))} label="Pick date" minDate={form.checkin} />
-                  </div>
-                </div>
-              )}
-              {type !== 'stay' && (
-                <div className="vl-modal__field">
-                  <label>Experience Date</label>
-                  <MiniCalendar value={form.checkin} onChange={v => setForm(f => ({...f, checkin: v}))} label="Pick date" />
-                </div>
-              )}
-              {nights > 0 && type === 'stay' && (
-                <div className="vl-modal__night-badge"><I n="moon-line" />{nights} {nights === 1 ? 'night' : 'nights'}</div>
-              )}
-              <div className="vl-modal__field">
-                <label>Guests</label>
-                <div className="vl-modal__counter">
-                  <button type="button" onClick={() => setForm(f => ({...f, guests: Math.max(1, f.guests - 1)}))}>−</button>
-                  <span><I n="group-line" /> {form.guests} {form.guests === 1 ? 'Guest' : 'Guests'}</span>
-                  <button type="button" onClick={() => setForm(f => ({...f, guests: Math.min(12, f.guests + 1)}))}>+</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!submitted && step === 2 && (
-            <div className="vl-modal__section">
-              <h4>Tell us about yourself</h4>
-              <div className="vl-modal__date-row">
-                <div className="vl-modal__field">
-                  <label>First Name *</label>
-                  <input type="text" value={form.firstName} onChange={e => setForm(f => ({...f, firstName: e.target.value}))} placeholder="Sofia" required />
-                </div>
-                <div className="vl-modal__field">
-                  <label>Last Name *</label>
-                  <input type="text" value={form.lastName} onChange={e => setForm(f => ({...f, lastName: e.target.value}))} placeholder="Almeria" required />
-                </div>
-              </div>
-              <div className="vl-modal__field">
-                <label>Email Address *</label>
-                <input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} placeholder="your@email.com" required />
-              </div>
-              <div className="vl-modal__field">
-                <label>Phone Number</label>
-                <input type="tel" value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} placeholder="+1 800 000 0000" />
-              </div>
-              <div className="vl-modal__field">
-                <label>Special Requests</label>
-                <textarea value={form.specialRequests} onChange={e => setForm(f => ({...f, specialRequests: e.target.value}))} rows={3} placeholder="Dietary requirements, accessibility needs, celebrations..." />
-              </div>
-            </div>
-          )}
-
-          {!submitted && step === 3 && (
-            <div className="vl-modal__section">
-              <h4>Review your booking</h4>
-              <div className="vl-modal__summary">
-                <div className="vl-modal__summary-img">
-                  <img src={item?.cover || item?.images?.[0]} alt={item?.name} />
-                </div>
-                <div className="vl-modal__summary-body">
-                  <span className="vl-modal__summary-cat">{type === 'stay' ? 'Stay' : type === 'experiences' ? 'Activity' : 'Package'}</span>
-                  <strong>{item?.name}</strong>
-                  <span className="vl-modal__summary-loc"><I n="map-pin-line" />{item?.location}</span>
-                </div>
-              </div>
-              <div className="vl-modal__summary-rows">
-                {form.checkin && <div className="vl-modal__sr"><span>Check in</span><strong>{form.checkin}</strong></div>}
-                {form.checkout && <div className="vl-modal__sr"><span>Check out</span><strong>{form.checkout}</strong></div>}
-                {nights > 0 && type === 'stay' && <div className="vl-modal__sr"><span>Nights</span><strong>{nights}</strong></div>}
-                <div className="vl-modal__sr"><span>Guests</span><strong>{form.guests}</strong></div>
-                <div className="vl-modal__sr"><span>Name</span><strong>{form.firstName} {form.lastName}</strong></div>
-                <div className="vl-modal__sr"><span>Email</span><strong>{form.email}</strong></div>
-                {total > 0 && <div className="vl-modal__sr vl-modal__sr--total"><span>Estimated Total</span><strong>${total.toLocaleString()}</strong></div>}
-              </div>
-              <p className="vl-modal__note">Your concierge will confirm availability and send a detailed quote within 24 hours.</p>
-            </div>
-          )}
-
-          {submitted && (
-            <div className="vl-modal__success">
-              <div className="vl-modal__success-icon"><I n="check-double-line" /></div>
-              <h3>Booking Request Sent!</h3>
-              <p>Thank you, {form.firstName}. Your TERRANOVA concierge will be in touch within 24 hours with a personalised confirmation.</p>
-              <button className="vl-btn-primary" onClick={onClose}>Close <I n="arrow-right-line" /></button>
-            </div>
-          )}
-        </div>
-
-        {/* Footer nav */}
-        {!submitted && (
-          <div className="vl-modal__foot">
-            {step > 1 && <button className="vl-btn-ghost" onClick={() => setStep(s => s - 1)}><I n="arrow-left-line" /> Back</button>}
-            {step < 3 && (
-              <button className="vl-btn-primary vl-modal__next"
-                onClick={() => setStep(s => s + 1)}
-                disabled={step === 1 && !canNext1}>
-                Continue <I n="arrow-right-line" />
-              </button>
-            )}
-            {step === 3 && (
-              <button className="vl-btn-primary vl-modal__next"
-                onClick={() => { if (canNext2) setSubmitted(true) }}
-                disabled={!canNext2}>
-                <I n="send-plane-line" /> Confirm Request
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════
-   BOOKING BAR
-═══════════════════════════════ */
-function BookingBar() {
-  const nav = useNavigate()
-  const [type, setType] = useState('stay')
-  const [destination, setDestination] = useState('')
-  const [checkin, setCheckin] = useState('')
-  const [checkout, setCheckout] = useState('')
-  const [guests, setGuests] = useState(2)
-  const [focused, setFocused] = useState(null)
-
-  const handleSearch = e => {
-    e.preventDefault()
-    nav(`/${type}`)
-  }
-
-  const TYPES = [
-    { key: 'stay',        icon: 'hotel-line',     label: 'Stay',     desc: '140+ properties' },
-    { key: 'experiences', icon: 'compass-3-line', label: 'Activity', desc: '80+ experiences' },
-    { key: 'packages',    icon: 'gift-2-line',    label: 'Package',  desc: 'Curated journeys' },
-  ]
-
-  return (
-    <div className="vl-booking-bar">
-      <div className="contain">
-        <div className="vl-bb-card">
-
-          {/* Header: type tabs + tagline */}
-          <div className="vl-bb-header">
-            <div className="vl-bb-types">
-              {TYPES.map(({ key, icon, label, desc }) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`vl-bb-type${type === key ? ' vl-bb-type--on' : ''}`}
-                  onClick={() => setType(key)}
-                >
-                  <div className="vl-bb-type__icon"><I n={icon} /></div>
-                  <div className="vl-bb-type__text">
-                    <span>{label}</span>
-                    <small>{desc}</small>
-                  </div>
-                  {type === key && <div className="vl-bb-type__line" />}
-                </button>
-              ))}
-            </div>
-            <div className="vl-bb-tagline">
-              <I n="sparkling-2-line" />
-              <span>Find your extraordinary journey</span>
-            </div>
-          </div>
-
-          {/* Search fields row */}
-          <form className="vl-bb-form" onSubmit={handleSearch}>
-            <div className={`vl-bb-field-group${focused === 'dest' ? ' vl-bb-field-group--focused' : ''}`}>
-              <label htmlFor="bb-dest">
-                <I n="map-pin-2-line" /> Where
-              </label>
-              <div className="vl-bb-input-row">
-                <input
-                  id="bb-dest"
-                  type="text"
-                  placeholder="Destination or property"
-                  value={destination}
-                  onChange={e => setDestination(e.target.value)}
-                  onFocus={() => setFocused('dest')}
-                  onBlur={() => setFocused(null)}
-                  aria-label="Destination"
-                />
-              </div>
-            </div>
-
-            <div className="vl-bb-divider" />
-
-            <div
-              className={`vl-bb-field-group vl-bb-field-group--cal${focused === 'checkin' ? ' vl-bb-field-group--focused' : ''}`}
-              onFocus={() => setFocused('checkin')}
-              onBlur={() => setFocused(null)}
-            >
-              <label><I n="calendar-line" /> Check In</label>
-              <MiniCalendar value={checkin} onChange={setCheckin} label="Pick date" />
-            </div>
-
-            <div className="vl-bb-divider" />
-
-            <div
-              className={`vl-bb-field-group vl-bb-field-group--cal${focused === 'checkout' ? ' vl-bb-field-group--focused' : ''}`}
-              onFocus={() => setFocused('checkout')}
-              onBlur={() => setFocused(null)}
-            >
-              <label><I n="calendar-check-line" /> Check Out</label>
-              <MiniCalendar value={checkout} onChange={setCheckout} label="Pick date" minDate={checkin} />
-            </div>
-
-            <div className="vl-bb-divider" />
-
-            <div className="vl-bb-field-group vl-bb-field-group--guests">
-              <label><I n="group-line" /> Guests</label>
-              <div className="vl-bb-guests-row">
-                <button type="button" className="vl-bb-guest-btn" onClick={() => setGuests(g => Math.max(1, g - 1))} aria-label="Remove guest">
-                  <I n="subtract-line" />
-                </button>
-                <span className="vl-bb-guest-count">
-                  <strong>{guests}</strong>&nbsp;{guests === 1 ? 'Guest' : 'Guests'}
-                </span>
-                <button type="button" className="vl-bb-guest-btn" onClick={() => setGuests(g => Math.min(12, g + 1))} aria-label="Add guest">
-                  <I n="add-line" />
-                </button>
-              </div>
-            </div>
-
-            <button type="submit" className="vl-bb-submit">
-              <span className="vl-bb-submit__icon"><I n="search-2-line" /></span>
-              <span className="vl-bb-submit__label">Search</span>
-              <span className="vl-bb-submit__arrow"><I n="arrow-right-line" /></span>
-            </button>
-          </form>
-
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════
-   HOME PAGE
-═══════════════════════════════ */
-function HomePage({ mode }) {
-  const [heroIdx, setHeroIdx] = useState(0)
-  const [testIdx, setTestIdx] = useState(0)
-  const [booking, setBooking] = useState(null)
-  const heroItems = STAYS.slice(0, 4)
-
-  useEffect(() => {
-    const t = setInterval(() => setHeroIdx(i => (i + 1) % heroItems.length), 5500)
-    return () => clearInterval(t)
-  }, [heroItems.length])
-
-  useEffect(() => {
-    const t = setInterval(() => setTestIdx(i => (i + 1) % TESTIMONIALS.length), 6800)
-    return () => clearInterval(t)
-  }, [])
-
-  useEffect(() => {
-    const targets = [
-      '.rv-hero__eyebrow',
-      '.rv-hero__h1-pre',
-      '.rv-hero__h1-main',
-      '.rv-hero__h1-sub',
-      '.rv-hero__sub',
-      '.rv-hero__actions',
-      '.rv-hero__trust',
-    ]
-    // Ensure elements are fully visible even without GSAP
-    targets.forEach(sel => {
-      document.querySelectorAll(sel).forEach(el => {
-        el.style.opacity = '1'
-        el.style.transform = 'none'
-        el.style.clipPath = 'none'
-      })
-    })
-    if (!window.gsap) return
-    window.gsap.killTweensOf(targets.join(', '))
-    const tl = window.gsap.timeline()
-    tl.fromTo('.rv-hero__eyebrow',   { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: 'power3.out' }, 0)
-    tl.fromTo('.rv-hero__h1-pre',    { opacity: 0, y: 18 },  { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 0.08)
-    tl.fromTo('.rv-hero__h1-main',   { opacity: 0, y: 36 },  { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, 0.16)
-    tl.fromTo('.rv-hero__h1-sub',    { opacity: 0, y: 36 },  { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, 0.22)
-    tl.fromTo('.rv-hero__sub',       { opacity: 0, y: 22 },  { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }, 0.32)
-    tl.fromTo('.rv-hero__actions',   { opacity: 0, y: 18 },  { opacity: 1, y: 0, duration: 0.5,  ease: 'power2.out' }, 0.44)
-    tl.fromTo('.rv-hero__trust',     { opacity: 0, y: 14 },  { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, 0.54)
-  }, [heroIdx])
-
-  const handleHeroMove = (e) => {
-    if (mode !== 'modern' || !window.gsap) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2
-    window.gsap.to('.rv-hero__slide--active img', {
-      x: x * 18,
-      y: y * 14,
-      scale: 1.045,
-      duration: 0.45,
-      ease: 'power2.out',
-      overwrite: true,
-    })
-  }
-
-  const handleHeroLeave = () => {
-    if (mode !== 'modern' || !window.gsap) return
-    window.gsap.to('.rv-hero__slide img', {
-      x: 0,
-      y: 0,
-      scale: 1,
-      duration: 0.55,
-      ease: 'power2.out',
-      overwrite: true,
-    })
-  }
-
-  const active = heroItems[heroIdx]
-
-  return (
-    <>
-      {booking && <BookingModal item={booking.item} type={booking.type} onClose={() => setBooking(null)} />}
-      {/* ── HERO ── */}
-      <section className="rv-hero" style={{ '--hero-color': active.color }} onMouseMove={handleHeroMove} onMouseLeave={handleHeroLeave}>
-        {/* Slides */}
-        <div className="rv-hero__slides">
-          {heroItems.map((item, i) => (
-            <div key={item.id} className={`rv-hero__slide${i === heroIdx ? ' rv-hero__slide--active' : ''}`}>
-              <img src={item.cover} alt={item.name} />
-              <div className="rv-hero__slide-veil" />
-            </div>
-          ))}
-        </div>
-
-        {/* Noise / grain overlay */}
-        <div className="rv-hero__grain" aria-hidden="true" />
-
-        {/* Content split layout */}
-        <div className="rv-hero__content contain">
-          <div className="rv-hero__split">
-            {/* LEFT — headline + CTAs */}
-            <div className="rv-hero__split-l">
-              <div className="rv-hero__eyebrow">
-                <span className="rv-hero__dot" />
-                <span className="rv-hero__eyebrow-cat">{active.category}</span>
-                <span className="rv-hero__eyebrow-sep" aria-hidden="true">·</span>
-                <span>{active.location}</span>
-              </div>
-
-              <h1 className="rv-hero__h1">
-                <span className="rv-hero__h1-pre">The World's Most</span>
-                <em className="rv-hero__h1-main">Extraordinary</em>
-                <span className="rv-hero__h1-sub">Places</span>
-              </h1>
-
-              <p className="rv-hero__sub">
-                Curated stays, rare experiences and seamlessly crafted journeys — for those who travel to feel, not just to see.
-              </p>
-
-              <div className="rv-hero__actions">
-                <Link to="/packages" className="rv-hero__cta">
-                  <I n="sparkling-2-line" /> Discover Packages
-                </Link>
-                <Link to="/stay" className="rv-hero__ghost">
-                  Browse Stays <I n="arrow-right-line" />
-                </Link>
-              </div>
-
-              {/* Trust strip */}
-              <div className="rv-hero__trust">
-                {STATS.slice(0, 3).map(s => (
-                  <div key={s.label} className="rv-hero__trust-item">
-                    <strong>{s.value}</strong>
-                    <span>{s.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* RIGHT — showcase card stack */}
-            <div className="rv-hero__split-r" aria-hidden="true">
-              {/* Back cards for depth */}
-              <div className="rv-hero__showcase-back rv-hero__showcase-back--2" />
-              <div className="rv-hero__showcase-back rv-hero__showcase-back--1" />
-              {/* Active property card */}
-              <div className="rv-hero__showcase">
-                <img src={active.cover} alt={active.name} className="rv-hero__showcase-img" />
-                <div className="rv-hero__showcase-body">
-                  <span className="rv-hero__showcase-cat">{active.category}</span>
-                  <strong className="rv-hero__showcase-name">{active.name}</strong>
-                  <div className="rv-hero__showcase-loc"><I n="map-pin-2-line" />{active.location}</div>
-                  <div className="rv-hero__showcase-foot">
-                    <span className="rv-hero__showcase-stars">{'★'.repeat(5)}</span>
-                    <span className="rv-hero__showcase-price">
-                      from <strong>${active.price.toLocaleString()}</strong>/night
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {/* Slide dots */}
-              <div className="rv-hero__dots">
-                {heroItems.map((item, i) => (
-                  <button
-                    key={item.id}
-                    className={`rv-hero__dot-btn${i === heroIdx ? ' rv-hero__dot-btn--on' : ''}`}
-                    onClick={() => setHeroIdx(i)}
-                    aria-label={`View ${item.name}`}
-                  >
-                    {i === heroIdx && <span className="rv-hero__dot-fill" style={{ '--dur': '5.5s' }} />}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <button className="rv-hero__scroll-hint" aria-label="Scroll down" onClick={() => window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' })}>
-          <span>Scroll</span>
-          <I n="arrow-down-line" />
-        </button>
-      </section>
-
-      {/* ── BOOKING BAR ── */}
-      <BookingBar />
-
-      {/* ── STATS ── */}
-      <section className="vl-stats-section">
-        <div className="vl-stats-section__bg" aria-hidden="true" />
-        <div className="contain">
-          <div className="vl-stats-grid">
-            {STATS.map((s, i) => (
-              <Reveal key={s.label} delay={i * 90}>
-                <div className="vl-stat-card">
-                  <div className="vl-stat-card__icon"><I n={s.icon} /></div>
-                  <div className="vl-stat-card__body">
-                    <strong className="vl-stat-card__value">{s.value}</strong>
-                    <span className="vl-stat-card__label">{s.label}</span>
-                  </div>
-                  <div className="vl-stat-card__glow" aria-hidden="true" />
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── DESTINATION CATEGORIES ── */}
-      <section className="vl-section vl-cat-section">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head">
-              <div>
-                <span className="vl-eyebrow"><I n="compass-discover-line" /> Explore by Type</span>
-                <h2>Where Does Your Story Begin?</h2>
-              </div>
-              <Link to="/stay" className="vl-see-all">Explore All <I n="arrow-right-line" /></Link>
-            </div>
-          </Reveal>
-          <div className="vl-cat-grid">
-            {DEST_CATEGORIES.map((d, i) => (
-              <Reveal key={d.label} delay={i * 55}>
-                <Link to="/stay" className={`vl-cat-card vl-cat-card--${i}`}>
-                  <div className="vl-cat-card__img">
-                    <img src={d.img} alt={d.label} loading="lazy" />
-                    <div className="vl-cat-card__veil" />
-                  </div>
-                  <div className="vl-cat-card__count">{d.count}</div>
-                  <div className="vl-cat-card__body">
-                    <div className="vl-cat-card__icon"><I n={d.icon} /></div>
-                    <strong className="vl-cat-card__label">{d.label}</strong>
-                    <span className="vl-cat-card__sub">{d.count} destinations</span>
-                    <span className="vl-cat-card__cta">Explore <I n="arrow-right-line" /></span>
-                  </div>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURED STAYS ── */}
-      <section className="vl-section vl-section--alt vl-stays-home">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head">
-              <div>
-                <span className="vl-eyebrow"><I n="hotel-line" /> Accommodations</span>
-                <h2>Where You'll Rest</h2>
-              </div>
-              <Link to="/stay" className="vl-see-all">All Stays <I n="arrow-right-line" /></Link>
-            </div>
-          </Reveal>
-          <div className="vl-stays-home__grid">
-            {/* Featured large card */}
-            <Reveal className="vl-stays-home__featured" delay={0}>
-              <article className="vl-stay-feat-card">
-                <Link to={`/stay/${STAYS[0].id}`} className="vl-stay-feat-card__img">
-                  <img src={STAYS[0].cover} alt={STAYS[0].name} loading="lazy" />
-                  <div className="vl-stay-feat-card__veil" />
-                  <div className="vl-stay-feat-card__overlays">
-                    {STAYS[0].badge && <span className="vl-badge">{STAYS[0].badge}</span>}
-                    <span className="vl-stay-feat-card__atmo">{STAYS[0].atmosphere}</span>
-                  </div>
-                  <div className="vl-stay-feat-card__price-tag">
-                    <span>from</span>
-                    <strong>${STAYS[0].price.toLocaleString()}</strong>
-                    <span>/night</span>
-                  </div>
-                </Link>
-                <div className="vl-stay-feat-card__body">
-                  <div className="vl-stay-feat-card__meta">
-                    <span className="vl-stay-feat-card__cat"><I n="hotel-line" />{STAYS[0].category}</span>
-                    <div className="vl-stay-feat-card__rating"><Stars n={STAYS[0].rating} /> {STAYS[0].rating}</div>
-                  </div>
-                  <h3><Link to={`/stay/${STAYS[0].id}`}>{STAYS[0].name}</Link></h3>
-                  <div className="vl-stay-feat-card__loc"><I n="map-pin-2-line" />{STAYS[0].location}</div>
-                  <p className="vl-stay-feat-card__tagline">"{STAYS[0].tagline}"</p>
-                  <div className="vl-stay-feat-card__highlights">
-                    {STAYS[0].highlights.slice(0, 3).map(h => <span key={h}><I n="check-double-line" />{h}</span>)}
-                  </div>
-                  <div className="vl-stay-feat-card__foot">
-                    <Link to={`/stay/${STAYS[0].id}`} className="vl-btn-primary">View Stay <I n="arrow-right-line" /></Link>
-                    <button className="vl-btn-ghost" onClick={() => setBooking({item: STAYS[0], type: 'stay'})}>Book Now</button>
-                  </div>
-                </div>
-              </article>
-            </Reveal>
-            {/* 2 smaller cards */}
-            <div className="vl-stays-home__stack">
-              {STAYS.slice(1, 3).map((s, i) => (
-                <Reveal key={s.id} delay={i * 90 + 80}>
-                  <StayCard item={s} onBook={s => setBooking({item: s, type: 'stay'})} />
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── MARQUEE ── */}
-      <div className="vl-marq" aria-hidden="true">
-        <div className="vl-marq__track">
-          {[...EXPERIENCES, ...EXPERIENCES].map((e, i) => (
-            <span key={i} className="vl-marq__pill"><I n="sparkling-2-line" />{e.name}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* ── EDITORIAL SPOTLIGHT ── */}
-      <section className="vl-section vl-curators-pick">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow"><I n="newspaper-line" /> Curator's Pick</span>
-              <h2>Journey of the Season</h2>
-              <p className="vl-sec-sub">Our head curator selects one extraordinary journey each season — chosen for uniqueness, timing, and the memories it creates.</p>
-            </div>
-          </Reveal>
-          <Reveal delay={100}>
-            <div className="vl-cp-card">
-              {/* BG image with parallax feel */}
-              <div className="vl-cp-card__bg">
-                <img src={PACKAGES[1].cover} alt={PACKAGES[1].name} />
-                <div className="vl-cp-card__bg-veil" />
-              </div>
-              <div className="vl-cp-card__inner">
-                {/* Left editorial block */}
-                <div className="vl-cp-card__left">
-                  <div className="vl-cp-card__badges">
-                    <span className="vl-badge">Season Pick</span>
-                    <span className="vl-cp-card__dur-pill"><I n="calendar-2-line" />{PACKAGES[1].duration}</span>
-                  </div>
-                  <span className="vl-cp-card__loc"><I n="map-pin-2-line" />{PACKAGES[1].location}</span>
-                  <h3 className="vl-cp-card__title">{PACKAGES[1].name}</h3>
-                  <p className="vl-cp-card__tagline">"{PACKAGES[1].tagline}"</p>
-                  <p className="vl-cp-card__desc">{PACKAGES[1].description.slice(0, 180)}…</p>
-                </div>
-                {/* Right price + includes block */}
-                <div className="vl-cp-card__right">
-                  <div className="vl-cp-card__price-block">
-                    <span className="vl-cp-card__from">Starting from</span>
-                    <div className="vl-cp-card__price"><strong>${PACKAGES[1].price.toLocaleString()}</strong><span>/{PACKAGES[1].pricePer}</span></div>
-                  </div>
-                  <div className="vl-cp-card__includes">
-                    <span className="vl-cp-card__inc-label"><I n="check-double-line" /> What's included</span>
-                    <ul>
-                      {PACKAGES[1].includes.slice(0, 4).map(inc => (
-                        <li key={inc}><I n="check-line" />{inc}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="vl-cp-card__actions">
-                    <Link to={`/packages/${PACKAGES[1].id}`} className="vl-btn-primary">
-                      View Full Itinerary <I n="arrow-right-line" />
-                    </Link>
-                  </div>
-                  <p className="vl-cp-card__note"><I n="shield-check-line" /> Free cancellation · 24h concierge</p>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── FEATURED ACTIVITIES ── */}
-      <section className="vl-section vl-section--alt vl-activities-home">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head">
-              <div>
-                <span className="vl-eyebrow"><I n="compass-3-line" /> Activities</span>
-                <h2>Moments Worth Having</h2>
-              </div>
-              <Link to="/experiences" className="vl-see-all">All Activities <I n="arrow-right-line" /></Link>
-            </div>
-          </Reveal>
-          <div className="vl-act-grid">
-            {EXPERIENCES.slice(0, 4).map((e, i) => (
-              <Reveal key={e.id} delay={i * 70}>
-                <article className="vl-act-card">
-                  <Link to={`/experiences/${e.id}`} className="vl-act-card__img">
-                    <img src={e.cover} alt={e.name} loading="lazy" />
-                    <div className="vl-act-card__veil" />
-                    <div className="vl-act-card__top">
-                      {e.badge && <span className="vl-badge">{e.badge}</span>}
-                      <span className={`vl-diff vl-diff--${e.difficulty.toLowerCase()}`}>{e.difficulty}</span>
-                    </div>
-                    <div className="vl-act-card__chips">
-                      <span><I n="time-line" />{e.duration}</span>
-                      <span><I n="group-line" />{e.groupSize}</span>
-                    </div>
-                  </Link>
-                  <div className="vl-act-card__body">
-                    <div className="vl-act-card__row">
-                      <span className="vl-act-card__cat"><I n="compass-3-line" />{e.category}</span>
-                      <span className="vl-act-card__price"><strong>${e.price}</strong>/pp</span>
-                    </div>
-                    <h3><Link to={`/experiences/${e.id}`}>{e.name}</Link></h3>
-                    <div className="vl-act-card__loc"><I n="map-pin-2-line" />{e.location}</div>
-                    <div className="vl-act-card__foot">
-                      <Link to={`/experiences/${e.id}`} className="vl-pill-btn vl-pill-btn--ghost">Details</Link>
-                      <button className="vl-pill-btn" onClick={() => setBooking({item: e, type: 'experiences'})}>Reserve <I n="arrow-right-line" /></button>
-                    </div>
-                  </div>
-                </article>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHY TERRANOVA ── */}
-      <section className="vl-section vl-why">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow"><I n="award-line" /> Why TERRANOVA</span>
-              <h2>Curation Over Commission</h2>
-              <p className="vl-sec-sub">Every choice we make serves only one person: you.</p>
-            </div>
-          </Reveal>
-          <div className="vl-why__grid">
-            {WHY_US.map((w, i) => (
-              <Reveal key={w.title} delay={i * 80}>
-                <div className="vl-why__card">
-                  <div className="vl-why__icon"><I n={w.icon} /></div>
-                  <h4>{w.title}</h4>
-                  <p>{w.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── AMENITIES ── */}
-      <section className="vl-section vl-amenities-sec">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow"><I n="service-line" /> Every Journey, Elevated</span>
-              <h2>Included as Standard</h2>
-              <p className="vl-sec-sub">Thoughtful services that make a TERRANOVA journey feel effortlessly seamless — from the moment you depart.</p>
-            </div>
-          </Reveal>
-          <div className="vl-amenities-sec__grid">
-            {AMENITIES.map((a, i) => (
-              <Reveal key={a.title} delay={i * 65}>
-                <div className="vl-amenity-card">
-                  <div className="vl-amenity-card__icon"><I n={a.icon} /></div>
-                  <div className="vl-amenity-card__body">
-                    <h4>{a.title}</h4>
-                    <p>{a.desc}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PACKAGES ── */}
-      <section className="vl-section vl-section--alt">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow"><I n="gift-2-line" /> Packages</span>
-              <h2>Complete Journeys</h2>
-              <p className="vl-sec-sub">Every detail handled. Every moment considered. Just arrive.</p>
-            </div>
-          </Reveal>
-          <div className="vl-pkg-grid">
-            {PACKAGES.slice(0, 3).map((p, i) => (
-              <Reveal key={p.id} delay={i * 80}>
-                <PkgCard item={p} onBook={p => setBooking({item: p, type: 'packages'})} />
-              </Reveal>
-            ))}
-          </div>
-          <Reveal delay={200}>
-            <div className="vl-sec-cta">
-              <Link to="/packages" className="vl-btn-primary">All Packages <I n="arrow-right-line" /></Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ── */}
-      <section className="vl-section vl-testimonials-sec">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow"><I n="double-quotes-l" /> Guest Stories</span>
-              <h2>Why Travellers Return</h2>
-            </div>
-          </Reveal>
-          <Reveal delay={100}>
-            <div className="vl-test-wrap">
-              <div className="vl-test-track" style={{ transform: `translateX(-${testIdx * 100}%)` }}>
-                {TESTIMONIALS.map((t, i) => (
-                  <article className="vl-testimonial" key={i}>
-                    <Stars n={t.rating} />
-                    <blockquote>"{t.text}"</blockquote>
-                    <div className="vl-test-loc"><I n="map-pin-line" />{t.location}</div>
-                    <cite>
-                      <img src={t.img} alt={t.name} />
-                      <div><strong>{t.name}</strong><span>{t.role}</span></div>
-                    </cite>
-                  </article>
-                ))}
-              </div>
-            </div>
-            <div className="vl-test-nav">
-              <button onClick={() => setTestIdx(i => Math.max(0, i - 1))} className="vl-test-arrow" disabled={testIdx === 0}><I n="arrow-left-line" /></button>
-              <div className="vl-test-dots">
-                {TESTIMONIALS.map((_, i) => (
-                  <button key={i} className={`vl-dot${testIdx === i ? ' vl-dot--on' : ''}`} onClick={() => setTestIdx(i)} />
-                ))}
-              </div>
-              <button onClick={() => setTestIdx(i => Math.min(TESTIMONIALS.length - 1, i + 1))} className="vl-test-arrow" disabled={testIdx === TESTIMONIALS.length - 1}><I n="arrow-right-line" /></button>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── FULL-BLEED CTA ── */}
-      <section className="vl-cta-band">
-        <div className="vl-cta-band__bg" aria-hidden="true" />
-        <div className="contain vl-cta-band__inner">
-          <Reveal>
-            <span className="vl-eyebrow vl-eyebrow--light"><I n="sparkling-2-line" /> Let's Begin</span>
-            <h2>Where Do You Want to<br /><span className="vl-gradient-text">Feel Alive?</span></h2>
-            <p>Tell us what moves you. We'll craft an itinerary you'll describe for the rest of your life.</p>
-            <div className="vl-cta-band__actions">
-              <Link to="/packages" className="vl-btn-primary">Start Planning <I n="arrow-right-line" /></Link>
-              <Link to="/about" className="vl-btn-ghost">Meet Our Curators</Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-    </>
-  )
-}
-
-/* ═══════════════════════════════
-   ABOUT PAGE
-═══════════════════════════════ */
-function AboutPage() {
-  return (
-    <main className="vl-about">
-      <section className="vl-page-hero vl-page-hero--about">
-        <div className="vl-page-hero__veil" />
-        <div className="contain">
-          <Reveal>
-            <span className="vl-eyebrow vl-eyebrow--light">Our Story</span>
-            <h1>Travel That Changes You</h1>
-            <p>TERRANOVA was founded on a single belief: extraordinary travel should be accessible to those who seek it, not just those who stumble upon it.</p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* BIG STATS STRIP */}
-      <section className="vl-about-stats-strip">
-        <div className="contain">
-          <div className="vl-about-stats-strip__grid">
-            {STATS.map((s, i) => (
-              <Reveal key={s.label} delay={i * 80}>
-                <div className="vl-about-stat-big">
-                  <div className="vl-about-stat-big__icon"><I n={s.icon} /></div>
-                  <strong className="vl-about-stat-big__value">{s.value}</strong>
-                  <span className="vl-about-stat-big__label">{s.label}</span>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* MISSION STATEMENT */}
-      <section className="vl-section vl-about-mission">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-about-mission__inner">
-              <div className="vl-about-mission__text">
-                <span className="vl-eyebrow"><I n="heart-line" /> Why We Exist</span>
-                <h2>Curation Over Commission</h2>
-                <p>Most travel platforms are built around paid placements and algorithmic recommendations. We're different — every destination, stay, and experience on TERRANOVA has been visited by a member of our team. If we wouldn't go back, we won't list it.</p>
-                <p>Our curators live in the places you dream of visiting. They know the hidden valley restaurant, the guide who'll take you off the beaten path, and the best season to witness something unforgettable.</p>
-                <div className="vl-about-mission__bullets">
-                  {WHY_US.map(w => (
-                    <div key={w.title} className="vl-about-mission__bullet">
-                      <div className="vl-about-mission__bullet-icon"><I n={w.icon} /></div>
-                      <div>
-                        <strong>{w.title}</strong>
-                        <p>{w.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="vl-about-mission__img">
-                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&auto=format&fit=crop" alt="Wild Routes — TERRANOVA" loading="lazy" />
-                <div className="vl-about-mission__img-overlay">
-                  <span className="vl-badge">18 Years of Curation</span>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* TEAM GRID */}
-      <section className="vl-section vl-section--alt">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow"><I n="team-line" /> The Team</span>
-              <h2>Meet Our Curators</h2>
-              <p className="vl-sec-sub">Travel obsessives, former guides, and local insiders who live the journeys they create.</p>
-            </div>
-          </Reveal>
-          <div className="vl-team-grid">
-            {TEAM.map((m, i) => (
-              <Reveal key={m.name} delay={i * 80}>
-                <div className="vl-team-card">
-                  <div className="vl-team-card__img">
-                    <img src={m.img} alt={m.name} />
-                    <div className="vl-team-card__img-overlay">
-                      <p>{m.bio}</p>
-                    </div>
-                  </div>
-                  <div className="vl-team-card__body">
-                    <h4>{m.name}</h4>
-                    <span>{m.role}</span>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* PROMISE / WHY US */}
-      <section className="vl-section">
-        <div className="contain">
-          <Reveal>
-            <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow"><I n="award-line" /> Our Promise</span>
-              <h2>The TERRANOVA Standard</h2>
-            </div>
-          </Reveal>
-          <div className="vl-why__grid">
-            {WHY_US.map((w, i) => (
-              <Reveal key={w.title} delay={i * 80}>
-                <div className="vl-why__card">
-                  <div className="vl-why__icon"><I n={w.icon} /></div>
-                  <h4>{w.title}</h4>
-                  <p>{w.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FULL-BLEED CTA */}
-      <section className="vl-about-cta">
-        <div className="contain">
-          <Reveal>
-            <em className="vl-about-cta__quote">
-              "We don't sell holidays. We architect moments that become the stories you tell for the rest of your life."
-            </em>
-            <div className="vl-about-cta__sig">— Sofia Almeria, Founder</div>
-            <div className="vl-about-cta__actions">
-              <Link to="/packages" className="vl-btn-primary">Browse Packages <I n="arrow-right-line" /></Link>
-              <Link to="/contact" className="vl-btn-ghost">Speak to a Curator</Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-    </main>
-  )
-}
-
-/* ═══════════════════════════════
-   STAYS LIST PAGE
-═══════════════════════════════ */
-function StaysPage() {
-  const [filter, setFilter] = useState('All')
-  const [sort, setSort] = useState('default')
-  const [booking, setBooking] = useState(null)
-  const cats = ['All', ...new Set(STAYS.map(s => s.category))]
-  let shown = filter === 'All' ? [...STAYS] : STAYS.filter(s => s.category === filter)
-  if (sort === 'price-asc') shown = [...shown].sort((a, b) => a.price - b.price)
-  if (sort === 'price-desc') shown = [...shown].sort((a, b) => b.price - a.price)
-  if (sort === 'rating') shown = [...shown].sort((a, b) => b.rating - a.rating)
-
-  return (
-    <main className="vl-list-page">
-      {booking && <BookingModal item={booking} type="stay" onClose={() => setBooking(null)} />}
-      <section className="vl-page-hero vl-page-hero--stays">
-        <div className="vl-page-hero__veil" />
-        <div className="contain">
-          <Reveal>
-            <span className="vl-eyebrow vl-eyebrow--light"><I n="hotel-line" /> Accommodations</span>
-            <h1>Where You'll Rest</h1>
-            <p>From overwater villas to mountain retreats — each stay hand-selected for the story it tells.</p>
-          </Reveal>
-        </div>
-      </section>
-      <div className="contain">
-        <div className="vl-list-toolbar">
-          <div className="vl-filter-pills">
-            {cats.map(c => (
-              <button key={c} className={`vl-filter-pill${filter === c ? ' vl-filter-pill--on' : ''}`} onClick={() => setFilter(c)}>{c}</button>
-            ))}
-          </div>
-          <div className="vl-sort-select">
-            <I n="arrow-up-down-line" />
-            <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort by">
-              <option value="default">Featured</option>
-              <option value="rating">Top Rated</option>
-              <option value="price-asc">Price: Low → High</option>
-              <option value="price-desc">Price: High → Low</option>
-            </select>
-          </div>
-        </div>
-        {/* Featured + grid layout */}
-        {shown.length > 0 && (
-          <div className="vl-stays-list-layout">
-            {shown.length >= 1 && (
-              <Reveal className="vl-stays-list-layout__featured">
-                <article className="vl-stay-hero-card">
-                  <Link to={`/stay/${shown[0].id}`} className="vl-stay-hero-card__img">
-                    <img src={shown[0].cover} alt={shown[0].name} />
-                    <div className="vl-stay-hero-card__veil" />
-                    <div className="vl-stay-hero-card__overlays">
-                      {shown[0].badge && <span className="vl-badge">{shown[0].badge}</span>}
-                      <div className="vl-stay-hero-card__atmo">{shown[0].atmosphere}</div>
-                    </div>
-                  </Link>
-                  <div className="vl-stay-hero-card__body">
-                    <div className="vl-stay-hero-card__meta">
-                      <span className="vl-stay-hero-card__cat"><I n="hotel-line" />{shown[0].category}</span>
-                      <span className="vl-stay-hero-card__region"><I n="globe-line" />{shown[0].region}</span>
-                      <div className="vl-stay-hero-card__rating"><Stars n={shown[0].rating} /> {shown[0].rating} <span>({shown[0].reviews})</span></div>
-                    </div>
-                    <h2><Link to={`/stay/${shown[0].id}`}>{shown[0].name}</Link></h2>
-                    <div className="vl-stay-hero-card__loc"><I n="map-pin-2-line" />{shown[0].location}</div>
-                    <p className="vl-stay-hero-card__tagline">"{shown[0].tagline}"</p>
-                    <div className="vl-stay-hero-card__highlights">
-                      {shown[0].highlights.slice(0, 4).map(h => <span key={h}><I n="check-double-line" />{h}</span>)}
-                    </div>
-                    <div className="vl-stay-hero-card__foot">
-                      <div className="vl-stay-hero-card__price">
-                        <span>from</span><strong>${shown[0].price.toLocaleString()}</strong><span>/night</span>
-                      </div>
-                      <div className="vl-stay-hero-card__btns">
-                        <Link to={`/stay/${shown[0].id}`} className="vl-btn-primary">View Stay <I n="arrow-right-line" /></Link>
-                        <button className="vl-btn-ghost" onClick={() => setBooking(shown[0])}>Book</button>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              </Reveal>
-            )}
-            <div className="vl-stays-list-layout__grid">
-              {shown.slice(1).map((s, i) => (
-                <Reveal key={s.id} delay={i * 60}>
-                  <StayCard item={s} onBook={setBooking} />
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        )}
-        {shown.length === 0 && (
-          <div className="vl-no-results">
-            <I n="search-line" />
-            <p>No stays match this filter.</p>
-            <button className="vl-btn-ghost" onClick={() => setFilter('All')}>Clear filter</button>
-          </div>
-        )}
-      </div>
-    </main>
-  )
-}
-
-/* ═══════════════════════════════
-   STAY DETAIL PAGE — Immersive
-═══════════════════════════════ */
-function StayDetailPage() {
-  const { id } = useParams()
-  const nav = useNavigate()
-  const item = STAYS.find(s => s.id === id)
-  const [imgIdx, setImgIdx] = useState(0)
-  const [booking, setBooking] = useState(false)
-  const heroRef = useRef(null)
-
-  useEffect(() => {
-    const el = heroRef.current
-    if (!el) return
-    const onScroll = () => {
-      const y = window.scrollY
-      el.style.transform = `scale(1.08) translateY(${y * 0.22}px)`
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  if (!item) return <NotFound />
-
-  const related = STAYS.filter(s => s.id !== item.id && s.category === item.category).slice(0, 3)
-  const allImages = item.images || [item.cover]
-
-  return (
-    <main className="vl-sd" style={{ '--ac': item.color }}>
-      {booking && <BookingModal item={item} type="stay" onClose={() => setBooking(false)} />}
-
-      {/* ── FULL-VH PARALLAX HERO ── */}
-      <div className="vl-sd__hero">
-        <img ref={heroRef} src={item.cover} alt={item.name} className="vl-sd__hero-bg" />
-        <div className="vl-sd__hero-veil" />
-
-        <div className="vl-sd__hero-nav contain">
-          <button className="vl-back-btn" onClick={() => nav(-1)}><I n="arrow-left-line" /> All Stays</button>
-          <div className="vl-sd__hero-badges">
-            {item.badge && <span className="vl-badge">{item.badge}</span>}
-            <span className="vl-sd__hero-pill">{item.category}</span>
-            <span className="vl-sd__hero-pill"><I n="globe-line" />{item.region}</span>
-          </div>
-        </div>
-
-        <div className="vl-sd__hero-foot contain">
-          <div className="vl-sd__hero-atmo">
-            {item.atmosphere.split(' · ').map((a, i) => (
-              <span key={a}>{i > 0 && <em>·</em>}{a}</span>
-            ))}
-          </div>
-          <h1 className="vl-sd__hero-title">{item.name}</h1>
-          <div className="vl-sd__hero-meta">
-            <span className="vl-sd__hero-loc"><I n="map-pin-2-fill" />{item.location}</span>
-            <span className="vl-sd__hero-rating">
-              <I n="star-fill" />{item.rating}
-              <em>({item.reviews} reviews)</em>
-            </span>
-          </div>
-        </div>
-
-        <div className="vl-sd__scroll-hint" aria-hidden="true">
-          <span>Scroll to explore</span>
-          <div className="vl-sd__scroll-line" />
-        </div>
-      </div>
-
-      {/* ── CINEMATIC GALLERY ── */}
-      <div className="vl-sd__gallery contain">
-        <div className="vl-sd__gallery-main">
-          <img src={allImages[imgIdx] || item.cover} alt={item.name} />
-          <div className="vl-sd__gallery-veil" />
-          <button className="vl-sd__gallery-arr vl-sd__gallery-arr--prev"
-            onClick={() => setImgIdx(i => Math.max(0, i - 1))}
-            disabled={imgIdx === 0} aria-label="Previous">
-            <I n="arrow-left-s-line" />
-          </button>
-          <button className="vl-sd__gallery-arr vl-sd__gallery-arr--next"
-            onClick={() => setImgIdx(i => Math.min(allImages.length - 1, i + 1))}
-            disabled={imgIdx === allImages.length - 1} aria-label="Next">
-            <I n="arrow-right-s-line" />
-          </button>
-          <div className="vl-sd__gallery-counter">
-            <I n="image-line" /> {imgIdx + 1} / {allImages.length}
-          </div>
-        </div>
-        <div className="vl-sd__gallery-rail">
-          {allImages.map((img, i) => (
-            <button key={i}
-              className={`vl-sd__gallery-thumb${imgIdx === i ? ' --on' : ''}`}
-              onClick={() => setImgIdx(i)}>
-              <img src={img} alt={`View ${i + 1}`} loading="lazy" />
-              {imgIdx === i && <div className="vl-sd__gallery-thumb-sel" />}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── BODY ── */}
-      <div className="vl-sd__body contain">
-        <div className="vl-sd__main">
-
-          <Reveal>
-            <blockquote className="vl-sd__quote">"{item.tagline}"</blockquote>
-            <p className="vl-sd__desc">{item.description}</p>
-          </Reveal>
-
-          {/* HIGHLIGHTS — numbered list with editorial styling */}
-          <Reveal delay={60}>
-            <h3 className="vl-sd__section-h"><I n="star-line" /> Why You'll Love It</h3>
-            <div className="vl-sd__hl-list">
-              {item.highlights.map((h, i) => (
-                <div key={h} className="vl-sd__hl-row">
-                  <span className="vl-sd__hl-num">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="vl-sd__hl-text">{h}</span>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-
-          {/* AMENITIES */}
-          <Reveal delay={80}>
-            <h3 className="vl-sd__section-h"><I n="service-line" /> Amenities</h3>
-            <div className="vl-sd__amenities">
-              {item.amenities.map(a => (
-                <span key={a} className="vl-sd__amenity">
-                  <I n="checkbox-circle-fill" />{a}
-                </span>
-              ))}
-            </div>
-          </Reveal>
-
-          {/* ATMOSPHERIC MID-IMAGE */}
-          <Reveal delay={100}>
-            <div className="vl-sd__mid-img">
-              <img src={allImages[1] || item.cover} alt={item.name} loading="lazy" />
-              <div className="vl-sd__mid-img-veil" />
-              <div className="vl-sd__mid-img-caption">
-                <I n="map-pin-line" />{item.location}
-              </div>
-            </div>
-          </Reveal>
-        </div>
-
-        {/* ── STICKY BOOKING CARD ── */}
-        <aside className="vl-sd__aside">
-          <div className="vl-sd__book-card">
-            <div className="vl-sd__book-top">
-              <div className="vl-sd__book-price">
-                <span>From</span>
-                <strong>${item.price.toLocaleString()}</strong>
-                <small>/night</small>
-              </div>
-              <div className="vl-sd__book-badge">
-                <Stars n={item.rating} />
-                <span>{item.rating}</span>
-              </div>
-            </div>
-            <div className="vl-sd__book-meta">
-              <span><I n="globe-line" />{item.region}</span>
-              <span><I n="hotel-line" />{item.category}</span>
-              <span><I n="group-line" />{item.reviews} reviews</span>
-            </div>
-            <div className="vl-sd__book-divider" />
-            <ul className="vl-sd__book-perks">
-              {item.highlights.slice(0, 4).map(h => (
-                <li key={h}><I n="check-line" />{h}</li>
-              ))}
-            </ul>
-            <button className="vl-btn-primary vl-btn-primary--full vl-sd__book-cta" onClick={() => setBooking(true)}>
-              <I n="calendar-check-line" /> Book This Stay
-            </button>
-            <Link to={`/book/stay/${item.id}`} className="vl-sd__book-onboard">
-              <I n="sparkling-2-line" /> Full booking experience
-            </Link>
-            <div className="vl-sd__book-trust">
-              <span><I n="shield-check-line" />Free cancel 48h</span>
-              <span><I n="customer-service-2-line" />24/7 support</span>
-            </div>
-          </div>
-        </aside>
-      </div>
-
-      {/* ── RELATED ── */}
-      {related.length > 0 && (
-        <section className="vl-sd__related">
-          <div className="contain">
-            <Reveal>
-              <div className="vl-sec-head">
-                <span className="vl-eyebrow"><I n="hotel-line" /> More Like This</span>
-                <h3>You Might Also Love</h3>
-              </div>
-            </Reveal>
-            <div className="vl-cards-grid">
-              {related.map((s, i) => (
-                <Reveal key={s.id} delay={i * 70}>
-                  <StayCard item={s} />
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-    </main>
-  )
-}
-
-/* ═══════════════════════════════
-   EXPERIENCES LIST PAGE
-═══════════════════════════════ */
-function ExperiencesPage() {
-  const [filter, setFilter] = useState('All')
-  const [diff, setDiff] = useState('All')
-  const [booking, setBooking] = useState(null)
-  const cats = ['All', ...new Set(EXPERIENCES.map(e => e.category))]
-  const diffs = ['All', 'Easy', 'Intermediate', 'Expert']
-  const shown = EXPERIENCES.filter(e =>
-    (filter === 'All' || e.category === filter) &&
-    (diff === 'All' || e.difficulty === diff)
-  )
-
-  return (
-    <main className="vl-list-page">
-      {booking && <BookingModal item={booking} type="experiences" onClose={() => setBooking(null)} />}
-      <section className="vl-page-hero vl-page-hero--exp">
-        <div className="vl-page-hero__veil" />
-        <div className="contain">
-          <Reveal>
-            <span className="vl-eyebrow vl-eyebrow--light"><I n="compass-3-line" /> Activities</span>
-            <h1>Moments Worth Having</h1>
-            <p>Guided experiences curated by those who know the land, sea, and sky better than anyone.</p>
-          </Reveal>
-        </div>
-      </section>
-      <div className="contain">
-        <div className="vl-list-toolbar">
-          <div className="vl-filter-pills">
-            {cats.map(c => (
-              <button key={c} className={`vl-filter-pill${filter === c ? ' vl-filter-pill--on' : ''}`} onClick={() => setFilter(c)}>{c}</button>
-            ))}
-          </div>
-          <div className="vl-filter-pills vl-filter-pills--diff">
-            {diffs.map(d => (
-              <button key={d} className={`vl-filter-pill vl-filter-pill--sm${diff === d ? ' vl-filter-pill--on' : ''}`} onClick={() => setDiff(d)}>{d}</button>
-            ))}
-          </div>
-        </div>
-        <div className="vl-exp-masonry">
-          {shown.map((e, i) => (
-            <Reveal key={e.id} delay={i * 55}>
-              <article className="vl-exp-masonry__card">
-                <Link to={`/experiences/${e.id}`} className="vl-exp-masonry__img">
-                  <img src={e.cover} alt={e.name} loading="lazy" />
-                  <div className="vl-exp-masonry__veil" />
-                  <div className="vl-exp-masonry__top">
-                    {e.badge && <span className="vl-badge">{e.badge}</span>}
-                    <span className={`vl-diff vl-diff--${e.difficulty.toLowerCase()}`}>{e.difficulty}</span>
-                  </div>
-                  <div className="vl-exp-masonry__meta-row">
-                    <span><I n="time-line" />{e.duration}</span>
-                    <span><I n="group-line" />{e.groupSize}</span>
-                  </div>
-                </Link>
-                <div className="vl-exp-masonry__body">
-                  <div className="vl-exp-masonry__header">
-                    <span className="vl-exp-masonry__cat"><I n="compass-3-line" />{e.category}</span>
-                    <span className="vl-exp-masonry__price"><strong>${e.price}</strong>/pp</span>
-                  </div>
-                  <h3><Link to={`/experiences/${e.id}`}>{e.name}</Link></h3>
-                  <div className="vl-exp-masonry__loc"><I n="map-pin-2-line" />{e.location}</div>
-                  <p className="vl-exp-masonry__tagline">{e.tagline}</p>
-                  <div className="vl-exp-masonry__foot">
-                    <Link to={`/experiences/${e.id}`} className="vl-pill-btn vl-pill-btn--ghost">Details</Link>
-                    <button className="vl-pill-btn" onClick={() => setBooking(e)}>Reserve <I n="arrow-right-line" /></button>
-                  </div>
-                </div>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-        {shown.length === 0 && (
-          <div className="vl-no-results">
-            <I n="search-line" />
-            <p>No activities match this filter.</p>
-            <button className="vl-btn-ghost" onClick={() => { setFilter('All'); setDiff('All') }}>Clear filters</button>
-          </div>
-        )}
-      </div>
-    </main>
-  )
-}
-
-/* ═══════════════════════════════
-   EXPERIENCE DETAIL — Expedition Style
-═══════════════════════════════ */
-function ExperienceDetailPage() {
-  const { id } = useParams()
-  const nav = useNavigate()
-  const item = EXPERIENCES.find(e => e.id === id)
-  const [booking, setBooking] = useState(false)
-  const [activeImg, setActiveImg] = useState(0)
-
-  if (!item) return <NotFound />
-
-  return (
-    <main className="vl-xd" style={{ '--ac': item.color }}>
-      {booking && <BookingModal item={item} type="experiences" onClose={() => setBooking(false)} />}
-
-      {/* ── CINEMATIC HERO ── */}
-      <div className="vl-xd__hero">
-        <img src={item.cover} alt={item.name} className="vl-xd__hero-bg" />
-        <div className="vl-xd__hero-veil" />
-        <div className="contain vl-xd__hero-inner">
-          <button className="vl-back-btn" onClick={() => nav(-1)}><I n="arrow-left-line" /> All Activities</button>
-          <div className="vl-xd__badges">
-            <span className={`vl-diff vl-diff--${item.difficulty.toLowerCase()}`}>{item.difficulty}</span>
-            {item.badge && <span className="vl-badge">{item.badge}</span>}
-            <span className="vl-xd__cat-pill"><I n="compass-3-line" />{item.category}</span>
-          </div>
-          <h1 className="vl-xd__hero-title">{item.name}</h1>
-          <p className="vl-xd__hero-loc"><I n="map-pin-2-fill" />{item.location}</p>
-        </div>
-        {/* Glass info bar */}
-        <div className="vl-xd__infobar">
-          <div className="vl-xd__stat">
-            <I n="time-line" />
-            <span>Duration</span>
-            <strong>{item.duration}</strong>
-          </div>
-          <div className="vl-xd__stat">
-            <I n="group-line" />
-            <span>Group Size</span>
-            <strong>{item.groupSize}</strong>
-          </div>
-          <div className="vl-xd__stat">
-            <I n="bar-chart-box-line" />
-            <span>Difficulty</span>
-            <strong>{item.difficulty}</strong>
-          </div>
-          <div className="vl-xd__stat vl-xd__stat--price">
-            <I n="price-tag-3-line" />
-            <span>From</span>
-            <strong>${item.price.toLocaleString()}/pp</strong>
-          </div>
-        </div>
-      </div>
-
-      {/* ── GALLERY ── */}
-      <div className="vl-xd__gallery contain">
-        <div className="vl-xd__gallery-main">
-          <img src={item.images[activeImg] || item.cover} alt={item.name} />
-          <div className="vl-xd__gallery-dots">
-            {item.images.map((_, i) => (
-              <button key={i}
-                className={`vl-xd__gallery-dot${activeImg === i ? ' --on' : ''}`}
-                onClick={() => setActiveImg(i)} aria-label={`Photo ${i + 1}`} />
-            ))}
-          </div>
-        </div>
-        <div className="vl-xd__gallery-rail">
-          {item.images.map((img, i) => (
-            <button key={i}
-              className={`vl-xd__gallery-thumb${activeImg === i ? ' --on' : ''}`}
-              onClick={() => setActiveImg(i)}>
-              <img src={img} alt={`View ${i + 1}`} loading="lazy" />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── BODY ── */}
-      <div className="vl-xd__body contain">
-        <div className="vl-xd__main">
-          <Reveal>
-            <blockquote className="vl-xd__quote">"{item.tagline}"</blockquote>
-            <p className="vl-xd__desc">{item.description}</p>
-          </Reveal>
-
-          {/* JOURNEY STEPS */}
-          <Reveal delay={60}>
-            <h3 className="vl-xd__section-h"><I n="route-line" /> Your Journey</h3>
-          </Reveal>
-          <div className="vl-xd__journey">
-            {item.whatToExpect.map((step, i) => (
-              <Reveal key={i} delay={i * 50}>
-                <div className="vl-xd__step">
-                  <div className="vl-xd__step-marker">
-                    <div className="vl-xd__step-dot">{i + 1}</div>
-                    {i < item.whatToExpect.length - 1 && <div className="vl-xd__step-line" />}
-                  </div>
-                  <div className="vl-xd__step-content">{step}</div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-
-        {/* ── SIDEBAR ── */}
-        <aside className="vl-xd__aside">
-          <Reveal>
-            <div className="vl-xd__includes-card">
-              <h4><I n="gift-2-line" /> What's Included</h4>
-              <ul>
-                {item.includes.map(inc => <li key={inc}><I n="check-double-line" />{inc}</li>)}
-              </ul>
-            </div>
-          </Reveal>
-
-          <Reveal delay={50}>
-            <div className="vl-xd__facts-card">
-              <h4>Quick Facts</h4>
-              <div className="vl-xd__facts-grid">
-                <div><I n="time-line" /><span>Duration</span><strong>{item.duration}</strong></div>
-                <div><I n="group-line" /><span>Group Size</span><strong>{item.groupSize}</strong></div>
-                <div><I n="bar-chart-box-line" /><span>Difficulty</span><strong>{item.difficulty}</strong></div>
-                <div><I n="map-pin-line" /><span>Location</span><strong>{item.location}</strong></div>
-              </div>
-            </div>
-          </Reveal>
-
-          <Reveal delay={80}>
-            <div className="vl-xd__book-card">
-              <div className="vl-xd__book-price">
-                <span>From</span>
-                <strong>${item.price.toLocaleString()}</strong>
-                <small>/person</small>
-              </div>
-              <button className="vl-btn-primary vl-btn-primary--full" onClick={() => setBooking(true)}>
-                <I n="calendar-check-line" /> Reserve Spot
-              </button>
-              <Link to={`/book/experience/${item.id}`} className="vl-xd__book-link">
-                <I n="sparkling-2-line" /> Full booking experience
-              </Link>
-              <p className="vl-xd__book-note"><I n="group-line" /> Small group — spots fill fast</p>
-            </div>
-          </Reveal>
-        </aside>
-      </div>
-    </main>
-  )
-}
-
-/* ═══════════════════════════════
-   PACKAGES LIST PAGE
-═══════════════════════════════ */
-function PackagesPage() {
-  const [filter, setFilter] = useState('All')
-  const [booking, setBooking] = useState(null)
-  const durations = ['All', ...new Set(PACKAGES.map(p => p.duration))]
-  const shown = filter === 'All' ? PACKAGES : PACKAGES.filter(p => p.duration === filter)
-
-  return (
-    <main className="vl-list-page">
-      {booking && <BookingModal item={booking} type="packages" onClose={() => setBooking(null)} />}
-      <section className="vl-page-hero vl-page-hero--pkg">
-        <div className="vl-page-hero__veil" />
-        <div className="contain">
-          <Reveal>
-            <span className="vl-eyebrow vl-eyebrow--light"><I n="gift-2-line" /> Curated Journeys</span>
-            <h1>Complete Packages</h1>
-            <p>Every detail handled. Every moment considered. You just have to show up.</p>
-          </Reveal>
-        </div>
-      </section>
-      <div className="contain">
-        <div className="vl-list-toolbar">
-          <div className="vl-filter-pills">
-            {durations.map(d => (
-              <button key={d} className={`vl-filter-pill${filter === d ? ' vl-filter-pill--on' : ''}`} onClick={() => setFilter(d)}>{d}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Featured hero package */}
-        {shown.length > 0 && (
-          <>
-            <Reveal>
-              <article className="vl-pkg-hero-card">
-                <div className="vl-pkg-hero-card__img">
-                  <img src={shown[0].cover} alt={shown[0].name} />
-                  <div className="vl-pkg-hero-card__veil" />
-                  <div className="vl-pkg-hero-card__meta-overlay">
-                    {shown[0].badge && <span className="vl-badge">{shown[0].badge}</span>}
-                    <span className="vl-pkg-hero-card__dur"><I n="calendar-2-line" />{shown[0].duration}</span>
-                  </div>
-                </div>
-                <div className="vl-pkg-hero-card__body">
-                  <div className="vl-pkg-hero-card__loc"><I n="map-pin-2-line" />{shown[0].location}</div>
-                  <h2><Link to={`/packages/${shown[0].id}`}>{shown[0].name}</Link></h2>
-                  <p className="vl-pkg-hero-card__tagline">"{shown[0].tagline}"</p>
-                  <p className="vl-pkg-hero-card__desc">{shown[0].description.slice(0, 200)}…</p>
-                  <div className="vl-pkg-hero-card__includes">
-                    {shown[0].includes.slice(0, 4).map(inc => (
-                      <span key={inc}><I n="check-line" />{inc.split(',')[0]}</span>
-                    ))}
-                  </div>
-                  <div className="vl-pkg-hero-card__foot">
-                    <div className="vl-pkg-hero-card__price">
-                      <span>from</span><strong>${shown[0].price.toLocaleString()}</strong><span>/{shown[0].pricePer}</span>
-                    </div>
-                    <div className="vl-pkg-hero-card__btns">
-                      <Link to={`/packages/${shown[0].id}`} className="vl-btn-primary">View Itinerary <I n="arrow-right-line" /></Link>
-                      <button className="vl-btn-ghost" onClick={() => setBooking(shown[0])}>Request</button>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            </Reveal>
-
-            {/* Remaining grid */}
-            {shown.length > 1 && (
-              <div className="vl-pkg-list-grid">
-                {shown.slice(1).map((p, i) => (
-                  <Reveal key={p.id} delay={i * 80}>
-                    <PkgCard item={p} onBook={setBooking} />
-                  </Reveal>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {shown.length === 0 && (
-          <div className="vl-no-results">
-            <I n="search-line" />
-            <p>No packages match this filter.</p>
-            <button className="vl-btn-ghost" onClick={() => setFilter('All')}>Clear filter</button>
-          </div>
-        )}
-      </div>
-    </main>
-  )
-}
-
-/* ═══════════════════════════════
-   PACKAGE DETAIL — Luxury Itinerary
-═══════════════════════════════ */
-function PackageDetailPage() {
-  const { id } = useParams()
-  const nav = useNavigate()
-  const item = PACKAGES.find(p => p.id === id)
-  const [booking, setBooking] = useState(false)
-  const [openDay, setOpenDay] = useState(0)
-
-  if (!item) return <NotFound />
-
-  const stayData = STAYS.find(s => s.id === item.stay)
-
-  return (
-    <main className="vl-pd" style={{ '--ac': item.color }}>
-      {booking && <BookingModal item={item} type="packages" onClose={() => setBooking(false)} />}
-
-      {/* ── FULL-VH HERO ── */}
-      <div className="vl-pd__hero">
-        <img src={item.cover} alt={item.name} className="vl-pd__hero-bg" />
-        <div className="vl-pd__hero-veil" />
-        <div className="contain vl-pd__hero-inner">
-          <button className="vl-back-btn" onClick={() => nav(-1)}><I n="arrow-left-line" /> All Packages</button>
-          <div className="vl-pd__badges">
-            {item.badge && <span className="vl-badge">{item.badge}</span>}
-            <span className="vl-pd__hero-dur"><I n="calendar-2-line" />{item.duration}</span>
-          </div>
-          <h1 className="vl-pd__hero-title">{item.name}</h1>
-          <p className="vl-pd__hero-loc"><I n="map-pin-2-fill" />{item.location}</p>
-        </div>
-        <div className="vl-pd__statsbar">
-          <div className="vl-pd__stat"><I n="calendar-2-line" /><span>Duration</span><strong>{item.duration}</strong></div>
-          <div className="vl-pd__stat"><I n="map-pin-line" /><span>Destination</span><strong>{item.location}</strong></div>
-          <div className="vl-pd__stat"><I n="check-double-line" /><span>Inclusions</span><strong>{item.includes.length} items</strong></div>
-          <div className="vl-pd__stat vl-pd__stat--price">
-            <I n="price-tag-3-line" /><span>From</span>
-            <strong>${item.price.toLocaleString()}</strong>
-            <em>/{item.pricePer}</em>
-          </div>
-        </div>
-      </div>
-
-      {/* ── IMAGE MOSAIC ── */}
-      <div className="vl-pd__mosaic contain">
-        {item.images.slice(0, 3).map((img, i) => (
-          <div key={i} className={`vl-pd__mosaic-cell vl-pd__mosaic-cell--${i}`}>
-            <img src={img} alt={`${item.name} — ${i + 1}`} loading={i > 0 ? 'lazy' : 'eager'} />
-            <div className="vl-pd__mosaic-veil" />
-          </div>
-        ))}
-      </div>
-
-      {/* ── BODY ── */}
-      <div className="vl-pd__body contain">
-        <div className="vl-pd__main">
-
-          <Reveal>
-            <blockquote className="vl-pd__quote">"{item.tagline}"</blockquote>
-            <p className="vl-pd__desc">{item.description}</p>
-          </Reveal>
-
-          {/* VISUAL ITINERARY */}
-          <Reveal delay={60}>
-            <h3 className="vl-pd__section-h"><I n="route-line" /> Day-by-Day Itinerary</h3>
-          </Reveal>
-          <div className="vl-pd__itinerary">
-            {item.itinerary.map((day, i) => (
-              <Reveal key={day.day} delay={i * 40}>
-                <div className={`vl-pd__day${openDay === i ? ' vl-pd__day--open' : ''}`}>
-                  <button className="vl-pd__day-btn" onClick={() => setOpenDay(openDay === i ? null : i)}>
-                    <div className="vl-pd__day-left">
-                      <div className="vl-pd__day-num">
-                        <span>Day</span>
-                        <strong>{day.day}</strong>
-                      </div>
-                      <span className="vl-pd__day-title">{day.title}</span>
-                    </div>
-                    <div className={`vl-pd__day-toggle${openDay === i ? ' --open' : ''}`}>
-                      <I n="add-line" />
-                    </div>
-                  </button>
-                  <div className="vl-pd__day-body">
-                    <p>{day.desc}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-
-          {/* INCLUDED ACTIVITIES */}
-          {item.experiences && item.experiences.length > 0 && (
-            <>
-              <Reveal delay={80}>
-                <h3 className="vl-pd__section-h"><I n="compass-3-line" /> Activities Included</h3>
-              </Reveal>
-              <div className="vl-pd__activities">
-                {item.experiences.map(expId => {
-                  const e = EXPERIENCES.find(x => x.id === expId)
-                  return e ? (
-                    <Reveal key={expId} delay={50}>
-                      <Link to={`/experiences/${e.id}`} className="vl-pd__act-card">
-                        <div className="vl-pd__act-card__img">
-                          <img src={e.cover} alt={e.name} loading="lazy" />
-                          <div className="vl-pd__act-card__veil" />
-                          <span className={`vl-diff vl-diff--${e.difficulty.toLowerCase()}`}>{e.difficulty}</span>
-                        </div>
-                        <div className="vl-pd__act-card__body">
-                          <div className="vl-pd__act-card__chips">
-                            <span><I n="time-line" />{e.duration}</span>
-                            <span><I n="group-line" />{e.groupSize}</span>
-                          </div>
-                          <h4>{e.name}</h4>
-                          <p className="vl-pd__act-card__loc"><I n="map-pin-line" />{e.location}</p>
-                          <p className="vl-pd__act-card__tag">{e.tagline}</p>
-                        </div>
-                        <div className="vl-pd__act-card__arrow"><I n="arrow-right-line" /></div>
-                      </Link>
-                    </Reveal>
-                  ) : null
-                })}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* ── STICKY ASIDE ── */}
-        <aside className="vl-pd__aside">
-          <Reveal>
-            <div className="vl-pd__price-card">
-              <div className="vl-pd__price-card__top">
-                <div>
-                  <span className="vl-pd__price-card__from">From</span>
-                  <div className="vl-pd__price-card__amount">
-                    <strong>${item.price.toLocaleString()}</strong>
-                    <span>/{item.pricePer}</span>
-                  </div>
-                </div>
-                <div className="vl-pd__price-card__dur">
-                  <I n="calendar-2-line" />{item.duration}
-                </div>
-              </div>
-              <div className="vl-pd__price-card__sep" />
-              <h5>What's Included</h5>
-              <ul className="vl-pd__price-card__list">
-                {item.includes.map(inc => <li key={inc}><I n="check-double-line" />{inc}</li>)}
-              </ul>
-              <button className="vl-btn-primary vl-btn-primary--full" onClick={() => setBooking(true)}>
-                <I n="send-plane-line" /> Request This Journey
-              </button>
-              <Link to={`/book/package/${item.id}`} className="vl-pd__price-card__link">
-                <I n="sparkling-2-line" /> Full booking experience
-              </Link>
-              <p className="vl-pd__price-card__note">
-                <I n="shield-check-line" /> Personalised quote within 24 hours
-              </p>
-            </div>
-          </Reveal>
-
-          {stayData && (
-            <Reveal delay={80}>
-              <div className="vl-pd__stay-box">
-                <div className="vl-pd__stay-box__label"><I n="hotel-line" /> Your Stay</div>
-                <Link to={`/stay/${stayData.id}`} className="vl-pd__stay-link">
-                  <div className="vl-pd__stay-img">
-                    <img src={stayData.cover} alt={stayData.name} loading="lazy" />
-                  </div>
-                  <div className="vl-pd__stay-info">
-                    <span className="vl-pd__stay-cat">{stayData.category}</span>
-                    <h5>{stayData.name}</h5>
-                    <span className="vl-pd__stay-loc"><I n="map-pin-line" />{stayData.location}</span>
-                    <span className="vl-pd__stay-rating"><I n="star-fill" />{stayData.rating}</span>
-                  </div>
-                </Link>
-              </div>
-            </Reveal>
-          )}
-        </aside>
-      </div>
-    </main>
-  )
-}
-
-/* ═══════════════════════════════
+/* ═══════════════════════════════════════════════════════
    FOOTER
-═══════════════════════════════ */
-function SiteFooter() {
+═══════════════════════════════════════════════════════ */
+function Footer() {
   const [email, setEmail] = useState('')
-  const [subscribed, setSubscribed] = useState(false)
-  const [colRef, colsVisible] = useFadeIn(0.08)
-  const handleSub = e => { e.preventDefault(); if (email) setSubscribed(true) }
+  const [done, setDone] = useState(false)
+  const handleSub = (e) => { e.preventDefault(); if (email.trim()) { setDone(true); setEmail('') } }
 
   return (
-    <footer className="vl-footer">
-      {/* Journal / Newsletter band */}
-      <div className="vl-footer__journal">
-        <div className="contain vl-footer__journal-inner">
-          <div className="vl-footer__journal-text">
-            <span className="vl-eyebrow vl-eyebrow--light"><I n="newspaper-line" /> The TERRANOVA Journal</span>
-            <h3>Rare destinations.<br />Delivered weekly.</h3>
+    <footer className="oz-footer">
+      <div className="oz-footer__body contain">
+        <div className="oz-footer__brand">
+          <OuzaftLogo />
+          <p>Extraordinary stays across Morocco's most magnificent landscapes — designed for those who believe travel is an art form.</p>
+          <div className="oz-footer__socials">
+            {['instagram-line','facebook-circle-line','twitter-x-line','youtube-line'].map(ic => (
+              <a key={ic} href="#" className="oz-footer__soc" aria-label={ic.split('-')[0]}><I n={ic} /></a>
+            ))}
           </div>
-          {subscribed ? (
-            <p className="vl-footer__subbed"><I n="check-double-line" /> You're on the list. Expect something extraordinary.</p>
-          ) : (
-            <form className="vl-footer__journal-form" onSubmit={handleSub}>
-              <div className="vl-footer__journal-input">
-                <I n="mail-send-line" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  required
-                  aria-label="Email for journal"
-                />
-              </div>
-              <button type="submit">
-                Join the Journal <I n="arrow-right-line" />
-              </button>
-            </form>
-          )}
+        </div>
+
+        <div className="oz-footer__col">
+          <h4>Discover</h4>
+          <ul>
+            {[['Stay','/stay'],['Packages','/packages'],['Activities','/activities'],['About','/about'],['Contact','/contact']].map(([l,to]) => (
+              <li key={to}><Link to={to}>{l}</Link></li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="oz-footer__col">
+          <h4>Destinations</h4>
+          <ul>
+            {['Marrakech Medina','Merzouga Sahara','Imlil High Atlas','Essaouira Coast','Fes el-Bali','Palmeraie'].map(d => (
+              <li key={d}><a href="#">{d}</a></li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="oz-footer__col oz-footer__col--news">
+          <h4>The Ouzaft Letter</h4>
+          <p>Stories from Morocco's edges, delivered monthly.</p>
+          {done
+            ? <p className="oz-footer__done"><I n="check-double-line" /> You're on the list — Shukran!</p>
+            : (
+              <form className="oz-footer__form" onSubmit={handleSub}>
+                <input type="email" placeholder="Your email" value={email}
+                  onChange={e => setEmail(e.target.value)} required aria-label="Email" />
+                <button type="submit" aria-label="Subscribe"><I n="arrow-right-line" /></button>
+              </form>
+            )
+          }
+          <div className="oz-footer__meta">
+            <span><I n="phone-line" /> +212 522 00 00 00</span>
+            <span><I n="mail-line" /> stay@ouzaft.ma</span>
+            <span><I n="map-pin-2-line" /> Merzouga, Morocco</span>
+          </div>
         </div>
       </div>
 
-      {/* Main footer grid */}
-      <div className="vl-footer__glass">
-        <div
-          className={`contain vl-footer__inner${colsVisible ? ' vl-footer__inner--on' : ''}`}
-          ref={colRef}
-        >
-          {/* BRAND */}
-          <div className="vl-footer__brand vl-footer__col-fade" style={{ '--col-delay': '0ms' }}>
-            <TerranovaLogo />
-            <p>Building unforgettable journeys for those who seek the extraordinary — not just the expected.</p>
-            <ul className="vl-footer__social">
-              <li><a href="#" aria-label="Instagram"><I n="instagram-line" /></a></li>
-              <li><a href="#" aria-label="Pinterest"><I n="pinterest-line" /></a></li>
-              <li><a href="#" aria-label="Twitter/X"><I n="twitter-x-line" /></a></li>
-              <li><a href="#" aria-label="YouTube"><I n="youtube-line" /></a></li>
-              <li><a href="#" aria-label="Facebook"><I n="facebook-line" /></a></li>
-            </ul>
-            <div className="vl-footer__trust">
-              <span><I n="award-line" /> Best Luxury Travel 2025</span>
-              <span><I n="shield-star-line" /> Verified &amp; Trusted</span>
-            </div>
-          </div>
+      <OrnamentDivider className="oz-footer__orn" />
 
-          {/* EXPLORE */}
-          <div className="vl-footer__col vl-footer__col-fade" style={{ '--col-delay': '80ms' }}>
-            <h5>Explore</h5>
-            <ul>
-              <li><Link to="/stay"><I n="arrow-right-s-line" />Stays</Link></li>
-              <li><Link to="/experiences"><I n="arrow-right-s-line" />Activities</Link></li>
-              <li><Link to="/packages"><I n="arrow-right-s-line" />Packages</Link></li>
-              <li><Link to="/about"><I n="arrow-right-s-line" />About Us</Link></li>
-              <li><Link to="/contact"><I n="arrow-right-s-line" />Contact</Link></li>
-            </ul>
-          </div>
-
-          {/* HELPFUL */}
-          <div className="vl-footer__col vl-footer__col-fade" style={{ '--col-delay': '160ms' }}>
-            <h5>Helpful</h5>
-            <ul>
-              <li><a href="#"><I n="arrow-right-s-line" />FAQs</a></li>
-              <li><a href="#"><I n="arrow-right-s-line" />Support</a></li>
-              <li>
-                <a href="#" className="vl-footer__live-link">
-                  <I n="arrow-right-s-line" />Live Chat
-                  <span className="vl-footer__ping"><span /><span /></span>
-                </a>
-              </li>
-              <li><a href="#"><I n="arrow-right-s-line" />Privacy</a></li>
-              <li><a href="#"><I n="arrow-right-s-line" />Terms</a></li>
-            </ul>
-          </div>
-
-          {/* CONTACT */}
-          <div className="vl-footer__col vl-footer__col--contact vl-footer__col-fade" style={{ '--col-delay': '240ms' }}>
-            <h5>Contact Us</h5>
-            <ul className="vl-footer__contact-list">
-              <li>
-                <span className="vl-footer__ci"><I n="mail-line" /></span>
-                <a href="mailto:hello@terranova.travel">hello@terranova.travel</a>
-              </li>
-              <li>
-                <span className="vl-footer__ci"><I n="phone-line" /></span>
-                <a href="tel:+18005550199">+1 800 555 0199</a>
-              </li>
-              <li>
-                <span className="vl-footer__ci"><I n="map-pin-2-line" /></span>
-                <address>12 Curator Lane, Geneva</address>
-              </li>
-              <li>
-                <span className="vl-footer__ci"><I n="time-line" /></span>
-                <span>Mon–Sat · 08:00–20:00 CET</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="vl-footer__bottom">
-          <div className="contain vl-footer__bottom-inner">
-            <span className="vl-footer__bottom-cr">
-              &copy; {new Date().getFullYear()} TERRANOVA &middot; Wild Routes
-            </span>
-            <div className="vl-footer__bottom-links">
-              <a href="#">Privacy Policy</a>
-              <span aria-hidden="true">·</span>
-              <a href="#">Terms</a>
-              <span aria-hidden="true">·</span>
-              <a href="#">Sitemap</a>
-            </div>
-            <button
-              className="vl-footer__top-btn"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              aria-label="Back to top"
-            >
-              <I n="arrow-up-line" />
-            </button>
-          </div>
+      <div className="oz-footer__bottom contain">
+        <p>© 2026 Ouzaft Luxury Stays. All rights reserved.</p>
+        <div className="oz-footer__legal">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Accessibility</a>
         </div>
       </div>
     </footer>
   )
 }
 
-/* ═══════════════════════════════
-   CONTACT PAGE
-═══════════════════════════════ */
-function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
-  const [sent, setSent] = useState(false)
-  const [openFaq, setOpenFaq] = useState(null)
+/* ═══════════════════════════════════════════════════════
+   CARD COMPONENTS
+═══════════════════════════════════════════════════════ */
+function StayCard({ item, delay = 0 }) {
+  return (
+    <Reveal delay={delay}>
+      <article className="oz-stay-card">
+        <Link to={`/stay/${item.id}`} className="oz-stay-card__img">
+          <img src={item.cover} alt={item.name} loading="lazy" />
+          <div className="oz-stay-card__veil" />
+          {item.badge && <span className="oz-badge">{item.badge}</span>}
+          <div className="oz-stay-card__foot-overlay">
+            <span className="oz-stay-card__atmo">{item.atmosphere}</span>
+            <span className="oz-stay-card__price-tag">from <strong>${item.price.toLocaleString()}</strong>/night</span>
+          </div>
+        </Link>
+        <div className="oz-stay-card__body">
+          <div className="oz-stay-card__meta">
+            <span className="oz-stay-card__cat"><I n="map-pin-line" />{item.category}</span>
+            <span className="oz-stay-card__rat"><I n="star-fill" />{item.rating}<span className="oz-muted">({item.reviews})</span></span>
+          </div>
+          <h3><Link to={`/stay/${item.id}`}>{item.name}</Link></h3>
+          <p className="oz-stay-card__loc"><I n="map-pin-2-line" />{item.location}</p>
+          <p className="oz-stay-card__tagline">{item.tagline}</p>
+          <div className="oz-stay-card__actions">
+            <div className="oz-price"><strong>${item.price.toLocaleString()}</strong><span className="oz-muted">/night</span></div>
+            <Link to={`/stay/${item.id}`} className="oz-btn oz-btn--ghost oz-btn--sm">View <I n="arrow-right-s-line" /></Link>
+          </div>
+        </div>
+      </article>
+    </Reveal>
+  )
+}
 
-  const handleSubmit = e => {
-    e.preventDefault()
-    if (form.name && form.email && form.message) setSent(true)
+function ActivityCard({ item, delay = 0 }) {
+  return (
+    <Reveal delay={delay}>
+      <article className="oz-act-card">
+        <Link to={`/activities/${item.id}`} className="oz-act-card__img">
+          <img src={item.cover} alt={item.name} loading="lazy" />
+          <div className="oz-act-card__veil" />
+          <div className="oz-act-card__top">
+            {item.badge && <span className="oz-badge">{item.badge}</span>}
+            <span className="oz-diff" data-diff={item.difficulty.toLowerCase()}>{item.difficulty}</span>
+          </div>
+          <div className="oz-act-card__pills">
+            <span><I n="time-line" />{item.duration}</span>
+            <span><I n="group-line" />{item.groupSize}</span>
+          </div>
+        </Link>
+        <div className="oz-act-card__body">
+          <div className="oz-act-card__hd">
+            <span className="oz-muted oz-act-card__cat"><I n="compass-3-line" />{item.category}</span>
+            <span className="oz-act-card__price"><strong>${item.price}</strong><span className="oz-muted">/pp</span></span>
+          </div>
+          <h3><Link to={`/activities/${item.id}`}>{item.name}</Link></h3>
+          <p>{item.tagline}</p>
+          <Link to={`/activities/${item.id}`} className="oz-btn oz-btn--ghost oz-btn--sm oz-btn--full">
+            Discover <I n="arrow-right-line" />
+          </Link>
+        </div>
+      </article>
+    </Reveal>
+  )
+}
+
+function PackageCard({ item, delay = 0 }) {
+  return (
+    <Reveal delay={delay}>
+      <article className="oz-pkg-card">
+        <Link to={`/packages/${item.id}`} className="oz-pkg-card__img">
+          <img src={item.cover} alt={item.name} loading="lazy" />
+          <div className="oz-pkg-card__veil" />
+          {item.badge && <span className="oz-badge">{item.badge}</span>}
+          <span className="oz-pkg-card__dur"><I n="calendar-2-line" />{item.duration}</span>
+        </Link>
+        <div className="oz-pkg-card__body">
+          <p className="oz-pkg-card__loc"><I n="map-pin-line" />{item.location}</p>
+          <h3><Link to={`/packages/${item.id}`}>{item.name}</Link></h3>
+          <p className="oz-pkg-card__tagline">{item.tagline}</p>
+          <ul className="oz-pkg-card__inc">
+            {item.includes.slice(0,3).map(inc => <li key={inc}><I n="check-line" />{inc}</li>)}
+            {item.includes.length > 3 && <li className="oz-muted"><I n="more-line" />+{item.includes.length - 3} more included</li>}
+          </ul>
+          <div className="oz-pkg-card__foot">
+            <div className="oz-price">
+              <span className="oz-muted">from </span><strong>${item.price.toLocaleString()}</strong>
+              <span className="oz-muted"> /{item.pricePer}</span>
+            </div>
+            <Link to={`/packages/${item.id}`} className="oz-btn oz-btn--primary oz-btn--sm">View <I n="arrow-right-line" /></Link>
+          </div>
+        </div>
+      </article>
+    </Reveal>
+  )
+}
+
+function BlogCard({ item, delay = 0 }) {
+  return (
+    <Reveal delay={delay}>
+      <article className="oz-blog-card">
+        <Link to={`/blog/${item.id}`} className="oz-blog-card__img">
+          <img src={item.cover} alt={item.title} loading="lazy" />
+          <div className="oz-blog-card__veil" />
+          <span className="oz-badge oz-badge--cat">{item.category}</span>
+        </Link>
+        <div className="oz-blog-card__body">
+          <div className="oz-blog-card__meta">
+            <span><I n="calendar-line" />{item.date}</span>
+            <span><I n="time-line" />{item.readTime}</span>
+          </div>
+          <h3><Link to={`/blog/${item.id}`}>{item.title}</Link></h3>
+          <p>{item.excerpt}</p>
+          <div className="oz-blog-card__foot">
+            <span className="oz-blog-card__author"><I n="quill-pen-line" />{item.author}</span>
+            <Link to={`/blog/${item.id}`} className="oz-text-link">Read <I n="arrow-right-line" /></Link>
+          </div>
+        </div>
+      </article>
+    </Reveal>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   HOME — HERO
+═══════════════════════════════════════════════════════ */
+function HeroSection() {
+  const [cur, setCur] = useState(0)
+  const [fading, setFading] = useState(false)
+  const timer = useRef(null)
+
+  const go = (i) => {
+    if (fading) return
+    setFading(true)
+    setTimeout(() => { setCur(i); setFading(false) }, 180)
   }
 
-  return (
-    <main className="vl-contact">
-      {/* HERO */}
-      <section className="vl-page-hero vl-page-hero--contact">
-        <div className="vl-page-hero__veil" />
-        <div className="contain">
-          <Reveal>
-            <span className="vl-eyebrow vl-eyebrow--light"><I n="mail-send-line" /> Get In Touch</span>
-            <h1>Let's Plan Your Journey</h1>
-            <p>Our curators are available Monday–Saturday. Expect a response within 24 hours.</p>
-          </Reveal>
-        </div>
-      </section>
+  useEffect(() => {
+    timer.current = setInterval(() => go((cur + 1) % HERO_SLIDES.length), 6500)
+    return () => clearInterval(timer.current)
+  }, [cur])
 
-      {/* CONTACT CARDS STRIP */}
-      <section className="vl-contact-cards-strip">
-        <div className="contain">
-          <div className="vl-contact-cards-strip__grid">
-            <Reveal delay={0}>
-              <div className="vl-contact-info-card">
-                <div className="vl-contact-info-card__icon"><I n="mail-line" /></div>
-                <h4>Email</h4>
-                <a href="mailto:hello@terranova.travel">hello@terranova.travel</a>
-                <span>We reply within 24h</span>
+  const slide = HERO_SLIDES[cur]
+
+  return (
+    <section className={`oz-hero${fading ? ' oz-hero--fade' : ''}`}>
+      {HERO_SLIDES.map((s, i) => (
+        <div key={s.id}
+          className={`oz-hero__bg${i === cur ? ' oz-hero__bg--on' : ''}`}
+          style={{ backgroundImage: `url(${s.img})` }}
+          aria-hidden="true" />
+      ))}
+      <div className="oz-hero__veil" />
+      <div className="oz-hero__geo" aria-hidden="true" />
+
+      <div className="oz-hero__body contain">
+        <div className="oz-hero__text">
+          <p className="oz-hero__eyebrow">
+            <I n="map-pin-2-line" /> Ouzaft · Morocco's Finest
+          </p>
+          <h1 className="oz-hero__h1" key={cur}>
+            {slide.headline.map((line, i) => (
+              <span key={i} className="oz-hero__line" style={{ animationDelay: `${i * 90}ms` }}>
+                {line}
+              </span>
+            ))}
+          </h1>
+          <p className="oz-hero__sub" key={`s${cur}`}>{slide.sub}</p>
+          <div className="oz-hero__ctas">
+            <Link to={slide.ctaTo} className="oz-btn oz-btn--hero">{slide.ctaLabel}</Link>
+            <Link to="/packages" className="oz-btn oz-btn--hero-ghost">View Packages</Link>
+          </div>
+        </div>
+
+        <div className="oz-hero__scroll" aria-hidden="true">
+          <span className="oz-hero__scroll-label">Scroll</span>
+          <span className="oz-hero__scroll-bar" />
+        </div>
+      </div>
+
+      <div className="oz-hero__controls">
+        <div className="oz-hero__dots" role="tablist">
+          {HERO_SLIDES.map((s, i) => (
+            <button key={s.id} role="tab"
+              className={`oz-hero__dot${i === cur ? ' oz-hero__dot--on' : ''}`}
+              onClick={() => go(i)} aria-selected={i === cur} aria-label={`Slide ${i + 1}`} />
+          ))}
+        </div>
+        <div className="oz-hero__counter" aria-hidden="true">
+          <span className="oz-hero__c-cur">{String(cur + 1).padStart(2,'0')}</span>
+          <span className="oz-hero__c-sep">/</span>
+          <span className="oz-hero__c-tot">{String(HERO_SLIDES.length).padStart(2,'0')}</span>
+        </div>
+      </div>
+
+      <div className="oz-hero__arc" />
+    </section>
+  )
+}
+
+/* ─── Why Strip ────────────────────────────────────────── */
+function WhyStrip() {
+  return (
+    <section className="oz-why-strip">
+      <div className="contain oz-why-strip__grid">
+        {WHY_ITEMS.map((w, i) => (
+          <Reveal key={w.title} delay={i * 60}>
+            <div className="oz-why-item">
+              <span className="oz-why-item__ic"><I n={w.icon} /></span>
+              <div>
+                <strong>{w.title}</strong>
+                <p>{w.desc}</p>
               </div>
-            </Reveal>
-            <Reveal delay={60}>
-              <div className="vl-contact-info-card">
-                <div className="vl-contact-info-card__icon"><I n="phone-line" /></div>
-                <h4>Phone</h4>
-                <a href="tel:+18005550199">+1 800 555 0199</a>
-                <span>Mon–Sat 08:00–20:00 CET</span>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ─── Featured Stays ───────────────────────────────────── */
+function FeaturedStays() {
+  return (
+    <section className="oz-section contain">
+      <Reveal>
+        <SectionHead eyebrow="Our Properties"
+          title="Sanctuaries of Quiet Magnificence"
+          body="Six properties across Morocco's most extraordinary landscapes — each one a private world."
+          center />
+      </Reveal>
+      <div className="oz-stays-grid">
+        {STAYS.slice(0,4).map((s,i) => <StayCard key={s.id} item={s} delay={i * 90} />)}
+      </div>
+      <Reveal>
+        <div className="oz-cta-row">
+          <Link to="/stay" className="oz-btn oz-btn--primary">View All Stays <I n="arrow-right-line" /></Link>
+        </div>
+      </Reveal>
+    </section>
+  )
+}
+
+/* ─── Story Section ────────────────────────────────────── */
+function StorySection() {
+  const [ref, visible] = useFadeIn(0.12)
+  return (
+    <section className="oz-story contain">
+      <div ref={ref} className={`oz-story__grid${visible ? ' oz-story__grid--in' : ''}`}>
+        <div className="oz-story__imgs">
+          <div className="oz-story__img-main">
+            <img src="https://images.unsplash.com/photo-1548013146-72479768bada?w=700&auto=format&fit=crop" alt="Marrakech riad" loading="lazy" />
+          </div>
+          <div className="oz-story__img-float">
+            <img src="https://images.unsplash.com/photo-1512100356356-de1b84283e18?w=400&auto=format&fit=crop" alt="Sahara" loading="lazy" />
+            <div className="oz-story__badge">
+              <strong>Since</strong>
+              <span>2009</span>
+              <small>Building Ouzaft</small>
+            </div>
+          </div>
+        </div>
+        <div className="oz-story__text">
+          <p className="oz-eyebrow-bare">Our Story</p>
+          <h2>Born from the belief that luxury and authenticity are the same thing</h2>
+          <OrnamentDivider />
+          <p>Karim El Ouazzani grew up navigating the Draa Valley before becoming a hotel architect in Paris. He returned to Morocco in 2009 with a single conviction: that the world's greatest hospitality experience was already here, in the land's own materials, its people's inherited knowledge, and its landscapes' supernatural beauty.</p>
+          <p>Ouzaft was built to reveal Morocco rather than package it. Every property is a collaboration with local craftspeople. Every guide is a keeper of knowledge that predates tourism by centuries.</p>
+          <div className="oz-story__stats">
+            {STATS.slice(0,3).map(s => (
+              <div key={s.label} className="oz-story__stat">
+                <strong>{s.value}</strong>
+                <span>{s.label}</span>
               </div>
-            </Reveal>
-            <Reveal delay={120}>
-              <div className="vl-contact-info-card">
-                <div className="vl-contact-info-card__icon"><I n="map-pin-2-line" /></div>
-                <h4>Address</h4>
-                <address>12 Curator Lane, Geneva</address>
-                <span>Switzerland</span>
+            ))}
+          </div>
+          <Link to="/about" className="oz-btn oz-btn--primary">Our Full Story <I n="arrow-right-line" /></Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── Activities Teaser ────────────────────────────────── */
+function ActivitiesTeaser() {
+  return (
+    <section className="oz-section oz-section--tinted">
+      <div className="contain">
+        <Reveal>
+          <SectionHead eyebrow="Experiences" title="Moments That Remain Long After You Leave"
+            body="Curated encounters with Morocco's most extraordinary natural and cultural wonders." center />
+        </Reveal>
+        <div className="oz-act-grid">
+          {ACTIVITIES.slice(0,3).map((a,i) => <ActivityCard key={a.id} item={a} delay={i * 90} />)}
+        </div>
+        <Reveal>
+          <div className="oz-cta-row">
+            <Link to="/activities" className="oz-btn oz-btn--ghost">All Activities <I n="arrow-right-line" /></Link>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  )
+}
+
+/* ─── Packages Teaser ──────────────────────────────────── */
+function PackagesTeaser() {
+  return (
+    <section className="oz-section contain">
+      <Reveal>
+        <SectionHead eyebrow="Curated Journeys" title="Complete Moroccan Immersions"
+          body="Every detail — accommodation, experiences, transfers, and table reservations — designed as a single beautiful arc." center />
+      </Reveal>
+      <div className="oz-pkg-grid">
+        {PACKAGES.slice(0,3).map((p,i) => <PackageCard key={p.id} item={p} delay={i * 90} />)}
+      </div>
+      <Reveal>
+        <div className="oz-cta-row">
+          <Link to="/packages" className="oz-btn oz-btn--primary">View All Packages <I n="arrow-right-line" /></Link>
+        </div>
+      </Reveal>
+    </section>
+  )
+}
+
+/* ─── Full-Bleed Banner ────────────────────────────────── */
+function FullBleedBanner() {
+  return (
+    <section className="oz-banner">
+      <div className="oz-banner__bg" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1800&auto=format&fit=crop')" }} />
+      <div className="oz-banner__veil" />
+      <div className="oz-banner__geo" aria-hidden="true" />
+      <div className="oz-banner__body contain">
+        <Reveal>
+          <p className="oz-banner__eyebrow"><I n="star-line" /> Exclusively Yours</p>
+          <h2>Reserve an Entire Property for Your Celebration</h2>
+          <p>Weddings, anniversaries, family reunions — exclusively private, entirely Ouzaft.</p>
+          <Link to="/contact" className="oz-btn oz-btn--hero">Enquire Now <I n="arrow-right-line" /></Link>
+        </Reveal>
+      </div>
+    </section>
+  )
+}
+
+/* ─── Testimonials ─────────────────────────────────────── */
+function TestimonialsSection() {
+  const [active, setActive] = useState(0)
+  const timer = useRef(null)
+
+  const go = (i) => {
+    setActive(i)
+    clearInterval(timer.current)
+    timer.current = setInterval(() => setActive(p => (p + 1) % TESTIMONIALS.length), 5500)
+  }
+
+  useEffect(() => {
+    timer.current = setInterval(() => setActive(p => (p + 1) % TESTIMONIALS.length), 5500)
+    return () => clearInterval(timer.current)
+  }, [])
+
+  const t = TESTIMONIALS[active]
+  return (
+    <section className="oz-section oz-section--tinted">
+      <div className="contain">
+        <Reveal><SectionHead eyebrow="Guest Voices" title="What Our Guests Say" center /></Reveal>
+        <div className="oz-testimonials">
+          <div className="oz-testimonials__main">
+            <I n="double-quotes-l" className="oz-testimonials__ql" />
+            <p className="oz-testimonials__text" key={active}>{t.text}</p>
+            <div className="oz-testimonials__author">
+              <img src={t.avatar} alt={t.name} loading="lazy" />
+              <div>
+                <strong>{t.name}</strong>
+                <span className="oz-muted">{t.role}</span>
               </div>
-            </Reveal>
-            <Reveal delay={180}>
-              <div className="vl-contact-info-card">
-                <div className="vl-contact-info-card__icon"><I n="customer-service-2-line" /></div>
-                <h4>Live Chat</h4>
-                <a href="#">Start a conversation</a>
-                <span className="vl-contact-info-card__live"><span className="vl-live-dot" />Online now</span>
-              </div>
-            </Reveal>
+              <Stars n={t.rating} />
+            </div>
+          </div>
+          <div className="oz-testimonials__nav">
+            {TESTIMONIALS.map((tb, i) => (
+              <button key={i} onClick={() => go(i)}
+                className={`oz-testimonials__thumb${i === active ? ' oz-testimonials__thumb--on' : ''}`}
+                aria-label={`Testimonial by ${tb.name}`} aria-pressed={i === active}>
+                <img src={tb.avatar} alt={tb.name} loading="lazy" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── Blog Teaser ──────────────────────────────────────── */
+function BlogTeaser() {
+  return (
+    <section className="oz-section contain">
+      <Reveal>
+        <SectionHead eyebrow="The Ouzaft Journal" title="Stories from Morocco's Edges"
+          body="Craft, landscape, people, and food — written by those who live and work inside these places." center />
+      </Reveal>
+      <div className="oz-blog-grid">
+        {BLOG_POSTS.slice(0,3).map((b,i) => <BlogCard key={b.id} item={b} delay={i * 80} />)}
+      </div>
+      <Reveal>
+        <div className="oz-cta-row">
+          <Link to="/blog" className="oz-btn oz-btn--ghost">Read the Journal <I n="arrow-right-line" /></Link>
+        </div>
+      </Reveal>
+    </section>
+  )
+}
+
+/* ─── Newsletter ───────────────────────────────────────── */
+function NewsletterSection() {
+  const [email, setEmail] = useState('')
+  const [done, setDone] = useState(false)
+  const handleSub = (e) => { e.preventDefault(); if (email.trim()) { setDone(true); setEmail('') } }
+
+  return (
+    <section className="oz-newsletter">
+      <div className="oz-newsletter__geo" aria-hidden="true" />
+      <div className="contain oz-newsletter__body">
+        <Reveal>
+          <I n="send-plane-line" className="oz-newsletter__icon" />
+          <h2>The Ouzaft Letter</h2>
+          <p>Monthly dispatches from Morocco's rarest places — stories, seasonal specials, and private event invitations.</p>
+          {done
+            ? <p className="oz-newsletter__done"><I n="check-double-line" /> Wonderful. You're on the list — Shukran!</p>
+            : (
+              <form className="oz-newsletter__form" onSubmit={handleSub}>
+                <input type="email" placeholder="Enter your email address" value={email}
+                  onChange={e => setEmail(e.target.value)} required aria-label="Email" />
+                <button type="submit" className="oz-btn oz-btn--primary">Subscribe <I n="arrow-right-line" /></button>
+              </form>
+            )
+          }
+        </Reveal>
+      </div>
+    </section>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   HOME PAGE
+═══════════════════════════════════════════════════════ */
+function HomePage() {
+  return (
+    <ErrorBoundary>
+      <HeroSection />
+      <WhyStrip />
+      <FeaturedStays />
+      <StorySection />
+      <ActivitiesTeaser />
+      <PackagesTeaser />
+      <FullBleedBanner />
+      <TestimonialsSection />
+      <BlogTeaser />
+      <NewsletterSection />
+    </ErrorBoundary>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   DETAIL PAGE SHELL (shared by Stay/Activity/Package)
+═══════════════════════════════════════════════════════ */
+function DetailLayout({ children, aside }) {
+  return (
+    <div className="oz-detail contain">
+      <div className="oz-detail__main">{children}</div>
+      <aside className="oz-detail__aside">{aside}</aside>
+    </div>
+  )
+}
+
+function DetailSection({ title, children }) {
+  return (
+    <section className="oz-detail__sec">
+      <h2>{title}</h2>
+      <OrnamentDivider />
+      {children}
+    </section>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   STAY DETAIL PAGE
+═══════════════════════════════════════════════════════ */
+function StayDetailPage() {
+  const loc = useLocation()
+  const navigate = useNavigate()
+  const id = loc.pathname.split('/').pop()
+  const stay = STAYS.find(s => s.id === id)
+  const [activeImg, setActiveImg] = useState(0)
+
+  if (!stay) return (
+    <div className="oz-section contain oz-404">
+      <h2>Stay not found</h2>
+      <button className="oz-btn oz-btn--primary" onClick={() => navigate('/stay')}>Back to Stays</button>
+    </div>
+  )
+
+  return (
+    <ErrorBoundary>
+      <section className="oz-detail-hero">
+        <div className="oz-detail-hero__gallery">
+          <div className="oz-detail-hero__main-img">
+            <img src={stay.images[activeImg] || stay.cover} alt={stay.name} />
+          </div>
+          <div className="oz-detail-hero__thumbs">
+            {stay.images.map((img, i) => (
+              <button key={i} onClick={() => setActiveImg(i)}
+                className={`oz-detail-hero__thumb${activeImg === i ? ' oz-detail-hero__thumb--on' : ''}`}>
+                <img src={img} alt={`${stay.name} ${i + 1}`} loading="lazy" />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="contain oz-detail-hero__info">
+          <nav className="oz-breadcrumb">
+            <Link to="/">Home</Link><I n="arrow-right-s-line" />
+            <Link to="/stay">Stays</Link><I n="arrow-right-s-line" />
+            <span>{stay.name}</span>
+          </nav>
+          <div className="oz-detail-hero__hd">
+            <div>
+              {stay.badge && <span className="oz-badge">{stay.badge}</span>}
+              <h1>{stay.name}</h1>
+              <p className="oz-detail-hero__loc"><I n="map-pin-2-line" />{stay.location}</p>
+              <div className="oz-detail-hero__rat"><Stars n={Math.round(stay.rating)} /><strong>{stay.rating}</strong><span className="oz-muted">({stay.reviews} reviews)</span></div>
+              <p className="oz-detail-hero__atmo">{stay.atmosphere}</p>
+            </div>
+            <div className="oz-detail-hero__cta-box">
+              <div className="oz-price oz-price--lg"><strong>${stay.price.toLocaleString()}</strong><span className="oz-muted">/night</span></div>
+              <Link to="/contact" className="oz-btn oz-btn--primary oz-btn--full"><I n="calendar-check-line" /> Reserve Now</Link>
+              <Link to="/packages" className="oz-btn oz-btn--ghost oz-btn--full"><I n="gift-2-line" /> See Packages</Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* MAIN GRID — form + map */}
-      <section className="vl-section">
-        <div className="contain vl-contact__grid">
-          {/* FORM */}
-          <Reveal>
-            <div className="vl-contact__form-wrap">
-              <h2>Send Us a Message</h2>
-              <p className="vl-contact__form-sub">Tell us what you dream of. We'll make it real.</p>
-              {sent ? (
-                <div className="vl-contact__success">
-                  <div className="vl-contact__success-icon"><I n="check-double-line" /></div>
-                  <h3>Message Received!</h3>
-                  <p>Thank you, {form.name}. Your curator will be in touch within 24 hours.</p>
-                </div>
-              ) : (
-                <form className="vl-contact__form" onSubmit={handleSubmit}>
-                  <div className="vl-contact__row">
-                    <label className="vl-float-label">
-                      <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder=" " required />
-                      <span>Full Name</span>
-                    </label>
-                    <label className="vl-float-label">
-                      <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder=" " required />
-                      <span>Email Address</span>
-                    </label>
-                  </div>
-                  <label className="vl-float-label">
-                    <input type="text" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder=" " />
-                    <span>Subject</span>
-                  </label>
-                  <label className="vl-float-label">
-                    <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} rows={6} placeholder=" " required />
-                    <span>Tell us about your dream journey...</span>
-                  </label>
-                  <button type="submit" className="vl-btn-primary">
-                    <I n="send-plane-line" /> Send Message
-                  </button>
-                </form>
-              )}
+      <DetailLayout
+        aside={
+          <>
+            <div className="oz-detail__aside-card">
+              <h3>Ready to stay?</h3>
+              <p className="oz-muted">Our concierge builds a personalised itinerary around your dates.</p>
+              <div className="oz-price oz-price--lg"><strong>${stay.price.toLocaleString()}</strong><span className="oz-muted">/night</span></div>
+              <Link to="/contact" className="oz-btn oz-btn--primary oz-btn--full">Reserve This Stay</Link>
+              <Link to="/packages" className="oz-btn oz-btn--ghost oz-btn--full">Include in a Package</Link>
             </div>
-          </Reveal>
+            <div className="oz-detail__aside-card oz-detail__aside-card--soft">
+              <h4><I n="headphone-line" /> 24/7 Concierge</h4>
+              <p className="oz-muted">One dedicated person, always available.</p>
+              <a href="tel:+212522000000" className="oz-btn oz-btn--ghost oz-btn--full"><I n="phone-line" /> Call Us</a>
+              <a href="mailto:stay@ouzaft.ma" className="oz-btn oz-btn--ghost oz-btn--full"><I n="mail-line" /> Email Us</a>
+            </div>
+          </>
+        }
+      >
+        <DetailSection title="The Experience"><p>{stay.description}</p></DetailSection>
+        <DetailSection title="Highlights">
+          <ul className="oz-check-list">
+            {stay.highlights.map(h => <li key={h}><I n="checkbox-circle-line" />{h}</li>)}
+          </ul>
+        </DetailSection>
+        <DetailSection title="Amenities">
+          <div className="oz-amenities">
+            {stay.amenities.map(a => <span key={a} className="oz-amenity"><I n="check-double-line" />{a}</span>)}
+          </div>
+        </DetailSection>
+      </DetailLayout>
+    </ErrorBoundary>
+  )
+}
 
-          {/* MAP + INFO */}
-          <Reveal delay={100}>
-            <div className="vl-contact__info">
-              <div className="vl-contact__map">
-                <img src="https://images.unsplash.com/photo-1527004013197-933b977c48c1?w=800&auto=format&fit=crop" alt="Geneva, Switzerland office location" loading="lazy" />
-                <div className="vl-contact__map-pin"><I n="map-pin-fill" /></div>
-                <div className="vl-contact__map-label">Geneva HQ</div>
+/* ═══════════════════════════════════════════════════════
+   STAYS PAGE
+═══════════════════════════════════════════════════════ */
+function StayPage() {
+  const [filter, setFilter] = useState('All')
+  const cats = ['All', ...new Set(STAYS.map(s => s.category))]
+  const filtered = filter === 'All' ? STAYS : STAYS.filter(s => s.category === filter)
+
+  return (
+    <ErrorBoundary>
+      <PageHero title="Our Stays"
+        subtitle="Six extraordinary properties across Morocco's most magnificent landscapes"
+        image="https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=1600&auto=format&fit=crop"
+        breadcrumb="Stay" />
+      <section className="oz-section contain">
+        <Reveal>
+          <div className="oz-filters">
+            {cats.map(c => (
+              <button key={c} onClick={() => setFilter(c)}
+                className={`oz-filter-btn${filter === c ? ' oz-filter-btn--on' : ''}`}>{c}</button>
+            ))}
+          </div>
+        </Reveal>
+        <div className="oz-stays-grid oz-stays-grid--full">
+          {filtered.map((s,i) => <StayCard key={s.id} item={s} delay={i * 60} />)}
+        </div>
+      </section>
+      <NewsletterSection />
+    </ErrorBoundary>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   ACTIVITY DETAIL PAGE
+═══════════════════════════════════════════════════════ */
+function ActivityDetailPage() {
+  const loc = useLocation()
+  const navigate = useNavigate()
+  const id = loc.pathname.split('/').pop()
+  const act = ACTIVITIES.find(a => a.id === id)
+
+  if (!act) return (
+    <div className="oz-section contain oz-404">
+      <h2>Activity not found</h2>
+      <button className="oz-btn oz-btn--primary" onClick={() => navigate('/activities')}>Back</button>
+    </div>
+  )
+
+  return (
+    <ErrorBoundary>
+      <PageHero title={act.name} subtitle={act.tagline} image={act.cover} breadcrumb="Activities" />
+      <DetailLayout
+        aside={
+          <div className="oz-detail__aside-card">
+            <h3>Book This Activity</h3>
+            <div className="oz-price oz-price--lg"><strong>${act.price}</strong><span className="oz-muted">/person</span></div>
+            <p className="oz-muted">{act.groupSize} · {act.duration}</p>
+            <Link to="/contact" className="oz-btn oz-btn--primary oz-btn--full"><I n="calendar-check-line" /> Book Now</Link>
+          </div>
+        }
+      >
+        <DetailSection title="About This Experience">
+          <div className="oz-detail-meta-row">
+            <span className="oz-diff" data-diff={act.difficulty.toLowerCase()}>{act.difficulty}</span>
+            <span><I n="time-line" />{act.duration}</span>
+            <span><I n="group-line" />{act.groupSize}</span>
+            {act.badge && <span className="oz-badge">{act.badge}</span>}
+          </div>
+          <p>{act.description}</p>
+        </DetailSection>
+        <DetailSection title="What's Included">
+          <ul className="oz-check-list">
+            {act.includes.map(inc => <li key={inc}><I n="check-double-line" />{inc}</li>)}
+          </ul>
+        </DetailSection>
+        <DetailSection title="What to Expect">
+          <ol className="oz-timeline">
+            {act.whatToExpect.map((step, i) => (
+              <li key={i} className="oz-timeline__item">
+                <span className="oz-timeline__n">{String(i+1).padStart(2,'0')}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </DetailSection>
+      </DetailLayout>
+    </ErrorBoundary>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   ACTIVITIES PAGE
+═══════════════════════════════════════════════════════ */
+function ActivitiesPage() {
+  const [filter, setFilter] = useState('All')
+  const cats = ['All', ...new Set(ACTIVITIES.map(a => a.category))]
+  const filtered = filter === 'All' ? ACTIVITIES : ACTIVITIES.filter(a => a.category === filter)
+
+  return (
+    <ErrorBoundary>
+      <PageHero title="Activities & Experiences"
+        subtitle="From deep-Sahara stargazing to medina artisan walks — Morocco's most meaningful encounters"
+        image="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1600&auto=format&fit=crop"
+        breadcrumb="Activities" />
+      <section className="oz-section contain">
+        <Reveal>
+          <div className="oz-filters">
+            {cats.map(c => (
+              <button key={c} onClick={() => setFilter(c)}
+                className={`oz-filter-btn${filter === c ? ' oz-filter-btn--on' : ''}`}>{c}</button>
+            ))}
+          </div>
+        </Reveal>
+        <div className="oz-act-grid oz-act-grid--full">
+          {filtered.map((a,i) => <ActivityCard key={a.id} item={a} delay={i * 70} />)}
+        </div>
+      </section>
+      <FullBleedBanner />
+      <NewsletterSection />
+    </ErrorBoundary>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   PACKAGE DETAIL PAGE
+═══════════════════════════════════════════════════════ */
+function PackageDetailPage() {
+  const loc = useLocation()
+  const navigate = useNavigate()
+  const id = loc.pathname.split('/').pop()
+  const pkg = PACKAGES.find(p => p.id === id)
+
+  if (!pkg) return (
+    <div className="oz-section contain oz-404">
+      <h2>Package not found</h2>
+      <button className="oz-btn oz-btn--primary" onClick={() => navigate('/packages')}>Back</button>
+    </div>
+  )
+
+  return (
+    <ErrorBoundary>
+      <PageHero title={pkg.name} subtitle={pkg.tagline} image={pkg.cover} breadcrumb="Packages" />
+      <DetailLayout
+        aside={
+          <>
+            <div className="oz-detail__aside-card">
+              <h3>Reserve This Package</h3>
+              <div className="oz-price oz-price--lg">
+                <strong>${pkg.price.toLocaleString()}</strong>
+                <span className="oz-muted"> /{pkg.pricePer}</span>
               </div>
-              <div className="vl-contact__social-strip">
-                <span>Follow Our Journey</span>
-                <div className="vl-contact__socials">
-                  <a href="#" aria-label="Instagram"><I n="instagram-line" /></a>
-                  <a href="#" aria-label="Pinterest"><I n="pinterest-line" /></a>
-                  <a href="#" aria-label="Twitter/X"><I n="twitter-x-line" /></a>
-                  <a href="#" aria-label="YouTube"><I n="youtube-line" /></a>
+              <p className="oz-muted">{pkg.duration} · {pkg.location}</p>
+              <Link to="/contact" className="oz-btn oz-btn--primary oz-btn--full"><I n="calendar-check-line" /> Enquire Now</Link>
+              <Link to="/contact" className="oz-btn oz-btn--ghost oz-btn--full"><I n="chat-1-line" /> Speak to Concierge</Link>
+            </div>
+            <div className="oz-detail__aside-card oz-detail__aside-card--soft">
+              <p className="oz-muted" style={{ fontSize:'0.85rem' }}>All packages include a dedicated concierge. Fully customisable itineraries available.</p>
+            </div>
+          </>
+        }
+      >
+        <DetailSection title="The Journey">
+          <div className="oz-detail-meta-row">
+            {pkg.badge && <span className="oz-badge">{pkg.badge}</span>}
+            <span><I n="calendar-2-line" />{pkg.duration}</span>
+            <span><I n="map-pin-line" />{pkg.location}</span>
+          </div>
+          <p>{pkg.description}</p>
+        </DetailSection>
+        <DetailSection title="Everything Included">
+          <ul className="oz-check-list">
+            {pkg.includes.map(inc => <li key={inc}><I n="checkbox-circle-line" />{inc}</li>)}
+          </ul>
+        </DetailSection>
+        <DetailSection title="Day by Day">
+          <ol className="oz-itinerary">
+            {pkg.itinerary.map(day => (
+              <li key={day.day} className="oz-itinerary__day">
+                <div className="oz-itinerary__n">
+                  <span>Day</span>
+                  <strong>{day.day}</strong>
                 </div>
-              </div>
+                <div className="oz-itinerary__body">
+                  <h4>{day.title}</h4>
+                  <p>{day.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </DetailSection>
+      </DetailLayout>
+    </ErrorBoundary>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   PACKAGES PAGE
+═══════════════════════════════════════════════════════ */
+function PackagesPage() {
+  return (
+    <ErrorBoundary>
+      <PageHero title="Curated Journeys"
+        subtitle="Complete Morocco immersions — every detail designed as a single beautiful arc"
+        image="https://images.unsplash.com/photo-1548013146-72479768bada?w=1600&auto=format&fit=crop"
+        breadcrumb="Packages" />
+      <section className="oz-section contain">
+        <Reveal>
+          <SectionHead eyebrow="All Packages" title="Choose Your Morocco"
+            body="From four-night desert escapes to nine-night grand tours — each one fully managed by our team." center />
+        </Reveal>
+        <div className="oz-pkg-grid oz-pkg-grid--2col">
+          {PACKAGES.map((p,i) => <PackageCard key={p.id} item={p} delay={i * 80} />)}
+        </div>
+      </section>
+      <FullBleedBanner />
+      <TestimonialsSection />
+      <NewsletterSection />
+    </ErrorBoundary>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   ABOUT PAGE
+═══════════════════════════════════════════════════════ */
+function AboutPage() {
+  return (
+    <ErrorBoundary>
+      <PageHero title="About Ouzaft"
+        subtitle="Built by those who love Morocco — for those who are ready to understand it"
+        image="https://images.unsplash.com/photo-1577717903315-1691ae25ab3f?w=1600&auto=format&fit=crop"
+        breadcrumb="About" />
+
+      <section className="oz-section contain">
+        <div className="oz-about-intro">
+          <Reveal direction="left" className="oz-about-intro__text">
+            <p className="oz-eyebrow-bare">Our Philosophy</p>
+            <h2>Luxury as a form of cultural respect</h2>
+            <OrnamentDivider />
+            <p>Most luxury travel imports comfort from elsewhere and layers it onto a destination. Ouzaft does the opposite: we extract the finest that Morocco already contains — its craftspeople, its landscapes, its flavours, its silence — and present it with the precision and care that an exceptional experience deserves.</p>
+            <p>Our guests do not observe Morocco. They participate in it. They hunt truffles, scrub with century-old soap, cook on charcoal fires, and sleep under skies that have not changed since the Saharan trade routes were alive. The luxury is in the access. The depth is in the authenticity.</p>
+          </Reveal>
+          <Reveal direction="right" className="oz-about-intro__imgs">
+            <img src="https://images.unsplash.com/photo-1548013146-72479768bada?w=700&auto=format&fit=crop" alt="Marrakech riad" loading="lazy" />
+            <div className="oz-about-intro__accent">
+              <img src="https://images.unsplash.com/photo-1512100356356-de1b84283e18?w=350&auto=format&fit=crop" alt="Sahara dunes" loading="lazy" />
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="vl-section vl-section--alt">
+      <section className="oz-stats-bar">
+        <div className="contain oz-stats-bar__grid">
+          {STATS.map((s,i) => (
+            <Reveal key={s.label} delay={i * 70}>
+              <div className="oz-stat">
+                <I n={s.icon} className="oz-stat__ic" />
+                <strong>{s.value}</strong>
+                <span>{s.label}</span>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="oz-section contain">
+        <Reveal><SectionHead eyebrow="Why Ouzaft" title="Six Reasons to Choose Differently" center /></Reveal>
+        <div className="oz-why-grid">
+          {WHY_ITEMS.map((w,i) => (
+            <Reveal key={w.title} delay={i * 80}>
+              <div className="oz-why-card">
+                <span className="oz-why-card__ic"><I n={w.icon} /></span>
+                <h3>{w.title}</h3>
+                <p>{w.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="oz-section oz-section--tinted">
         <div className="contain">
           <Reveal>
-            <div className="vl-sec-head vl-sec-head--center">
-              <span className="vl-eyebrow"><I n="question-answer-line" /> Need Answers?</span>
-              <h2>Frequently Asked Questions</h2>
-            </div>
+            <SectionHead eyebrow="The People" title="Meet the Ouzaft Team"
+              body="We are guides, chefs, astronomers, and healers — each one born from the place they bring to life." center />
           </Reveal>
-          <div className="vl-faq-grid">
-            {FAQ_ITEMS.map((item, i) => (
-              <Reveal key={i} delay={i * 50}>
-                <div className={`vl-faq-item${openFaq === i ? ' vl-faq-item--open' : ''}`}>
-                  <button className="vl-faq-item__q" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-                    <span>{item.q}</span>
-                    <I n={openFaq === i ? 'subtract-line' : 'add-line'} />
-                  </button>
-                  <div className="vl-faq-item__a"><p>{item.a}</p></div>
+          <div className="oz-team-grid">
+            {TEAM.map((m,i) => (
+              <Reveal key={m.name} delay={i * 100}>
+                <div className="oz-team-card">
+                  <div className="oz-team-card__img"><img src={m.avatar} alt={m.name} loading="lazy" /></div>
+                  <div className="oz-team-card__body">
+                    <strong>{m.name}</strong>
+                    <span className="oz-muted">{m.role}</span>
+                    <p>{m.bio}</p>
+                  </div>
                 </div>
               </Reveal>
             ))}
           </div>
         </div>
       </section>
-    </main>
+
+      <section className="oz-section contain">
+        <Reveal><SectionHead eyebrow="From the Journal" title="Recent Stories" center /></Reveal>
+        <div className="oz-blog-grid">
+          {BLOG_POSTS.slice(0,3).map((b,i) => <BlogCard key={b.id} item={b} delay={i * 80} />)}
+        </div>
+      </section>
+      <NewsletterSection />
+    </ErrorBoundary>
   )
 }
 
-/* ═══════════════════════════════
-   BOOKING PAGE
-═══════════════════════════════ */
-function BookingPage() {
-  const { type, id } = useParams()
-  const navigate = useNavigate()
+/* ═══════════════════════════════════════════════════════
+   CONTACT PAGE
+═══════════════════════════════════════════════════════ */
+function ContactPage() {
+  const [form, setForm] = useState({ name:'', email:'', phone:'', subject:'Reservation Enquiry', message:'' })
+  const [sent, setSent] = useState(false)
+  const [errors, setErrors] = useState({})
+  const [expanded, setExpanded] = useState(null)
 
-  /* Resolve item from correct data array */
-  const item = type === 'stay'
-    ? STAYS.find(s => s.id === id)
-    : type === 'experience'
-      ? EXPERIENCES.find(e => e.id === id)
-      : PACKAGES.find(p => p.id === id)
-
-  const [step, setStep] = useState(1)
-  const [form, setForm] = useState({
-    checkin: '', checkout: '', guests: 2,
-    firstName: '', lastName: '', email: '', phone: '',
-    specialRequests: '', room: ''
-  })
-  const [submitted, setSubmitted] = useState(false)
-  const containerRef = useRef(null)
-  const [bookingRef] = useState(() => Math.random().toString(36).slice(2, 10).toUpperCase())
-
-  const TOTAL_STEPS = 4
-
-  const nights = form.checkin && form.checkout
-    ? Math.max(0, Math.round((new Date(form.checkout) - new Date(form.checkin)) / 86400000))
-    : 0
-
-  const priceBase = item?.price || 0
-  const subtotal = type === 'stay' ? nights * priceBase : priceBase * form.guests
-  const taxes = Math.round(subtotal * 0.14)
-  const total = subtotal + taxes
-
-  const canStep1 = type === 'stay' ? (form.checkin && form.checkout && nights > 0) : !!form.checkin
-  const canStep2 = form.firstName && form.lastName && form.email
-
-  /* GSAP transition between steps */
-  const goStep = (next) => {
-    const el = containerRef.current
-    if (el && window.gsap) {
-      window.gsap.fromTo(el, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out' })
-    }
-    setStep(next)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  const validate = () => {
+    const e = {}
+    if (!form.name.trim()) e.name = 'Name is required'
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Valid email required'
+    if (!form.message.trim()) e.message = 'Message is required'
+    return e
   }
 
-  const handleSubmit = () => {
-    setSubmitted(true)
-    goStep(4)
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const errs = validate()
+    if (Object.keys(errs).length) { setErrors(errs); return }
+    setSent(true); setErrors({})
   }
-
-  if (!item) {
-    return (
-      <main className="vl-404">
-        <div className="vl-404__inner">
-          <span className="vl-404__code">404</span>
-          <h1>Booking not found</h1>
-          <Link to="/" className="vl-btn-primary"><I n="home-4-line" /> Back to Home</Link>
-        </div>
-      </main>
-    )
-  }
-
-  const STEP_LABELS = ['Preview', 'Dates & Guests', 'Your Details', 'Confirm & Pay']
 
   return (
-    <main className="vl-book-page">
+    <ErrorBoundary>
+      <PageHero title="Contact Us"
+        subtitle="Our concierge team is available 24 hours a day, seven days a week"
+        image="https://images.unsplash.com/photo-1577717903315-1691ae25ab3f?w=1600&auto=format&fit=crop"
+        breadcrumb="Contact" />
 
-      {/* ── TOP PROGRESS BAR ── */}
-      <div className="vl-book-progress">
-        <div className="vl-book-progress__bar">
-          <div className="vl-book-progress__fill" style={{ width: `${((step - 1) / (TOTAL_STEPS - 1)) * 100}%` }} />
-        </div>
-        <div className="vl-book-progress__steps">
-          {STEP_LABELS.map((label, i) => (
-            <div
-              key={i}
-              className={`vl-book-progress__step${step === i + 1 ? ' --on' : step > i + 1 ? ' --done' : ''}`}
-            >
-              <div className="vl-book-progress__step-dot">
-                {step > i + 1 ? <I n="check-line" /> : i + 1}
-              </div>
-              <span>{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── CONTENT ── */}
-      <div className="vl-book-layout contain" ref={containerRef}>
-
-        {/* ════ STEP 1: PREVIEW ════ */}
-        {step === 1 && (
-          <div className="vl-book-step">
-            <div className="vl-book-step__hero">
-              <div className="vl-book-step__hero-img">
-                <img src={item.cover} alt={item.name} />
-                <div className="vl-book-step__hero-veil" />
-                {item.badge && <span className="vl-badge">{item.badge}</span>}
-              </div>
-              <div className="vl-book-step__hero-info">
-                <span className="vl-eyebrow">
-                  <I n={type === 'stay' ? 'hotel-line' : type === 'experience' ? 'compass-3-line' : 'route-line'} />
-                  {type === 'stay' ? item.category : type === 'experience' ? 'Experience' : 'Package'}
-                </span>
-                <h1>{item.name}</h1>
-                <p className="vl-book-step__loc"><I n="map-pin-2-line" /> {item.location}</p>
-                {item.tagline && <p className="vl-book-step__tagline">{item.tagline}</p>}
-                <p className="vl-book-step__desc">{item.description?.slice(0, 260)}…</p>
-                <div className="vl-book-step__highlights">
-                  {(item.highlights || item.includes || []).slice(0, 4).map((h, i) => (
-                    <span key={i}><I n="check-line" /> {h}</span>
-                  ))}
-                </div>
-                <div className="vl-book-step__price-row">
-                  <div className="vl-book-step__price">
-                    <span>From</span>
-                    <strong>${item.price?.toLocaleString()}</strong>
-                    <span>{type === 'stay' ? '/ night' : type === 'package' ? item.pricePer || '/ person' : '/ person'}</span>
+      <section className="oz-section contain">
+        <div className="oz-contact-grid">
+          <div className="oz-contact-form-wrap">
+            <Reveal>
+              <h2>Send a Message</h2>
+              <p className="oz-muted">Whether planning a first visit or a tenth, we build every stay from scratch with you.</p>
+            </Reveal>
+            {sent
+              ? (
+                <Reveal>
+                  <div className="oz-contact-success">
+                    <I n="check-double-line" />
+                    <h3>Message sent — Shukran!</h3>
+                    <p>Your concierge will respond within 4 hours.</p>
                   </div>
-                  {item.rating && (
-                    <div className="vl-book-step__rating">
-                      <I n="star-fill" /> {item.rating}
-                      {item.reviews && <span>({item.reviews} reviews)</span>}
+                </Reveal>
+              )
+              : (
+                <form className="oz-contact-form" onSubmit={handleSubmit} noValidate>
+                  <div className="oz-field-row">
+                    <div className="oz-field">
+                      <label htmlFor="cf-name">Full Name *</label>
+                      <input id="cf-name" type="text" placeholder="Your full name"
+                        value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} />
+                      {errors.name && <span className="oz-field-err">{errors.name}</span>}
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Gallery strip */}
-            {item.images?.length > 1 && (
-              <div className="vl-book-gallery-strip">
-                {item.images.slice(1).map((img, i) => (
-                  <div key={i} className="vl-book-gallery-strip__thumb">
-                    <img src={img} alt="" />
+                    <div className="oz-field">
+                      <label htmlFor="cf-email">Email Address *</label>
+                      <input id="cf-email" type="email" placeholder="you@example.com"
+                        value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} />
+                      {errors.email && <span className="oz-field-err">{errors.email}</span>}
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-
-            <div className="vl-book-step__foot">
-              <button className="vl-btn-ghost" onClick={() => navigate(-1)}><I n="arrow-left-line" /> Back</button>
-              <button className="vl-btn-primary vl-book-step__cta" onClick={() => goStep(2)}>
-                Select Dates &amp; Guests <I n="arrow-right-line" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ════ STEP 2: DATES + GUESTS ════ */}
-        {step === 2 && (
-          <div className="vl-book-step vl-book-step--form">
-            <div className="vl-book-form-area">
-              <h2 className="vl-book-form-area__title"><I n="calendar-2-line" /> {type === 'stay' ? 'Check-in & Check-out' : 'Experience Date'}</h2>
-
-              {type === 'stay' ? (
-                <div className="vl-book-date-grid">
-                  <div className="vl-book-field">
-                    <label>Check In</label>
-                    <MiniCalendar
-                      value={form.checkin}
-                      onChange={v => setForm(f => ({ ...f, checkin: v, checkout: f.checkout && new Date(f.checkout) <= new Date(v) ? '' : f.checkout }))}
-                      label="Select date"
-                    />
+                  <div className="oz-field-row">
+                    <div className="oz-field">
+                      <label htmlFor="cf-phone">Phone (optional)</label>
+                      <input id="cf-phone" type="tel" placeholder="+212 xxx xxx xxx"
+                        value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} />
+                    </div>
+                    <div className="oz-field">
+                      <label htmlFor="cf-subject">Subject</label>
+                      <select id="cf-subject" value={form.subject}
+                        onChange={e => setForm(f => ({...f, subject: e.target.value}))}>
+                        <option>Reservation Enquiry</option>
+                        <option>Package Information</option>
+                        <option>Activity Booking</option>
+                        <option>Private Event</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="vl-book-field">
-                    <label>Check Out</label>
-                    <MiniCalendar value={form.checkout} onChange={v => setForm(f => ({ ...f, checkout: v }))} label="Select date" minDate={form.checkin} />
+                  <div className="oz-field">
+                    <label htmlFor="cf-msg">Message *</label>
+                    <textarea id="cf-msg" rows={5}
+                      placeholder="Tell us about your ideal stay, dates, group size, and any special requirements..."
+                      value={form.message} onChange={e => setForm(f => ({...f, message: e.target.value}))} />
+                    {errors.message && <span className="oz-field-err">{errors.message}</span>}
                   </div>
-                </div>
-              ) : (
-                <div className="vl-book-field">
-                  <label>Experience Date</label>
-                  <MiniCalendar value={form.checkin} onChange={v => setForm(f => ({ ...f, checkin: v }))} label="Select date" />
-                </div>
-              )}
-
-              {nights > 0 && type === 'stay' && (
-                <div className="vl-book-night-badge"><I n="moon-line" /> {nights} {nights === 1 ? 'night' : 'nights'}</div>
-              )}
-
-              <h2 className="vl-book-form-area__title" style={{ marginTop: '2rem' }}><I n="group-line" /> Guest Count</h2>
-
-              <div className="vl-book-counter">
-                <button type="button" className="vl-book-counter__btn" onClick={() => setForm(f => ({ ...f, guests: Math.max(1, f.guests - 1) }))} aria-label="Decrease guests">−</button>
-                <span className="vl-book-counter__val"><I n="user-line" /> {form.guests} {form.guests === 1 ? 'Guest' : 'Guests'}</span>
-                <button type="button" className="vl-book-counter__btn" onClick={() => setForm(f => ({ ...f, guests: Math.min(20, f.guests + 1) }))} aria-label="Increase guests">+</button>
-              </div>
-
-              {type === 'stay' && (
-                <div className="vl-book-field" style={{ marginTop: '1.5rem' }}>
-                  <label>Room / Suite preference <span>(optional)</span></label>
-                  <input
-                    type="text"
-                    className="vl-book-input"
-                    placeholder="e.g. Ocean view suite, ground floor…"
-                    value={form.room}
-                    onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="vl-book-sidebar">
-              <div className="vl-book-summary">
-                <div className="vl-book-summary__img"><img src={item.cover} alt={item.name} /></div>
-                <div className="vl-book-summary__body">
-                  <p className="vl-book-summary__name">{item.name}</p>
-                  <p className="vl-book-summary__loc"><I n="map-pin-2-line" /> {item.location}</p>
-                  {type === 'stay' && nights > 0 && (
-                    <div className="vl-book-summary__line"><span>{nights} nights × ${priceBase}</span><strong>${(nights * priceBase).toLocaleString()}</strong></div>
-                  )}
-                  {type !== 'stay' && (
-                    <div className="vl-book-summary__line"><span>{form.guests} guest × ${priceBase}</span><strong>${(form.guests * priceBase).toLocaleString()}</strong></div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="vl-book-step__foot vl-book-step__foot--wide">
-              <button className="vl-btn-ghost" onClick={() => goStep(1)}><I n="arrow-left-line" /> Back</button>
-              <button className="vl-btn-primary vl-book-step__cta" onClick={() => goStep(3)} disabled={!canStep1}>
-                Continue to Details <I n="arrow-right-line" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ════ STEP 3: PERSONAL DETAILS ════ */}
-        {step === 3 && (
-          <div className="vl-book-step vl-book-step--form">
-            <div className="vl-book-form-area">
-              <h2 className="vl-book-form-area__title"><I n="user-line" /> Traveller Details</h2>
-
-              <div className="vl-book-field-grid">
-                <div className="vl-book-field">
-                  <label>First Name <span>*</span></label>
-                  <input className="vl-book-input" type="text" placeholder="Jean" value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} />
-                </div>
-                <div className="vl-book-field">
-                  <label>Last Name <span>*</span></label>
-                  <input className="vl-book-input" type="text" placeholder="Dupont" value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} />
-                </div>
-                <div className="vl-book-field vl-book-field--full">
-                  <label>Email Address <span>*</span></label>
-                  <input className="vl-book-input" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-                </div>
-                <div className="vl-book-field vl-book-field--full">
-                  <label>Phone Number <span>(optional)</span></label>
-                  <input className="vl-book-input" type="tel" placeholder="+1 (555) 000-0000" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-                </div>
-                <div className="vl-book-field vl-book-field--full">
-                  <label>Special Requests <span>(optional)</span></label>
-                  <textarea className="vl-book-input" rows={4} placeholder="Dietary requirements, accessibility needs, celebration details…" value={form.specialRequests} onChange={e => setForm(f => ({ ...f, specialRequests: e.target.value }))} />
-                </div>
-              </div>
-
-              <div className="vl-book-trust-strip">
-                <span><I n="shield-check-line" /> SSL secured</span>
-                <span><I n="lock-line" /> Data protected</span>
-                <span><I n="customer-service-2-line" /> 24/7 concierge support</span>
-              </div>
-            </div>
-
-            <div className="vl-book-sidebar">
-              <div className="vl-book-summary">
-                <div className="vl-book-summary__img"><img src={item.cover} alt={item.name} /></div>
-                <div className="vl-book-summary__body">
-                  <p className="vl-book-summary__name">{item.name}</p>
-                  <p className="vl-book-summary__loc"><I n="map-pin-2-line" /> {item.location}</p>
-                  {type === 'stay' && nights > 0 && (
-                    <>
-                      <div className="vl-book-summary__line"><span>Check-in</span><strong>{form.checkin}</strong></div>
-                      <div className="vl-book-summary__line"><span>Check-out</span><strong>{form.checkout}</strong></div>
-                      <div className="vl-book-summary__line"><span>{nights} nights</span><strong>${(nights * priceBase).toLocaleString()}</strong></div>
-                    </>
-                  )}
-                  <div className="vl-book-summary__line"><span>{form.guests} {form.guests === 1 ? 'guest' : 'guests'}</span></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="vl-book-step__foot vl-book-step__foot--wide">
-              <button className="vl-btn-ghost" onClick={() => goStep(2)}><I n="arrow-left-line" /> Back</button>
-              <button className="vl-btn-primary vl-book-step__cta" onClick={handleSubmit} disabled={!canStep2}>
-                Review &amp; Confirm <I n="arrow-right-line" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ════ STEP 4: CONFIRM / SUCCESS ════ */}
-        {step === 4 && (
-          <div className="vl-book-step vl-book-step--confirm">
-            {submitted ? (
-              <div className="vl-book-success">
-                <div className="vl-book-success__icon"><I n="checkbox-circle-line" /></div>
-                <h2>Booking Request Sent!</h2>
-                <p>Thank you, <strong>{form.firstName}</strong>. Your reservation for <strong>{item.name}</strong> has been submitted. Our concierge team will reach out to <strong>{form.email}</strong> within 24 hours to confirm all details.</p>
-                <div className="vl-book-success__ref">Ref #{bookingRef}</div>
-                <div className="vl-book-success__actions">
-                  <Link to="/" className="vl-btn-primary"><I n="home-4-line" /> Back to Home</Link>
-                  <Link to={`/${type === 'stay' ? 'stay' : type === 'experience' ? 'experiences' : 'packages'}`} className="vl-btn-ghost">Browse More</Link>
-                </div>
-              </div>
-            ) : (
-              <div className="vl-book-review">
-                <h2>Review Your Booking</h2>
-
-                <div className="vl-book-review__card">
-                  <img src={item.cover} alt={item.name} className="vl-book-review__img" />
-                  <div className="vl-book-review__info">
-                    <h3>{item.name}</h3>
-                    <p className="vl-book-review__loc"><I n="map-pin-2-line" /> {item.location}</p>
-                  </div>
-                </div>
-
-                <div className="vl-book-review__details">
-                  {form.checkin && <div className="vl-book-review__row"><span><I n="calendar-check-line" /> Date(s)</span><strong>{form.checkin}{form.checkout ? ` → ${form.checkout}` : ''}</strong></div>}
-                  {nights > 0 && <div className="vl-book-review__row"><span><I n="moon-line" /> Duration</span><strong>{nights} nights</strong></div>}
-                  <div className="vl-book-review__row"><span><I n="group-line" /> Guests</span><strong>{form.guests}</strong></div>
-                  <div className="vl-book-review__row"><span><I n="user-line" /> Lead Guest</span><strong>{form.firstName} {form.lastName}</strong></div>
-                  <div className="vl-book-review__row"><span><I n="mail-line" /> Email</span><strong>{form.email}</strong></div>
-                  {form.phone && <div className="vl-book-review__row"><span><I n="phone-line" /> Phone</span><strong>{form.phone}</strong></div>}
-                  {form.specialRequests && <div className="vl-book-review__row"><span><I n="message-2-line" /> Requests</span><strong className="vl-book-review__req">{form.specialRequests}</strong></div>}
-                </div>
-
-                <div className="vl-book-review__price-box">
-                  <div className="vl-book-review__price-row"><span>Subtotal</span><strong>${subtotal.toLocaleString()}</strong></div>
-                  <div className="vl-book-review__price-row"><span>Taxes &amp; Fees (14%)</span><strong>${taxes.toLocaleString()}</strong></div>
-                  <div className="vl-book-review__price-row vl-book-review__price-row--total"><span>Total</span><strong>${total.toLocaleString()}</strong></div>
-                  <p className="vl-book-review__note"><I n="information-line" /> No payment is charged now. Our team will contact you to arrange payment securely.</p>
-                </div>
-
-                <div className="vl-book-step__foot">
-                  <button className="vl-btn-ghost" onClick={() => goStep(3)}><I n="arrow-left-line" /> Edit Details</button>
-                  <button className="vl-btn-primary vl-book-step__cta" onClick={handleSubmit}>
-                    <I n="sparkling-2-line" /> Confirm Booking
+                  <button type="submit" className="oz-btn oz-btn--primary">
+                    <I n="send-plane-line" /> Send Message
                   </button>
-                </div>
-              </div>
-            )}
+                </form>
+              )
+            }
           </div>
-        )}
 
-      </div>
-    </main>
-  )
-}
-
-/* ═══════════════════════════════
-   NOT FOUND
-═══════════════════════════════ */
-function NotFound() {
-  return (
-    <main className="vl-404">
-      <Reveal>
-        <div className="vl-404__inner">
-          <span className="vl-404__code">404</span>
-          <h1>You've Wandered Off the Map</h1>
-          <p>Even the best explorers take a wrong turn. Let's get you somewhere beautiful.</p>
-          <Link to="/" className="vl-btn-primary"><I n="home-4-line" /> Back to Home</Link>
+          <div className="oz-contact-info">
+            <Reveal><h2>Find Us</h2></Reveal>
+            <div className="oz-contact-cards">
+              {[
+                { icon:'phone-line',     label:'Phone',   val:'+212 522 00 00 00',             sub:'Available 24/7' },
+                { icon:'mail-line',      label:'Email',   val:'stay@ouzaft.ma',                sub:'Reply within 4 hours' },
+                { icon:'map-pin-2-line', label:'Address', val:'Merzouga, Errachidia Province', sub:'Morocco' },
+                { icon:'time-line',      label:'Hours',   val:'24 / 7 / 365',                  sub:'Concierge always available' },
+              ].map(c => (
+                <Reveal key={c.label} delay={80}>
+                  <div className="oz-contact-card">
+                    <I n={c.icon} className="oz-contact-card__ic" />
+                    <div>
+                      <strong>{c.label}</strong>
+                      <p>{c.val}</p>
+                      <span className="oz-muted">{c.sub}</span>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
         </div>
-      </Reveal>
-    </main>
+      </section>
+
+      <section className="oz-section oz-section--tinted">
+        <div className="contain">
+          <Reveal><SectionHead eyebrow="Frequently Asked" title="Questions & Answers" center /></Reveal>
+          <div className="oz-faq-grid">
+            {FAQ.map((item, i) => (
+              <Reveal key={i} delay={i * 50}>
+                <div className={`oz-faq-item${expanded === i ? ' oz-faq-item--open' : ''}`}>
+                  <button className="oz-faq-item__q"
+                    onClick={() => setExpanded(expanded === i ? null : i)}
+                    aria-expanded={expanded === i}>
+                    <span>{item.q}</span>
+                    <I n={expanded === i ? 'subtract-line' : 'add-line'} />
+                  </button>
+                  {expanded === i && <p className="oz-faq-item__a">{item.a}</p>}
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <NewsletterSection />
+    </ErrorBoundary>
   )
 }
 
-/* ═══════════════════════════════
-   APP SHELL (default export)
-═══════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   BLOG PAGE
+═══════════════════════════════════════════════════════ */
+function BlogPage() {
+  const [cat, setCat] = useState('All')
+  const cats = ['All', ...new Set(BLOG_POSTS.map(b => b.category))]
+  const filtered = cat === 'All' ? BLOG_POSTS : BLOG_POSTS.filter(b => b.category === cat)
+
+  return (
+    <ErrorBoundary>
+      <PageHero title="The Ouzaft Journal"
+        subtitle="Stories from Morocco's most extraordinary places — written by those who live inside them"
+        image="https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1600&auto=format&fit=crop"
+        breadcrumb="Journal" />
+      <section className="oz-section contain">
+        <Reveal>
+          <div className="oz-filters">
+            {cats.map(c => (
+              <button key={c} onClick={() => setCat(c)}
+                className={`oz-filter-btn${cat === c ? ' oz-filter-btn--on' : ''}`}>{c}</button>
+            ))}
+          </div>
+        </Reveal>
+        <div className="oz-blog-grid">
+          {filtered.map((b,i) => <BlogCard key={b.id} item={b} delay={i * 80} />)}
+        </div>
+      </section>
+      <NewsletterSection />
+    </ErrorBoundary>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════════════════════ */
 function AppShell() {
+  const location = useLocation()
   const [mode, setMode] = useState(() => {
-    try { return localStorage.getItem('terranova-mode') || 'modern' } catch { return 'modern' }
+    const saved = localStorage.getItem('ouzaft-mode')
+    return MODES.map(m => m.id).includes(saved) ? saved : 'light'
   })
-  const { pathname } = useLocation()
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-mode', mode)
-    try { localStorage.setItem('terranova-mode', mode) } catch { /* ignore storage failures */ }
+    document.body.dataset.mode = mode
+    localStorage.setItem('ouzaft-mode', mode)
   }, [mode])
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [pathname])
-
-  useEffect(() => {
-    if (mode !== 'modern' || !window.gsap) return
-    const targets = document.querySelectorAll(
-      '.vl-reveal--on, .vl-sec-head, .vl-stay-card, .vl-exp-card, .vl-pkg-card, .vl-stat-card'
-    )
-    if (!targets.length) return
-    window.gsap.fromTo(
-      targets,
-      { opacity: 0, y: 18 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.7,
-        stagger: 0.02,
-        ease: 'power2.out',
-        clearProps: 'opacity,transform',
-      }
-    )
-  }, [pathname, mode])
+  }, [location.pathname])
 
   return (
-    <ErrorBoundary>
+    <div className="oz-app">
       <SiteHeader mode={mode} setMode={setMode} />
-      <main id="main-content" tabIndex={-1} style={{ outline: 'none' }}>
+      <main className="oz-main">
         <Routes>
-          <Route path="/" element={<HomePage mode={mode} />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/stay" element={<StaysPage />} />
-          <Route path="/stay/:id" element={<StayDetailPage />} />
-          <Route path="/experiences" element={<ExperiencesPage />} />
-          <Route path="/experiences/:id" element={<ExperienceDetailPage />} />
-          <Route path="/packages" element={<PackagesPage />} />
-          <Route path="/packages/:id" element={<PackageDetailPage />} />
-          <Route path="/book/:type/:id" element={<BookingPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/"               element={<HomePage />} />
+          <Route path="/stay"           element={<StayPage />} />
+          <Route path="/stay/:id"       element={<StayDetailPage />} />
+          <Route path="/activities"     element={<ActivitiesPage />} />
+          <Route path="/activities/:id" element={<ActivityDetailPage />} />
+          <Route path="/packages"       element={<PackagesPage />} />
+          <Route path="/packages/:id"   element={<PackageDetailPage />} />
+          <Route path="/about"          element={<AboutPage />} />
+          <Route path="/contact"        element={<ContactPage />} />
+          <Route path="/blog"           element={<BlogPage />} />
+          <Route path="*"               element={<HomePage />} />
         </Routes>
       </main>
-      <SiteFooter />
-    </ErrorBoundary>
+      <Footer />
+    </div>
   )
 }
 
