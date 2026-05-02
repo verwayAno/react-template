@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, Component } from 'react'
-import { Routes, Route, Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import './App.css'
 
 /* ─── Icon helper ─────────────────────────────────────── */
@@ -528,10 +528,11 @@ function OuzaftLogo({ onClick }) {
    SITE HEADER
 ═══════════════════════════════════════════════════════ */
 const NAV_LINKS = [
+  { label: 'Home',       to: '/',           icon: 'home-4-line'     },
+  { label: 'About',      to: '/about',      icon: 'team-line'       },
   { label: 'Stay',       to: '/stay',       icon: 'hotel-line'      },
   { label: 'Packages',   to: '/packages',   icon: 'gift-2-line'     },
   { label: 'Activities', to: '/activities', icon: 'compass-3-line'  },
-  { label: 'About',      to: '/about',      icon: 'team-line'       },
   { label: 'Contact',    to: '/contact',    icon: 'mail-send-line'  },
 ]
 
@@ -555,7 +556,7 @@ function SiteHeader({ mode, setMode }) {
 
         <nav className="oz-nav" aria-label="Primary navigation">
           {NAV_LINKS.map(l => (
-            <NavLink key={l.to} to={l.to}
+            <NavLink key={l.to} to={l.to} end={l.to === '/'}
               className={({ isActive }) => `oz-nav__link${isActive ? ' oz-nav__link--on' : ''}`}>
               {l.label}
             </NavLink>
@@ -1133,6 +1134,7 @@ function HomePage() {
   return (
     <ErrorBoundary>
       <HeroSection />
+      <QuickBookCard />
       <WhyStrip />
       <FeaturedStays />
       <StorySection />
@@ -1169,7 +1171,7 @@ function DetailSection({ title, children }) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   STAY DETAIL PAGE
+   STAY DETAIL PAGE — Enhanced
 ═══════════════════════════════════════════════════════ */
 function StayDetailPage() {
   const loc = useLocation()
@@ -1177,6 +1179,10 @@ function StayDetailPage() {
   const id = loc.pathname.split('/').pop()
   const stay = STAYS.find(s => s.id === id)
   const [activeImg, setActiveImg] = useState(0)
+  const [lightbox, setLightbox] = useState(false)
+  const related = STAYS.filter(s => s.id !== id).slice(0, 3)
+
+  useEffect(() => { setActiveImg(0) }, [id])
 
   if (!stay) return (
     <div className="oz-section contain oz-404">
@@ -1185,76 +1191,260 @@ function StayDetailPage() {
     </div>
   )
 
+  const nights = 2
+  const subtotal = stay.price * nights
+
   return (
     <ErrorBoundary>
-      <section className="oz-detail-hero">
-        <div className="oz-detail-hero__gallery">
-          <div className="oz-detail-hero__main-img">
+      {/* ── Immersive Gallery Hero ── */}
+      <section className="oz-dh">
+        <div className="oz-dh__gallery">
+          <button className="oz-dh__main" onClick={() => setLightbox(true)} aria-label="View full gallery">
             <img src={stay.images[activeImg] || stay.cover} alt={stay.name} />
-          </div>
-          <div className="oz-detail-hero__thumbs">
+            <span className="oz-dh__gallery-badge"><I n="image-line" /> {stay.images.length} Photos</span>
+          </button>
+          <div className="oz-dh__thumbs">
             {stay.images.map((img, i) => (
               <button key={i} onClick={() => setActiveImg(i)}
-                className={`oz-detail-hero__thumb${activeImg === i ? ' oz-detail-hero__thumb--on' : ''}`}>
+                className={`oz-dh__thumb${activeImg === i ? ' oz-dh__thumb--on' : ''}`}>
                 <img src={img} alt={`${stay.name} ${i + 1}`} loading="lazy" />
               </button>
             ))}
           </div>
         </div>
-        <div className="contain oz-detail-hero__info">
+
+        {/* ── Lightbox ── */}
+        {lightbox && (
+          <div className="oz-lightbox" role="dialog" aria-modal="true">
+            <button className="oz-lightbox__close" onClick={() => setLightbox(false)} aria-label="Close">
+              <I n="close-line" />
+            </button>
+            <button className="oz-lightbox__prev"
+              onClick={() => setActiveImg(i => (i - 1 + stay.images.length) % stay.images.length)}
+              aria-label="Previous">
+              <I n="arrow-left-s-line" />
+            </button>
+            <img src={stay.images[activeImg]} alt={stay.name} className="oz-lightbox__img" />
+            <button className="oz-lightbox__next"
+              onClick={() => setActiveImg(i => (i + 1) % stay.images.length)}
+              aria-label="Next">
+              <I n="arrow-right-s-line" />
+            </button>
+            <span className="oz-lightbox__count">{activeImg + 1} / {stay.images.length}</span>
+          </div>
+        )}
+      </section>
+
+      {/* ── Header Info Bar ── */}
+      <div className="oz-dh__bar contain">
+        <div className="oz-dh__bar-left">
           <nav className="oz-breadcrumb">
             <Link to="/">Home</Link><I n="arrow-right-s-line" />
             <Link to="/stay">Stays</Link><I n="arrow-right-s-line" />
             <span>{stay.name}</span>
           </nav>
-          <div className="oz-detail-hero__hd">
-            <div>
-              {stay.badge && <span className="oz-badge">{stay.badge}</span>}
-              <h1>{stay.name}</h1>
-              <p className="oz-detail-hero__loc"><I n="map-pin-2-line" />{stay.location}</p>
-              <div className="oz-detail-hero__rat"><Stars n={Math.round(stay.rating)} /><strong>{stay.rating}</strong><span className="oz-muted">({stay.reviews} reviews)</span></div>
-              <p className="oz-detail-hero__atmo">{stay.atmosphere}</p>
+          <div className="oz-dh__tags">
+            {stay.badge && <span className="oz-badge">{stay.badge}</span>}
+            <span className="oz-badge--cat oz-badge">{stay.category}</span>
+          </div>
+          <h1 className="oz-dh__title">{stay.name}</h1>
+          <div className="oz-dh__meta-row">
+            <span><I n="map-pin-2-line" />{stay.location}</span>
+            <span className="oz-dh__sep">·</span>
+            <Stars n={Math.round(stay.rating)} />
+            <strong>{stay.rating}</strong>
+            <span className="oz-muted">({stay.reviews} reviews)</span>
+            <span className="oz-dh__sep">·</span>
+            <span className="oz-dh__atmo"><I n="sparkling-2-line" />{stay.atmosphere}</span>
+          </div>
+        </div>
+        <div className="oz-dh__bar-actions">
+          <button className="oz-btn oz-btn--ghost oz-btn--sm"><I n="share-line" /> Share</button>
+          <button className="oz-btn oz-btn--ghost oz-btn--sm"><I n="heart-line" /> Save</button>
+        </div>
+      </div>
+
+      {/* ── Main Content + Sticky Sidebar ── */}
+      <div className="oz-dh__layout contain">
+        <div className="oz-dh__content">
+
+          {/* Tagline banner */}
+          <div className="oz-dh__tagline-block">
+            <blockquote className="oz-dh__tagline">"{stay.tagline}"</blockquote>
+          </div>
+
+          {/* Description */}
+          <section className="oz-detail__sec">
+            <h2>The Experience</h2>
+            <OrnamentDivider />
+            <p className="oz-dh__desc">{stay.description}</p>
+          </section>
+
+          {/* Highlights */}
+          <section className="oz-detail__sec">
+            <h2>Signature Highlights</h2>
+            <OrnamentDivider />
+            <div className="oz-dh__highlights">
+              {stay.highlights.map((h, i) => (
+                <div key={i} className="oz-dh__highlight">
+                  <span className="oz-dh__hl-ic"><I n="sparkling-line" /></span>
+                  <span>{h}</span>
+                </div>
+              ))}
             </div>
-            <div className="oz-detail-hero__cta-box">
-              <div className="oz-price oz-price--lg"><strong>${stay.price.toLocaleString()}</strong><span className="oz-muted">/night</span></div>
-              <Link to="/contact" className="oz-btn oz-btn--primary oz-btn--full"><I n="calendar-check-line" /> Reserve Now</Link>
-              <Link to="/packages" className="oz-btn oz-btn--ghost oz-btn--full"><I n="gift-2-line" /> See Packages</Link>
+          </section>
+
+          {/* Amenities */}
+          <section className="oz-detail__sec">
+            <h2>Amenities & Inclusions</h2>
+            <OrnamentDivider />
+            <div className="oz-amenities">
+              {stay.amenities.map(a => (
+                <span key={a} className="oz-amenity"><I n="checkbox-circle-line" />{a}</span>
+              ))}
             </div>
+          </section>
+
+          {/* What's nearby */}
+          <section className="oz-detail__sec">
+            <h2>Location & Setting</h2>
+            <OrnamentDivider />
+            <div className="oz-dh__map-placeholder">
+              <I n="map-2-line" />
+              <span>{stay.location}</span>
+              <p>Private transfer arranged from all major airports</p>
+            </div>
+            <div className="oz-dh__nearby">
+              {[
+                { icon: 'map-pin-line', label: 'Private arrival transfer included' },
+                { icon: 'compass-3-line', label: 'Guided medina & landscape walks' },
+                { icon: 'restaurant-line', label: 'Chef-curated menus, local ingredients' },
+                { icon: 'shield-check-line', label: 'Gated & fully private property' },
+              ].map(n => (
+                <div key={n.label} className="oz-dh__nearby-item">
+                  <I n={n.icon} />
+                  <span>{n.label}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Guest Reviews */}
+          <section className="oz-detail__sec">
+            <h2>Guest Voices</h2>
+            <OrnamentDivider />
+            <div className="oz-dh__reviews">
+              <div className="oz-dh__review-score">
+                <strong>{stay.rating}</strong>
+                <Stars n={5} />
+                <span>{stay.reviews} verified reviews</span>
+              </div>
+              <div className="oz-dh__review-cards">
+                {TESTIMONIALS.slice(0, 2).map((t, i) => (
+                  <div key={i} className="oz-dh__review-card">
+                    <div className="oz-dh__rev-head">
+                      <img src={t.avatar} alt={t.name} />
+                      <div>
+                        <strong>{t.name}</strong>
+                        <span className="oz-muted">{t.role}</span>
+                      </div>
+                      <Stars n={t.rating} />
+                    </div>
+                    <p>"{t.text.substring(0, 180)}..."</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* ── Sticky Booking Sidebar ── */}
+        <aside className="oz-dh__aside">
+          <div className="oz-dh__book-card">
+            <div className="oz-dh__book-price">
+              <div className="oz-price oz-price--lg">
+                <strong>${stay.price.toLocaleString()}</strong>
+                <span className="oz-muted">/night</span>
+              </div>
+              <Stars n={Math.round(stay.rating)} />
+            </div>
+            <OrnamentDivider />
+
+            <div className="oz-dh__book-dates">
+              <div className="oz-dh__date-field">
+                <label><I n="calendar-line" /> Check-in</label>
+                <OzDatePicker value="2026-05-15" onChange={() => {}} placeholder="Check-in date" />
+              </div>
+              <div className="oz-dh__date-field">
+                <label><I n="calendar-check-line" /> Check-out</label>
+                <OzDatePicker value="2026-05-17" onChange={() => {}} placeholder="Check-out date" openUp />
+              </div>
+            </div>
+
+            <div className="oz-dh__book-guests">
+              <label><I n="group-line" /> Guests</label>
+              <div className="oz-dh__guest-row">
+                <span>Adults</span>
+                <div className="oz-dh__stepper">
+                  <button aria-label="Decrease">−</button>
+                  <span>2</span>
+                  <button aria-label="Increase">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="oz-dh__price-breakdown">
+              <div className="oz-dh__price-row">
+                <span>${stay.price.toLocaleString()} × {nights} nights</span>
+                <span>${subtotal.toLocaleString()}</span>
+              </div>
+              <div className="oz-dh__price-row">
+                <span>Concierge service</span>
+                <span className="oz-dh__free">Included</span>
+              </div>
+              <div className="oz-dh__price-row oz-dh__price-row--total">
+                <strong>Total</strong>
+                <strong>${subtotal.toLocaleString()}</strong>
+              </div>
+            </div>
+
+            <Link to={`/book?type=stay&id=${stay.id}`} className="oz-btn oz-btn--primary oz-btn--full oz-btn--lg">
+              <I n="calendar-check-line" /> Reserve Now
+            </Link>
+            <Link to="/contact" className="oz-btn oz-btn--ghost oz-btn--full">
+              <I n="chat-1-line" /> Ask Concierge
+            </Link>
+            <p className="oz-dh__book-note"><I n="shield-check-line" /> Free cancellation up to 48h before arrival</p>
+          </div>
+
+          <div className="oz-dh__aside-concierge">
+            <div className="oz-dh__conc-head">
+              <img src={TEAM[0].avatar} alt={TEAM[0].name} />
+              <div>
+                <strong>{TEAM[0].name}</strong>
+                <span className="oz-muted">Your Dedicated Concierge</span>
+              </div>
+            </div>
+            <p>Available 24/7 — call, email, or WhatsApp</p>
+            <div className="oz-dh__conc-actions">
+              <a href="tel:+212522000000" className="oz-btn oz-btn--ghost oz-btn--sm"><I n="phone-line" /> Call</a>
+              <a href="mailto:stay@ouzaft.ma" className="oz-btn oz-btn--ghost oz-btn--sm"><I n="mail-line" /> Email</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* ── Related Stays ── */}
+      <section className="oz-section oz-section--tinted">
+        <div className="contain">
+          <Reveal>
+            <SectionHead eyebrow="You May Also Love" title="More Extraordinary Stays" />
+          </Reveal>
+          <div className="oz-stays-grid">
+            {related.map((s, i) => <StayCard key={s.id} item={s} delay={i * 80} />)}
           </div>
         </div>
       </section>
-
-      <DetailLayout
-        aside={
-          <>
-            <div className="oz-detail__aside-card">
-              <h3>Ready to stay?</h3>
-              <p className="oz-muted">Our concierge builds a personalised itinerary around your dates.</p>
-              <div className="oz-price oz-price--lg"><strong>${stay.price.toLocaleString()}</strong><span className="oz-muted">/night</span></div>
-              <Link to="/contact" className="oz-btn oz-btn--primary oz-btn--full">Reserve This Stay</Link>
-              <Link to="/packages" className="oz-btn oz-btn--ghost oz-btn--full">Include in a Package</Link>
-            </div>
-            <div className="oz-detail__aside-card oz-detail__aside-card--soft">
-              <h4><I n="headphone-line" /> 24/7 Concierge</h4>
-              <p className="oz-muted">One dedicated person, always available.</p>
-              <a href="tel:+212522000000" className="oz-btn oz-btn--ghost oz-btn--full"><I n="phone-line" /> Call Us</a>
-              <a href="mailto:stay@ouzaft.ma" className="oz-btn oz-btn--ghost oz-btn--full"><I n="mail-line" /> Email Us</a>
-            </div>
-          </>
-        }
-      >
-        <DetailSection title="The Experience"><p>{stay.description}</p></DetailSection>
-        <DetailSection title="Highlights">
-          <ul className="oz-check-list">
-            {stay.highlights.map(h => <li key={h}><I n="checkbox-circle-line" />{h}</li>)}
-          </ul>
-        </DetailSection>
-        <DetailSection title="Amenities">
-          <div className="oz-amenities">
-            {stay.amenities.map(a => <span key={a} className="oz-amenity"><I n="check-double-line" />{a}</span>)}
-          </div>
-        </DetailSection>
-      </DetailLayout>
     </ErrorBoundary>
   )
 }
@@ -1292,13 +1482,14 @@ function StayPage() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   ACTIVITY DETAIL PAGE
+   ACTIVITY DETAIL PAGE — Enhanced
 ═══════════════════════════════════════════════════════ */
 function ActivityDetailPage() {
   const loc = useLocation()
   const navigate = useNavigate()
   const id = loc.pathname.split('/').pop()
   const act = ACTIVITIES.find(a => a.id === id)
+  const related = ACTIVITIES.filter(a => a.id !== id).slice(0, 3)
 
   if (!act) return (
     <div className="oz-section contain oz-404">
@@ -1309,42 +1500,176 @@ function ActivityDetailPage() {
 
   return (
     <ErrorBoundary>
-      <PageHero title={act.name} subtitle={act.tagline} image={act.cover} breadcrumb="Activities" />
-      <DetailLayout
-        aside={
-          <div className="oz-detail__aside-card">
-            <h3>Book This Activity</h3>
-            <div className="oz-price oz-price--lg"><strong>${act.price}</strong><span className="oz-muted">/person</span></div>
-            <p className="oz-muted">{act.groupSize} · {act.duration}</p>
-            <Link to="/contact" className="oz-btn oz-btn--primary oz-btn--full"><I n="calendar-check-line" /> Book Now</Link>
+      {/* ── Cinematic Hero ── */}
+      <section className="oz-dh oz-dh--act">
+        <div className="oz-dh__act-hero" style={{ backgroundImage: `url(${act.cover})` }}>
+          <div className="oz-dh__act-veil" />
+          <div className="oz-dh__act-content contain">
+            <nav className="oz-breadcrumb">
+              <Link to="/">Home</Link><I n="arrow-right-s-line" />
+              <Link to="/activities">Activities</Link><I n="arrow-right-s-line" />
+              <span>{act.name}</span>
+            </nav>
+            <div className="oz-dh__act-tags">
+              {act.badge && <span className="oz-badge">{act.badge}</span>}
+              <span className="oz-diff" data-diff={act.difficulty.toLowerCase()}>{act.difficulty}</span>
+            </div>
+            <h1 className="oz-dh__act-title">{act.name}</h1>
+            <p className="oz-dh__act-tagline">"{act.tagline}"</p>
+            <div className="oz-dh__act-pills">
+              <span><I n="time-line" />{act.duration}</span>
+              <span><I n="group-line" />{act.groupSize}</span>
+              <span><I n="compass-3-line" />{act.category}</span>
+            </div>
           </div>
-        }
-      >
-        <DetailSection title="About This Experience">
-          <div className="oz-detail-meta-row">
-            <span className="oz-diff" data-diff={act.difficulty.toLowerCase()}>{act.difficulty}</span>
-            <span><I n="time-line" />{act.duration}</span>
-            <span><I n="group-line" />{act.groupSize}</span>
-            {act.badge && <span className="oz-badge">{act.badge}</span>}
+        </div>
+      </section>
+
+      {/* ── Layout ── */}
+      <div className="oz-dh__layout contain" style={{ paddingTop: '2.5rem' }}>
+        <div className="oz-dh__content">
+
+          {/* About */}
+          <section className="oz-detail__sec">
+            <h2>About This Experience</h2>
+            <OrnamentDivider />
+            <p className="oz-dh__desc">{act.description}</p>
+          </section>
+
+          {/* What's Included */}
+          <section className="oz-detail__sec">
+            <h2>Everything Included</h2>
+            <OrnamentDivider />
+            <div className="oz-dh__highlights">
+              {act.includes.map((inc, i) => (
+                <div key={i} className="oz-dh__highlight oz-dh__highlight--check">
+                  <span className="oz-dh__hl-ic oz-dh__hl-ic--check"><I n="check-double-line" /></span>
+                  <span>{inc}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* What to Expect — visual timeline */}
+          <section className="oz-detail__sec">
+            <h2>What to Expect</h2>
+            <OrnamentDivider />
+            <ol className="oz-dh__timeline">
+              {act.whatToExpect.map((step, i) => (
+                <li key={i} className="oz-dh__timeline-item">
+                  <div className="oz-dh__tl-dot">
+                    <span>{String(i + 1).padStart(2, '0')}</span>
+                  </div>
+                  <div className="oz-dh__tl-body">
+                    <p>{step}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* Reviews */}
+          <section className="oz-detail__sec">
+            <h2>What Guests Say</h2>
+            <OrnamentDivider />
+            <div className="oz-dh__review-cards">
+              {TESTIMONIALS.slice(0, 2).map((t, i) => (
+                <div key={i} className="oz-dh__review-card">
+                  <div className="oz-dh__rev-head">
+                    <img src={t.avatar} alt={t.name} />
+                    <div>
+                      <strong>{t.name}</strong>
+                      <span className="oz-muted">{t.role}</span>
+                    </div>
+                    <Stars n={t.rating} />
+                  </div>
+                  <p>"{t.text.substring(0, 200)}..."</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* ── Sidebar ── */}
+        <aside className="oz-dh__aside">
+          <div className="oz-dh__book-card">
+            <div className="oz-dh__book-price">
+              <div className="oz-price oz-price--lg">
+                <strong>${act.price}</strong>
+                <span className="oz-muted">/person</span>
+              </div>
+              <span className="oz-diff" data-diff={act.difficulty.toLowerCase()}>{act.difficulty}</span>
+            </div>
+            <OrnamentDivider />
+            <div className="oz-dh__act-info-list">
+              <div><I n="time-line" /><span>{act.duration}</span></div>
+              <div><I n="group-line" /><span>{act.groupSize}</span></div>
+              <div><I n="compass-3-line" /><span>{act.category}</span></div>
+            </div>
+
+            <div className="oz-dh__book-dates">
+              <div className="oz-dh__date-field">
+                <label><I n="calendar-line" /> Preferred Date</label>
+                <OzDatePicker value="2026-05-16" onChange={() => {}} placeholder="Select date" />
+              </div>
+            </div>
+            <div className="oz-dh__book-guests">
+              <label><I n="group-line" /> Participants</label>
+              <div className="oz-dh__guest-row">
+                <span>Guests</span>
+                <div className="oz-dh__stepper">
+                  <button aria-label="Decrease">−</button>
+                  <span>2</span>
+                  <button aria-label="Increase">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="oz-dh__price-breakdown">
+              <div className="oz-dh__price-row">
+                <span>${act.price} × 2 guests</span>
+                <span>${(act.price * 2).toLocaleString()}</span>
+              </div>
+              <div className="oz-dh__price-row oz-dh__price-row--total">
+                <strong>Total</strong>
+                <strong>${(act.price * 2).toLocaleString()}</strong>
+              </div>
+            </div>
+
+            <Link to={`/book?type=activity&id=${act.id}`} className="oz-btn oz-btn--primary oz-btn--full oz-btn--lg">
+              <I n="calendar-check-line" /> Book Now
+            </Link>
+            <Link to="/contact" className="oz-btn oz-btn--ghost oz-btn--full">
+              <I n="chat-1-line" /> Ask Questions
+            </Link>
+            <p className="oz-dh__book-note"><I n="shield-check-line" /> Free cancellation up to 24h before</p>
           </div>
-          <p>{act.description}</p>
-        </DetailSection>
-        <DetailSection title="What's Included">
-          <ul className="oz-check-list">
-            {act.includes.map(inc => <li key={inc}><I n="check-double-line" />{inc}</li>)}
-          </ul>
-        </DetailSection>
-        <DetailSection title="What to Expect">
-          <ol className="oz-timeline">
-            {act.whatToExpect.map((step, i) => (
-              <li key={i} className="oz-timeline__item">
-                <span className="oz-timeline__n">{String(i+1).padStart(2,'0')}</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-        </DetailSection>
-      </DetailLayout>
+          <div className="oz-dh__aside-concierge">
+            <div className="oz-dh__conc-head">
+              <img src={TEAM[0].avatar} alt={TEAM[0].name} />
+              <div>
+                <strong>{TEAM[0].name}</strong>
+                <span className="oz-muted">Your Dedicated Concierge</span>
+              </div>
+            </div>
+            <p>Available 24/7 for any questions</p>
+            <div className="oz-dh__conc-actions">
+              <a href="tel:+212522000000" className="oz-btn oz-btn--ghost oz-btn--sm"><I n="phone-line" /> Call</a>
+              <a href="mailto:stay@ouzaft.ma" className="oz-btn oz-btn--ghost oz-btn--sm"><I n="mail-line" /> Email</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* Related */}
+      <section className="oz-section oz-section--tinted">
+        <div className="contain">
+          <Reveal><SectionHead eyebrow="Explore More" title="Other Experiences You'll Love" /></Reveal>
+          <div className="oz-act-grid">
+            {related.map((a, i) => <ActivityCard key={a.id} item={a} delay={i * 80} />)}
+          </div>
+        </div>
+      </section>
     </ErrorBoundary>
   )
 }
@@ -1383,13 +1708,15 @@ function ActivitiesPage() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   PACKAGE DETAIL PAGE
+   PACKAGE DETAIL PAGE — Enhanced
 ═══════════════════════════════════════════════════════ */
 function PackageDetailPage() {
   const loc = useLocation()
   const navigate = useNavigate()
   const id = loc.pathname.split('/').pop()
   const pkg = PACKAGES.find(p => p.id === id)
+  const [activeDay, setActiveDay] = useState(null)
+  const related = PACKAGES.filter(p => p.id !== id).slice(0, 2)
 
   if (!pkg) return (
     <div className="oz-section contain oz-404">
@@ -1400,56 +1727,185 @@ function PackageDetailPage() {
 
   return (
     <ErrorBoundary>
-      <PageHero title={pkg.name} subtitle={pkg.tagline} image={pkg.cover} breadcrumb="Packages" />
-      <DetailLayout
-        aside={
-          <>
-            <div className="oz-detail__aside-card">
-              <h3>Reserve This Package</h3>
+      {/* ── Cinematic Hero ── */}
+      <section className="oz-dh">
+        <div className="oz-dh__pkg-hero" style={{ backgroundImage: `url(${pkg.cover})` }}>
+          <div className="oz-dh__act-veil" />
+          <div className="oz-dh__act-content contain">
+            <nav className="oz-breadcrumb">
+              <Link to="/">Home</Link><I n="arrow-right-s-line" />
+              <Link to="/packages">Packages</Link><I n="arrow-right-s-line" />
+              <span>{pkg.name}</span>
+            </nav>
+            <div className="oz-dh__act-tags">
+              {pkg.badge && <span className="oz-badge">{pkg.badge}</span>}
+              <span className="oz-badge oz-badge--cat"><I n="calendar-2-line" />{pkg.duration}</span>
+            </div>
+            <h1 className="oz-dh__act-title">{pkg.name}</h1>
+            <p className="oz-dh__act-tagline">"{pkg.tagline}"</p>
+            <div className="oz-dh__act-pills">
+              <span><I n="map-pin-line" />{pkg.location}</span>
+              <span><I n="calendar-2-line" />{pkg.duration}</span>
+              <span><I n="group-2-line" />{pkg.pricePer}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Layout ── */}
+      <div className="oz-dh__layout contain" style={{ paddingTop: '2.5rem' }}>
+        <div className="oz-dh__content">
+
+          {/* Overview */}
+          <section className="oz-detail__sec">
+            <h2>The Journey</h2>
+            <OrnamentDivider />
+            <p className="oz-dh__desc">{pkg.description}</p>
+          </section>
+
+          {/* Inclusions */}
+          <section className="oz-detail__sec">
+            <h2>Everything Included</h2>
+            <OrnamentDivider />
+            <div className="oz-dh__highlights">
+              {pkg.includes.map((inc, i) => (
+                <div key={i} className="oz-dh__highlight oz-dh__highlight--check">
+                  <span className="oz-dh__hl-ic oz-dh__hl-ic--check"><I n="checkbox-circle-line" /></span>
+                  <span>{inc}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Itinerary — accordion */}
+          <section className="oz-detail__sec">
+            <h2>Day by Day</h2>
+            <OrnamentDivider />
+            <ol className="oz-dh__itinerary">
+              {pkg.itinerary.map(day => (
+                <li key={day.day} className={`oz-dh__itin-item${activeDay === day.day ? ' oz-dh__itin-item--open' : ''}`}>
+                  <button className="oz-dh__itin-hd"
+                    onClick={() => setActiveDay(activeDay === day.day ? null : day.day)}>
+                    <div className="oz-dh__itin-n">
+                      <span>Day</span>
+                      <strong>{day.day}</strong>
+                    </div>
+                    <span className="oz-dh__itin-title">{day.title}</span>
+                    <I n={activeDay === day.day ? 'subtract-line' : 'add-line'} className="oz-dh__itin-toggle" />
+                  </button>
+                  {activeDay === day.day && (
+                    <div className="oz-dh__itin-body"><p>{day.desc}</p></div>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* Reviews */}
+          <section className="oz-detail__sec">
+            <h2>Guest Voices</h2>
+            <OrnamentDivider />
+            <div className="oz-dh__review-cards">
+              {TESTIMONIALS.slice(2, 4).map((t, i) => (
+                <div key={i} className="oz-dh__review-card">
+                  <div className="oz-dh__rev-head">
+                    <img src={t.avatar} alt={t.name} />
+                    <div>
+                      <strong>{t.name}</strong>
+                      <span className="oz-muted">{t.role}</span>
+                    </div>
+                    <Stars n={t.rating} />
+                  </div>
+                  <p>"{t.text.substring(0, 200)}..."</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* ── Sidebar ── */}
+        <aside className="oz-dh__aside">
+          <div className="oz-dh__book-card">
+            <div className="oz-dh__book-price">
+              <span className="oz-muted" style={{ fontSize: '.8rem' }}>From</span>
               <div className="oz-price oz-price--lg">
                 <strong>${pkg.price.toLocaleString()}</strong>
                 <span className="oz-muted"> /{pkg.pricePer}</span>
               </div>
-              <p className="oz-muted">{pkg.duration} · {pkg.location}</p>
-              <Link to="/contact" className="oz-btn oz-btn--primary oz-btn--full"><I n="calendar-check-line" /> Enquire Now</Link>
-              <Link to="/contact" className="oz-btn oz-btn--ghost oz-btn--full"><I n="chat-1-line" /> Speak to Concierge</Link>
+              {pkg.badge && <span className="oz-badge">{pkg.badge}</span>}
             </div>
-            <div className="oz-detail__aside-card oz-detail__aside-card--soft">
-              <p className="oz-muted" style={{ fontSize:'0.85rem' }}>All packages include a dedicated concierge. Fully customisable itineraries available.</p>
+            <OrnamentDivider />
+            <div className="oz-dh__act-info-list">
+              <div><I n="calendar-2-line" /><span>{pkg.duration}</span></div>
+              <div><I n="map-pin-line" /><span>{pkg.location}</span></div>
             </div>
-          </>
-        }
-      >
-        <DetailSection title="The Journey">
-          <div className="oz-detail-meta-row">
-            {pkg.badge && <span className="oz-badge">{pkg.badge}</span>}
-            <span><I n="calendar-2-line" />{pkg.duration}</span>
-            <span><I n="map-pin-line" />{pkg.location}</span>
+            <div className="oz-dh__book-dates">
+              <div className="oz-dh__date-field">
+                <label><I n="calendar-line" /> Start Date</label>
+                <OzDatePicker value="2026-06-01" onChange={() => {}} placeholder="Select start date" />
+              </div>
+            </div>
+            <div className="oz-dh__book-guests">
+              <label><I n="group-line" /> Travellers</label>
+              <div className="oz-dh__guest-row">
+                <span>Adults</span>
+                <div className="oz-dh__stepper">
+                  <button aria-label="Decrease">−</button>
+                  <span>2</span>
+                  <button aria-label="Increase">+</button>
+                </div>
+              </div>
+            </div>
+            <div className="oz-dh__price-breakdown">
+              <div className="oz-dh__price-row">
+                <span>Package from</span>
+                <span>${pkg.price.toLocaleString()}</span>
+              </div>
+              <div className="oz-dh__price-row">
+                <span>Concierge & transfers</span>
+                <span className="oz-dh__free">Included</span>
+              </div>
+              <div className="oz-dh__price-row oz-dh__price-row--total">
+                <strong>From</strong>
+                <strong>${pkg.price.toLocaleString()}</strong>
+              </div>
+            </div>
+            <Link to={`/book?type=package&id=${pkg.id}`} className="oz-btn oz-btn--primary oz-btn--full oz-btn--lg">
+              <I n="calendar-check-line" /> Book This Package
+            </Link>
+            <Link to="/contact" className="oz-btn oz-btn--ghost oz-btn--full">
+              <I n="chat-1-line" /> Customise Itinerary
+            </Link>
+            <p className="oz-dh__book-note"><I n="shield-check-line" /> Fully customisable dates & route</p>
           </div>
-          <p>{pkg.description}</p>
-        </DetailSection>
-        <DetailSection title="Everything Included">
-          <ul className="oz-check-list">
-            {pkg.includes.map(inc => <li key={inc}><I n="checkbox-circle-line" />{inc}</li>)}
-          </ul>
-        </DetailSection>
-        <DetailSection title="Day by Day">
-          <ol className="oz-itinerary">
-            {pkg.itinerary.map(day => (
-              <li key={day.day} className="oz-itinerary__day">
-                <div className="oz-itinerary__n">
-                  <span>Day</span>
-                  <strong>{day.day}</strong>
-                </div>
-                <div className="oz-itinerary__body">
-                  <h4>{day.title}</h4>
-                  <p>{day.desc}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </DetailSection>
-      </DetailLayout>
+          <div className="oz-dh__aside-concierge">
+            <div className="oz-dh__conc-head">
+              <img src={TEAM[0].avatar} alt={TEAM[0].name} />
+              <div>
+                <strong>{TEAM[0].name}</strong>
+                <span className="oz-muted">Package Specialist</span>
+              </div>
+            </div>
+            <p>We'll craft your perfect Morocco journey</p>
+            <div className="oz-dh__conc-actions">
+              <a href="tel:+212522000000" className="oz-btn oz-btn--ghost oz-btn--sm"><I n="phone-line" /> Call</a>
+              <a href="mailto:stay@ouzaft.ma" className="oz-btn oz-btn--ghost oz-btn--sm"><I n="mail-line" /> Email</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* Related */}
+      {related.length > 0 && (
+        <section className="oz-section oz-section--tinted">
+          <div className="contain">
+            <Reveal><SectionHead eyebrow="Explore More" title="Other Curated Journeys" /></Reveal>
+            <div className="oz-pkg-grid oz-pkg-grid--2col">
+              {related.map((p, i) => <PackageCard key={p.id} item={p} delay={i * 80} />)}
+            </div>
+          </div>
+        </section>
+      )}
     </ErrorBoundary>
   )
 }
@@ -1753,8 +2209,904 @@ function BlogPage() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   APP SHELL
+   CUSTOM DATE PICKER
 ═══════════════════════════════════════════════════════ */
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const WEEKDAYS = ['Mo','Tu','We','Th','Fr','Sa','Su']
+
+function OzDatePicker({ value, onChange, placeholder = 'Select date', min, label, isRange, rangeStart, rangeEnd, onRangeChange, openUp = false }) {
+  const [open, setOpen] = useState(false)
+  const [viewYear, setViewYear] = useState(() => {
+    const d = value ? new Date(value) : (min ? new Date(min) : new Date())
+    return d.getFullYear()
+  })
+  const [viewMonth, setViewMonth] = useState(() => {
+    const d = value ? new Date(value) : (min ? new Date(min) : new Date())
+    return d.getMonth()
+  })
+  const ref = useRef(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const today = new Date(); today.setHours(0,0,0,0)
+  const minDate = min ? (() => { const d = new Date(min); d.setHours(0,0,0,0); return d })() : null
+
+  const firstDay = new Date(viewYear, viewMonth, 1)
+  // Monday-first: 0=Mo..6=Su
+  const startDow = (firstDay.getDay() + 6) % 7
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
+    else setViewMonth(m => m - 1)
+  }
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
+    else setViewMonth(m => m + 1)
+  }
+
+  const selectDay = (day) => {
+    const d = new Date(viewYear, viewMonth, day)
+    const iso = d.toISOString().split('T')[0]
+    if (isRange && onRangeChange) {
+      onRangeChange(iso)
+    } else {
+      onChange(iso)
+      setOpen(false)
+    }
+  }
+
+  const clear = () => {
+    if (isRange && onRangeChange) { onRangeChange(null) }
+    else { onChange(''); setOpen(false) }
+  }
+
+  const goToday = () => {
+    setViewYear(today.getFullYear())
+    setViewMonth(today.getMonth())
+  }
+
+  const dayClass = (day) => {
+    const d = new Date(viewYear, viewMonth, day)
+    d.setHours(0,0,0,0)
+    const iso = d.toISOString().split('T')[0]
+    let cls = 'oz-datepicker__day'
+    if (d.getTime() === today.getTime()) cls += ' oz-datepicker__day--today'
+    if (minDate && d < minDate) cls += ' oz-datepicker__day--disabled'
+    if (isRange) {
+      const rs = rangeStart ? new Date(rangeStart) : null
+      const re = rangeEnd ? new Date(rangeEnd) : null
+      if (rs) rs.setHours(0,0,0,0)
+      if (re) re.setHours(0,0,0,0)
+      if (rs && d.getTime() === rs.getTime()) cls += ' oz-datepicker__day--range-start'
+      else if (re && d.getTime() === re.getTime()) cls += ' oz-datepicker__day--range-end'
+      else if (rs && re && d > rs && d < re) cls += ' oz-datepicker__day--in-range'
+    } else {
+      if (value === iso) cls += ' oz-datepicker__day--selected'
+    }
+    return cls
+  }
+
+  const displayValue = () => {
+    if (isRange) {
+      if (rangeStart && rangeEnd) return `${new Date(rangeStart).toLocaleDateString('en-GB',{day:'numeric',month:'short'})} → ${new Date(rangeEnd).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`
+      if (rangeStart) return new Date(rangeStart).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})
+      return null
+    }
+    return value ? new Date(value).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : null
+  }
+
+  const displayed = displayValue()
+
+  return (
+    <div className="oz-datepicker" ref={ref}>
+      <button type="button"
+        className={`oz-datepicker__trigger${open ? ' oz-datepicker__trigger--open' : ''}`}
+        onClick={() => setOpen(o => !o)}
+        aria-label={label || placeholder}>
+        <i className="ri-calendar-2-line" />
+        {displayed
+          ? <span className="oz-datepicker__value">{displayed}</span>
+          : <span className="oz-datepicker__placeholder">{placeholder}</span>
+        }
+      </button>
+
+      {open && (
+        <div className={`oz-datepicker__panel${openUp ? ' oz-datepicker__panel--up' : ''}`}>
+          <div className="oz-datepicker__header">
+            <button className="oz-datepicker__nav" onClick={prevMonth} aria-label="Previous month">
+              <i className="ri-arrow-left-s-line" />
+            </button>
+            <span className="oz-datepicker__month-label">{MONTHS[viewMonth]} {viewYear}</span>
+            <button className="oz-datepicker__nav" onClick={nextMonth} aria-label="Next month">
+              <i className="ri-arrow-right-s-line" />
+            </button>
+          </div>
+
+          <div className="oz-datepicker__weekdays">
+            {WEEKDAYS.map(d => <div key={d} className="oz-datepicker__wd">{d}</div>)}
+          </div>
+
+          <div className="oz-datepicker__days">
+            {Array.from({ length: startDow }, (_, i) => (
+              <div key={`e${i}`} className="oz-datepicker__day oz-datepicker__day--empty" />
+            ))}
+            {Array.from({ length: daysInMonth }, (_, i) => (
+              <button key={i+1} type="button" className={dayClass(i+1)} onClick={() => selectDay(i+1)}>
+                {i+1}
+              </button>
+            ))}
+          </div>
+
+          <div className="oz-datepicker__footer">
+            <button className="oz-datepicker__clear" onClick={clear}>Clear</button>
+            <button className="oz-datepicker__today-btn" onClick={goToday}>Today</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   QUICK BOOKING CARD
+═══════════════════════════════════════════════════════ */
+function QuickBookCard() {
+  const navigate = useNavigate()
+  const [tab, setTab] = useState('stay')
+  const [date, setDate] = useState('')
+  const [checkout, setCheckout] = useState('')
+  const [guests, setGuests] = useState(2)
+
+  // Range handler for stay
+  const handleRange = (iso) => {
+    if (!iso) { setDate(''); setCheckout(''); return }
+    if (!date || checkout) { setDate(iso); setCheckout('') }
+    else if (new Date(iso) > new Date(date)) setCheckout(iso)
+    else { setDate(iso); setCheckout('') }
+  }
+
+  const handleSearch = () => {
+    const path = tab === 'stay' ? '/stay' : tab === 'activity' ? '/activities' : '/packages'
+    navigate(path)
+  }
+
+  const tabDefs = [
+    { id: 'stay',     icon: 'ri-hotel-bed-line',     label: 'Stay'       },
+    { id: 'activity', icon: 'ri-compass-3-line',      label: 'Activities' },
+    { id: 'package',  icon: 'ri-luggage-cart-line',   label: 'Packages'  },
+  ]
+
+  return (
+    <div className="oz-qbook-wrap">
+      <div className="oz-qbook contain">
+        {/* Type tabs */}
+        <div className="oz-qbook__tabs">
+          {tabDefs.map(t => (
+            <button key={t.id}
+              className={`oz-qbook__tab${tab === t.id ? ' oz-qbook__tab--on' : ''}`}
+              onClick={() => setTab(t.id)}>
+              <i className={t.icon} />{t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Fields */}
+        <div className="oz-qbook__fields">
+          {tab === 'stay' ? (
+            <>
+              <div className="oz-qbook__field">
+                <label><i className="ri-map-pin-line" /> Destination</label>
+                <OzDatePicker
+                  isRange
+                  rangeStart={date}
+                  rangeEnd={checkout}
+                  onRangeChange={handleRange}
+                  placeholder="Check-in → Check-out"
+                  label="Select dates"
+                />
+              </div>
+              <div className="oz-qbook__field">
+                <label><i className="ri-calendar-check-line" /> Check-out</label>
+                <OzDatePicker
+                  value={checkout}
+                  onChange={setCheckout}
+                  min={date || new Date().toISOString().split('T')[0]}
+                  placeholder="Select check-out"
+                />
+              </div>
+            </>
+          ) : (
+            <div className="oz-qbook__field" style={{ gridColumn: 'span 2' }}>
+              <label><i className="ri-calendar-event-line" /> Date</label>
+              <OzDatePicker
+                value={date}
+                onChange={setDate}
+                min={new Date().toISOString().split('T')[0]}
+                placeholder="Select date"
+              />
+            </div>
+          )}
+
+          <div className="oz-qbook__field">
+            <label><i className="ri-group-line" /> Guests</label>
+            <div className="oz-qbook__guest-ctrl">
+              <button onClick={() => setGuests(g => Math.max(1, g - 1))} aria-label="Decrease">−</button>
+              <span className="oz-qbook__guest-count">{guests} {guests === 1 ? 'Guest' : 'Guests'}</span>
+              <button onClick={() => setGuests(g => g + 1)} aria-label="Increase">+</button>
+            </div>
+          </div>
+
+          <button className="oz-qbook__search" onClick={handleSearch}>
+            <i className="ri-search-line" />
+            {tab === 'stay' ? 'Find Stays' : tab === 'activity' ? 'Find Activities' : 'View Packages'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   BOOKING PAGE — Multi-Step Wizard
+═══════════════════════════════════════════════════════ */
+const BOOKING_STEPS_STAY = [
+  { id: 1, label: 'Dates & Guests',    icon: 'calendar-line'       },
+  { id: 2, label: 'Choose Your Room',  icon: 'hotel-line'          },
+  { id: 3, label: 'Extras & Services', icon: 'service-line'        },
+  { id: 4, label: 'Add Activities',    icon: 'compass-3-line'      },
+  { id: 5, label: 'Travellers',        icon: 'user-line'           },
+  { id: 6, label: 'Your Details',      icon: 'profile-line'        },
+  { id: 7, label: 'Checkout',          icon: 'secure-payment-line' },
+]
+const BOOKING_STEPS_ACTIVITY = [
+  { id: 1, label: 'Date & Guests',  icon: 'calendar-line'       },
+  { id: 2, label: 'Participants',   icon: 'group-line'          },
+  { id: 3, label: 'Add-ons',        icon: 'add-circle-line'     },
+  { id: 4, label: 'Your Details',   icon: 'profile-line'        },
+  { id: 5, label: 'Checkout',       icon: 'secure-payment-line' },
+]
+const BOOKING_STEPS_PACKAGE = [
+  { id: 1, label: 'Dates & Guests', icon: 'calendar-line'       },
+  { id: 2, label: 'Customise',      icon: 'settings-3-line'     },
+  { id: 3, label: 'Add Activities', icon: 'compass-3-line'      },
+  { id: 4, label: 'Travellers',     icon: 'user-line'           },
+  { id: 5, label: 'Your Details',   icon: 'profile-line'        },
+  { id: 6, label: 'Checkout',       icon: 'secure-payment-line' },
+]
+
+const ROOM_OPTIONS = [
+  { id: 'standard', label: 'Classic Suite', desc: 'Elegant courtyard-view suite with traditional furnishings', price: 0, icon: 'hotel-bed-line' },
+  { id: 'deluxe',   label: 'Deluxe Suite',  desc: 'Enhanced suite with private terrace and premium amenities', price: 150, icon: 'vip-crown-line' },
+  { id: 'royal',    label: 'Royal Suite',   desc: 'The finest suite, featuring a private hammam and plunge pool', price: 380, icon: 'sparkling-2-line' },
+]
+
+const EXTRAS = [
+  { id: 'airport',  label: 'Private Airport Transfer', desc: 'Dedicated 4WD from/to airport', price: 120, icon: 'car-line' },
+  { id: 'breakfast',label: 'Daily Breakfast',          desc: 'Chef-prepared Moroccan breakfast daily', price: 45, icon: 'restaurant-2-line' },
+  { id: 'flowers',  label: 'Welcome Flowers & Fruit',  desc: 'Seasonal arrangement in your room', price: 35, icon: 'plant-line' },
+  { id: 'wine',     label: 'Welcome Wine & Pastries',  desc: 'Curated Moroccan welcome tray', price: 55, icon: 'goblet-line' },
+]
+
+function BookingPage() {
+  const [params] = useSearchParams()
+  const navigate = useNavigate()
+  const type = params.get('type') || 'stay'
+  const itemId = params.get('id')
+
+  const item = type === 'stay'
+    ? STAYS.find(s => s.id === itemId) || STAYS[0]
+    : type === 'activity'
+    ? ACTIVITIES.find(a => a.id === itemId) || ACTIVITIES[0]
+    : PACKAGES.find(p => p.id === itemId) || PACKAGES[0]
+
+  const steps = type === 'activity'
+    ? BOOKING_STEPS_ACTIVITY
+    : type === 'package'
+    ? BOOKING_STEPS_PACKAGE
+    : BOOKING_STEPS_STAY
+
+  const [step, setStep] = useState(1)
+  const [checkin, setCheckin] = useState('')
+  const [checkout, setCheckout] = useState('')
+  const [adults, setAdults] = useState(2)
+  const [children, setChildren] = useState(0)
+  const [room, setRoom] = useState(ROOM_OPTIONS[0].id)
+  const [extras, setExtras] = useState([])
+  const [addedActivities, setAddedActivities] = useState([])
+  const [travellers, setTravellers] = useState([{ firstName: '', lastName: '', passport: '' }])
+  const [details, setDetails] = useState({ name: '', email: '', phone: '', special: '' })
+  const [detailErrors, setDetailErrors] = useState({})
+  const [complete, setComplete] = useState(false)
+
+  const nights = checkin && checkout
+    ? Math.max(1, Math.round((new Date(checkout) - new Date(checkin)) / 86400000))
+    : 2
+
+  const basePrice = type === 'activity'
+    ? item.price * adults
+    : type === 'package'
+    ? item.price
+    : item.price * nights
+
+  const roomUpgrade = ROOM_OPTIONS.find(r => r.id === room)?.price || 0
+  const extrasTotal = extras.reduce((s, id) => {
+    const e = EXTRAS.find(x => x.id === id); return s + (e ? e.price : 0)
+  }, 0)
+  const activitiesTotal = addedActivities.reduce((s, id) => {
+    const a = ACTIVITIES.find(x => x.id === id); return s + (a ? a.price * adults : 0)
+  }, 0)
+  const grandTotal = basePrice + (type === 'stay' ? roomUpgrade * nights : 0) + extrasTotal + activitiesTotal
+
+  const toggleExtra = (id) =>
+    setExtras(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
+  const toggleActivity = (id) =>
+    setAddedActivities(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
+
+  const canContinue = () => {
+    if (step === 1) return checkin && checkout && adults >= 1
+    return true
+  }
+
+  const handleContinue = () => {
+    if (step === steps.length) {
+      // Validate details step
+      const e = {}
+      if (!details.name.trim()) e.name = 'Required'
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.email)) e.email = 'Valid email required'
+      if (Object.keys(e).length) { setDetailErrors(e); return }
+      setComplete(true)
+      return
+    }
+    setStep(s => Math.min(s + 1, steps.length))
+  }
+
+  if (complete) {
+    return (
+      <div className="oz-book-complete">
+        <div className="oz-book-complete__inner">
+          <span className="oz-book-complete__ic"><I n="check-double-line" /></span>
+          <h2>Booking Confirmed!</h2>
+          <p>Thank you, {details.name.split(' ')[0] || 'Guest'}. Your reservation for <strong>{item.name}</strong> has been received. Your dedicated concierge will contact you at {details.email || 'your email'} within 2 hours.</p>
+          <div className="oz-book-complete__ref">
+            <span>Reference: <strong>OZF-{Date.now().toString(36).toUpperCase().slice(-6)}</strong></span>
+          </div>
+          <div className="oz-book-complete__actions">
+            <button className="oz-btn oz-btn--primary" onClick={() => navigate('/')}>Back to Home</button>
+            <button className="oz-btn oz-btn--ghost" onClick={() => navigate('/stay')}>Explore More Stays</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Summary helpers
+  const checkinLabel = checkin ? new Date(checkin).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : 'Not selected'
+  const checkoutLabel = checkout ? new Date(checkout).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '—'
+
+  return (
+    <div className="oz-book">
+      {/* ── Top Bar ── */}
+      <div className="oz-book__topbar">
+        <button className="oz-book__back" onClick={() => navigate(-1)} aria-label="Back">
+          <I n="arrow-left-line" />
+        </button>
+        <div className="oz-book__topbar-brand">
+          <I n="calendar-2-line" />
+          <span>Book Your {type === 'activity' ? 'Experience' : type === 'package' ? 'Journey' : 'Stay'}</span>
+        </div>
+        {/* Step progress */}
+        <ol className="oz-book__steps">
+          {steps.map(s => (
+            <li key={s.id}
+              className={`oz-book__step${step === s.id ? ' oz-book__step--on' : ''}${step > s.id ? ' oz-book__step--done' : ''}`}>
+              <button onClick={() => step > s.id && setStep(s.id)}
+                disabled={step <= s.id}
+                className="oz-book__step-btn"
+                aria-label={s.label}>
+                <span className="oz-book__step-n">
+                  {step > s.id ? <I n="check-line" /> : s.id}
+                </span>
+                <span className="oz-book__step-label">{s.label}</span>
+              </button>
+              {s.id < steps.length && <span className="oz-book__step-line" />}
+            </li>
+          ))}
+        </ol>
+        <button className="oz-book__close" onClick={() => navigate(-1)} aria-label="Close">
+          <I n="close-line" />
+        </button>
+      </div>
+
+      {/* ── Body ── */}
+      <div className="oz-book__body">
+        <div className="oz-book__main">
+
+          {/* ─ STEP 1: Dates & Guests ─ */}
+          {step === 1 && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="calendar-check-line" />
+                <div>
+                  <h2>When are you visiting?</h2>
+                  <p>Select your dates and tell us about your group.</p>
+                </div>
+              </div>
+
+              {/* Custom Date Pickers */}
+              <div className="oz-book__date-grid">
+                <div className="oz-book__date-inputs">
+                  <div className="oz-book__date-lbl">
+                    <span><I n="calendar-line" /> {type === 'activity' ? 'Date' : 'Check-in'}</span>
+                    <OzDatePicker
+                      value={checkin}
+                      onChange={setCheckin}
+                      min={new Date().toISOString().split('T')[0]}
+                      placeholder={type === 'activity' ? 'Select date' : 'Select check-in'}
+                    />
+                  </div>
+                  {type !== 'activity' && (
+                    <div className="oz-book__date-lbl">
+                      <span><I n="calendar-check-line" /> Check-out</span>
+                      <OzDatePicker
+                        value={checkout}
+                        onChange={setCheckout}
+                        min={checkin || new Date().toISOString().split('T')[0]}
+                        placeholder="Select check-out"
+                      />
+                    </div>
+                  )}
+                </div>
+                {checkin && checkout && type !== 'activity' && (
+                  <p className="oz-book__nights-label">
+                    <I n="moon-line" /> {nights} {nights === 1 ? 'night' : 'nights'}
+                  </p>
+                )}
+              </div>
+
+              {/* Guests */}
+              <div className="oz-book__guests-section">
+                <h3><I n="group-line" /> Guests</h3>
+                <div className="oz-book__guest-controls">
+                  <div className="oz-book__guest-row-ctrl">
+                    <div>
+                      <strong>Adults</strong>
+                      <span className="oz-muted">Age 13+</span>
+                    </div>
+                    <div className="oz-book__stepper">
+                      <button onClick={() => setAdults(a => Math.max(1, a - 1))} aria-label="Decrease adults">−</button>
+                      <span>{adults}</span>
+                      <button onClick={() => setAdults(a => a + 1)} aria-label="Increase adults">+</button>
+                    </div>
+                  </div>
+                  <div className="oz-book__guest-row-ctrl">
+                    <div>
+                      <strong>Children</strong>
+                      <span className="oz-muted">Age 2–12</span>
+                    </div>
+                    <div className="oz-book__stepper">
+                      <button onClick={() => setChildren(c => Math.max(0, c - 1))} aria-label="Decrease children">−</button>
+                      <span>{children}</span>
+                      <button onClick={() => setChildren(c => c + 1)} aria-label="Increase children">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─ STEP 2 (stay/package): Choose Room / Customise ─ */}
+          {step === 2 && type !== 'activity' && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="hotel-line" />
+                <div>
+                  <h2>{type === 'package' ? 'Customise Your Journey' : 'Choose Your Room'}</h2>
+                  <p>{type === 'package' ? 'Select your preferred room type for your stay.' : 'Upgrade your experience with a premium suite.'}</p>
+                </div>
+              </div>
+              <div className="oz-book__room-list">
+                {ROOM_OPTIONS.map(r => (
+                  <button key={r.id}
+                    className={`oz-book__room${room === r.id ? ' oz-book__room--on' : ''}`}
+                    onClick={() => setRoom(r.id)}>
+                    <span className="oz-book__room-ic"><I n={r.icon} /></span>
+                    <div className="oz-book__room-body">
+                      <strong>{r.label}</strong>
+                      <p>{r.desc}</p>
+                    </div>
+                    <div className="oz-book__room-price">
+                      {r.price > 0 ? <><span className="oz-muted">+</span><strong>${r.price}</strong><span className="oz-muted">/night</span></> : <strong className="oz-dh__free">Included</strong>}
+                    </div>
+                    <span className="oz-book__room-check"><I n={room === r.id ? 'checkbox-circle-fill' : 'checkbox-blank-circle-line'} /></span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ─ STEP 2 (activity): Participants ─ */}
+          {step === 2 && type === 'activity' && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="group-line" />
+                <div>
+                  <h2>Confirm Participants</h2>
+                  <p>We'll prepare everything for your group.</p>
+                </div>
+              </div>
+              <div className="oz-book__guests-section">
+                <div className="oz-book__guest-controls">
+                  <div className="oz-book__guest-row-ctrl">
+                    <div>
+                      <strong>Participants</strong>
+                      <span className="oz-muted">Each charged at ${item.price}/person</span>
+                    </div>
+                    <div className="oz-dh__stepper oz-book__stepper">
+                      <button onClick={() => setAdults(a => Math.max(1, a - 1))}>−</button>
+                      <span>{adults}</span>
+                      <button onClick={() => setAdults(a => a + 1)}>+</button>
+                    </div>
+                  </div>
+                </div>
+                <div className="oz-book__activity-info">
+                  <div><I n="time-line" /><span>{item.duration}</span></div>
+                  <div><I n="group-line" /><span>{item.groupSize}</span></div>
+                  <div><I n="compass-3-line" /><span>{item.category}</span></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─ STEP 3 (stay): Extras ─ */}
+          {step === 3 && type === 'stay' && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="service-line" />
+                <div>
+                  <h2>Extras & Services</h2>
+                  <p>Enhance your stay with additional services.</p>
+                </div>
+              </div>
+              <div className="oz-book__extras-list">
+                {EXTRAS.map(ex => (
+                  <button key={ex.id}
+                    className={`oz-book__extra${extras.includes(ex.id) ? ' oz-book__extra--on' : ''}`}
+                    onClick={() => toggleExtra(ex.id)}>
+                    <span className="oz-book__extra-ic"><I n={ex.icon} /></span>
+                    <div className="oz-book__extra-body">
+                      <strong>{ex.label}</strong>
+                      <p>{ex.desc}</p>
+                    </div>
+                    <div className="oz-book__extra-price">
+                      <strong>+${ex.price}</strong>
+                    </div>
+                    <span className="oz-book__extra-chk"><I n={extras.includes(ex.id) ? 'checkbox-circle-fill' : 'add-circle-line'} /></span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ─ STEP 3 (activity/package): Add-ons / Activities ─ */}
+          {step === 3 && type !== 'stay' && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="compass-3-line" />
+                <div>
+                  <h2>{type === 'package' ? 'Additional Activities' : 'Add-ons'}</h2>
+                  <p>Enhance your experience with extra activities.</p>
+                </div>
+              </div>
+              <div className="oz-book__extras-list">
+                {ACTIVITIES.filter(a => a.id !== itemId).slice(0, 4).map(act => (
+                  <button key={act.id}
+                    className={`oz-book__extra${addedActivities.includes(act.id) ? ' oz-book__extra--on' : ''}`}
+                    onClick={() => toggleActivity(act.id)}>
+                    <div className="oz-book__extra-img">
+                      <img src={act.cover} alt={act.name} />
+                    </div>
+                    <div className="oz-book__extra-body">
+                      <strong>{act.name}</strong>
+                      <p>{act.duration} · {act.category}</p>
+                    </div>
+                    <div className="oz-book__extra-price">
+                      <strong>+${act.price}/pp</strong>
+                    </div>
+                    <span className="oz-book__extra-chk"><I n={addedActivities.includes(act.id) ? 'checkbox-circle-fill' : 'add-circle-line'} /></span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ─ STEP 4 (stay/package): Activities ─ */}
+          {step === 4 && (type === 'stay' || type === 'package') && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="compass-3-line" />
+                <div>
+                  <h2>Add Activities</h2>
+                  <p>Curate your perfect Morocco experience.</p>
+                </div>
+              </div>
+              <div className="oz-book__act-grid">
+                {ACTIVITIES.slice(0, 6).map(act => (
+                  <button key={act.id}
+                    className={`oz-book__act-card${addedActivities.includes(act.id) ? ' oz-book__act-card--on' : ''}`}
+                    onClick={() => toggleActivity(act.id)}>
+                    <div className="oz-book__act-img">
+                      <img src={act.cover} alt={act.name} />
+                      {addedActivities.includes(act.id) && (
+                        <span className="oz-book__act-tick"><I n="check-double-line" /></span>
+                      )}
+                    </div>
+                    <div className="oz-book__act-body">
+                      <strong>{act.name}</strong>
+                      <span className="oz-muted">{act.duration} · {act.category}</span>
+                      <span className="oz-book__act-price">${act.price}/pp</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ─ STEP 5 (stay/package): Travellers ─ */}
+          {step === 5 && (type === 'stay' || type === 'package') && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="user-line" />
+                <div>
+                  <h2>Traveller Details</h2>
+                  <p>We'll use this information for your travel documents.</p>
+                </div>
+              </div>
+              {Array.from({ length: adults }).map((_, i) => (
+                <div key={i} className="oz-book__traveller">
+                  <h4>Traveller {i + 1} {i === 0 ? '(Lead)' : ''}</h4>
+                  <div className="oz-field-row">
+                    <div className="oz-field">
+                      <label>First Name</label>
+                      <input type="text" placeholder="First name"
+                        value={travellers[i]?.firstName || ''}
+                        onChange={e => setTravellers(t => t.map((x, j) => j === i ? { ...x, firstName: e.target.value } : x))} />
+                    </div>
+                    <div className="oz-field">
+                      <label>Last Name</label>
+                      <input type="text" placeholder="Last name"
+                        value={travellers[i]?.lastName || ''}
+                        onChange={e => setTravellers(t => t.map((x, j) => j === i ? { ...x, lastName: e.target.value } : x))} />
+                    </div>
+                  </div>
+                  <div className="oz-field">
+                    <label>Passport / ID Number (optional)</label>
+                    <input type="text" placeholder="Passport number"
+                      value={travellers[i]?.passport || ''}
+                      onChange={e => setTravellers(t => t.map((x, j) => j === i ? { ...x, passport: e.target.value } : x))} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ─ STEP 4 (activity): Your Details ─ */}
+          {step === 4 && type === 'activity' && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="profile-line" />
+                <div>
+                  <h2>Your Details</h2>
+                  <p>How should we confirm your booking?</p>
+                </div>
+              </div>
+              <div className="oz-book__details-form">
+                <div className="oz-field-row">
+                  <div className="oz-field">
+                    <label>Full Name *</label>
+                    <input type="text" value={details.name} placeholder="Your name"
+                      onChange={e => setDetails(d => ({ ...d, name: e.target.value }))} />
+                    {detailErrors.name && <span className="oz-field-err">{detailErrors.name}</span>}
+                  </div>
+                  <div className="oz-field">
+                    <label>Email Address *</label>
+                    <input type="email" value={details.email} placeholder="you@example.com"
+                      onChange={e => setDetails(d => ({ ...d, email: e.target.value }))} />
+                    {detailErrors.email && <span className="oz-field-err">{detailErrors.email}</span>}
+                  </div>
+                </div>
+                <div className="oz-field">
+                  <label>Phone (optional)</label>
+                  <input type="tel" value={details.phone} placeholder="+212 xxx xxx xxx"
+                    onChange={e => setDetails(d => ({ ...d, phone: e.target.value }))} />
+                </div>
+                <div className="oz-field">
+                  <label>Special Requests</label>
+                  <textarea rows={3} value={details.special} placeholder="Any dietary needs, accessibility requirements, or special requests..."
+                    onChange={e => setDetails(d => ({ ...d, special: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─ STEP 6 (stay/package): Your Details ─ */}
+          {step === 6 && (type === 'stay' || type === 'package') && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="profile-line" />
+                <div>
+                  <h2>Your Details</h2>
+                  <p>How should we confirm your booking?</p>
+                </div>
+              </div>
+              <div className="oz-book__details-form">
+                <div className="oz-field-row">
+                  <div className="oz-field">
+                    <label>Full Name *</label>
+                    <input type="text" value={details.name} placeholder="Your name"
+                      onChange={e => setDetails(d => ({ ...d, name: e.target.value }))} />
+                    {detailErrors.name && <span className="oz-field-err">{detailErrors.name}</span>}
+                  </div>
+                  <div className="oz-field">
+                    <label>Email Address *</label>
+                    <input type="email" value={details.email} placeholder="you@example.com"
+                      onChange={e => setDetails(d => ({ ...d, email: e.target.value }))} />
+                    {detailErrors.email && <span className="oz-field-err">{detailErrors.email}</span>}
+                  </div>
+                </div>
+                <div className="oz-field">
+                  <label>Phone (optional)</label>
+                  <input type="tel" value={details.phone} placeholder="+212 xxx xxx xxx"
+                    onChange={e => setDetails(d => ({ ...d, phone: e.target.value }))} />
+                </div>
+                <div className="oz-field">
+                  <label>Special Requests</label>
+                  <textarea rows={3} value={details.special} placeholder="Dietary needs, accessibility, celebrations..."
+                    onChange={e => setDetails(d => ({ ...d, special: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─ FINAL STEP: Checkout ─ */}
+          {step === steps.length && (
+            <div className="oz-book__panel">
+              <div className="oz-book__panel-head">
+                <I n="secure-payment-line" />
+                <div>
+                  <h2>Review & Checkout</h2>
+                  <p>Please review your booking before confirming.</p>
+                </div>
+              </div>
+              <div className="oz-book__review">
+                <div className="oz-book__review-item">
+                  <img src={item.cover} alt={item.name} className="oz-book__review-img" />
+                  <div>
+                    <strong>{item.name}</strong>
+                    <p className="oz-muted">{item.location}</p>
+                    {type !== 'activity' && checkin && <p className="oz-muted">{checkinLabel} → {checkoutLabel} · {nights} nights</p>}
+                    {type === 'activity' && checkin && <p className="oz-muted">{checkinLabel} · {adults} guests</p>}
+                  </div>
+                </div>
+                <div className="oz-book__review-lines">
+                  <div className="oz-dh__price-row">
+                    <span>Base price</span>
+                    <span>${basePrice.toLocaleString()}</span>
+                  </div>
+                  {type === 'stay' && roomUpgrade > 0 && (
+                    <div className="oz-dh__price-row">
+                      <span>Room upgrade (× {nights} nights)</span>
+                      <span>${(roomUpgrade * nights).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {extrasTotal > 0 && (
+                    <div className="oz-dh__price-row">
+                      <span>Extras & services</span>
+                      <span>${extrasTotal.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {activitiesTotal > 0 && (
+                    <div className="oz-dh__price-row">
+                      <span>Added activities</span>
+                      <span>${activitiesTotal.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="oz-dh__price-row oz-dh__price-row--total">
+                    <strong>Total</strong>
+                    <strong>${grandTotal.toLocaleString()}</strong>
+                  </div>
+                </div>
+                <div className="oz-book__payment-note">
+                  <I n="shield-check-line" />
+                  <p>No payment is taken now. Our concierge will contact you within 2 hours to confirm details and arrange secure payment.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Continue Bar ── */}
+          <div className="oz-book__continue-bar">
+            {step > 1 && (
+              <button className="oz-btn oz-btn--ghost"
+                onClick={() => setStep(s => s - 1)}>
+                <I n="arrow-left-line" /> Back
+              </button>
+            )}
+            <button
+              className={`oz-btn oz-btn--primary oz-btn--lg${!canContinue() ? ' oz-btn--disabled' : ''}`}
+              onClick={handleContinue}
+              disabled={step === 1 && !canContinue()}>
+              {step === steps.length ? 'Confirm Booking' : 'Continue'} <I n="arrow-right-line" />
+            </button>
+          </div>
+        </div>
+
+        {/* ── Booking Summary Sidebar ── */}
+        <aside className="oz-book__summary">
+          <h3 className="oz-book__sum-title"><I n="file-list-3-line" /> Booking Summary</h3>
+
+          <div className="oz-book__sum-section">
+            <div className="oz-book__sum-label"><I n="calendar-line" /> Stay Period</div>
+            {checkin
+              ? <div className="oz-book__sum-val">{checkinLabel}{checkout ? ` → ${checkoutLabel}` : ''}</div>
+              : <div className="oz-book__sum-placeholder">Select your dates</div>
+            }
+          </div>
+
+          <div className="oz-book__sum-section oz-book__sum-done">
+            <div className="oz-book__sum-label">
+              <I n="group-line" /> Guests
+              <I n="check-line" className="oz-book__sum-chk" />
+            </div>
+            <div className="oz-book__sum-val">{adults} adult{adults !== 1 ? 's' : ''}{children > 0 ? `, ${children} child${children !== 1 ? 'ren' : ''}` : ''}</div>
+          </div>
+
+          <div className="oz-book__sum-section">
+            <div className="oz-book__sum-label"><I n="hotel-bed-line" /> Accommodation</div>
+            {type === 'activity'
+              ? <div className="oz-book__sum-val">{item.name}</div>
+              : <div className="oz-book__sum-placeholder">No room selected (optional)</div>
+            }
+          </div>
+
+          {(extras.length > 0 || addedActivities.length > 0) && (
+            <div className="oz-book__sum-section">
+              <div className="oz-book__sum-label"><I n="add-circle-line" /> Add-ons</div>
+              <div className="oz-book__sum-addons">
+                {extras.map(id => {
+                  const e = EXTRAS.find(x => x.id === id)
+                  return e ? <span key={id}><I n="check-line" />{e.label}</span> : null
+                })}
+                {addedActivities.map(id => {
+                  const a = ACTIVITIES.find(x => x.id === id)
+                  return a ? <span key={id}><I n="check-line" />{a.name}</span> : null
+                })}
+              </div>
+            </div>
+          )}
+
+          {grandTotal > 0 && (
+            <div className="oz-book__sum-total">
+              <span>Total</span>
+              <strong>${grandTotal.toLocaleString()}</strong>
+            </div>
+          )}
+          {!grandTotal && (
+            <p className="oz-book__sum-note"><I n="price-tag-3-line" /> Add items to see pricing</p>
+          )}
+        </aside>
+      </div>
+    </div>
+  )
+}
+
+
 function AppShell() {
   const location = useLocation()
   const [mode, setMode] = useState(() => {
@@ -1786,6 +3138,7 @@ function AppShell() {
           <Route path="/about"          element={<AboutPage />} />
           <Route path="/contact"        element={<ContactPage />} />
           <Route path="/blog"           element={<BlogPage />} />
+          <Route path="/book"           element={<BookingPage />} />
           <Route path="*"               element={<HomePage />} />
         </Routes>
       </main>
