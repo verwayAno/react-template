@@ -4,10 +4,29 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rivora Hotel Demo</title>
+    <meta name="description" content="Dar Zellige — a boutique collection of restored Moroccan riads, curated for travellers who value architecture, stillness, and craft." />
+    <title>Dar Zellige — A Collection of Restored Riads</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script>
+      (function () {
+        try {
+          var v = window.localStorage.getItem('riad-mode');
+          var valid = ['light', 'dark', 'classic', 'modern'];
+          if (valid.indexOf(v) === -1) {
+            v = 'light';
+            try { window.localStorage.setItem('riad-mode', 'light'); } catch (e) {}
+          }
+          document.documentElement.setAttribute('data-mode', v);
+          document.addEventListener('DOMContentLoaded', function () {
+            if (document.body) document.body.dataset.mode = v;
+          });
+        } catch (e) {
+          document.documentElement.setAttribute('data-mode', 'light');
+        }
+      })();
+    </script>
   </head>
-  <body>
+  <body data-mode="light">
     <div id="root"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="/src/main.jsx"></script>

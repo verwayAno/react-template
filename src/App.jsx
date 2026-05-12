@@ -1,686 +1,457 @@
-import { useEffect, useState } from 'react'
-import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import ReactDatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
+﻿import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { Link, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import './App.css'
 
-const DatePicker = ReactDatePicker.default || ReactDatePicker
-
-const I = ({ name, className }) => <i className={`ri-${name} ${className || ''}`} />
+const I = ({ name, className = '' }) => <i className={`ri-${name} ${className}`} aria-hidden="true" />
 const MODES = ['light', 'dark', 'classic', 'modern']
+const STORAGE_KEY = 'riad-mode'
+const MODE_ICONS = { light: 'sun-line', dark: 'moon-clear-line', classic: 'ancient-pavilion-line', modern: 'leaf-line' }
 
-/* ── Data ── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   DATA
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const heroSlides = [
-  { title: 'Refined Stays Crafted for Modern Travelers', subtitle: 'Luxury hotel experience', description: 'Rivora combines architectural calm, intuitive service, and destination-led experiences in every stay.', image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=2200&q=80' },
-  { title: 'Designed Rooms, Better Sleep, Elevated Comfort', subtitle: 'Award-winning hospitality', description: 'From signature suites to family-ready layouts, every room is designed with thoughtful spatial flow.', image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=2200&q=80' },
-  { title: 'City Access with Resort-Level Hospitality', subtitle: 'Urban retreat collection', description: 'Stay steps away from key districts while enjoying concierge-led curation and premium amenities.', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=2200&q=80' },
+  { id: 'courtyard', eyebrow: 'Courtyard Collection', title: 'An inner courtyard,', titleEm: 'an outer silence.', subtitle: 'Step through a carved cedar door and the medina falls away. Dar Zellige is a collection of eleven restored riads across Marrakech, Fes, and Chefchaouen.', ctaLabel: 'Browse riads', ctaHref: '/rooms', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=2000&q=80' },
+  { id: 'zellige', eyebrow: 'Hand-set Zellige', title: 'Ten thousand tiles,', titleEm: 'cut by hand.', subtitle: 'Every mosaic floor and fountain basin is laid in the traditional way â€” tesserae chipped to shape, set in plaster, grouted by masters.', ctaLabel: 'Meet the craftsmen', ctaHref: '/about', image: 'https://images.unsplash.com/photo-1539020140153-e479b8c64e3a?auto=format&fit=crop&w=2000&q=80' },
+  { id: 'hammam', eyebrow: 'Hammam Ritual', title: 'Steam, savon beldi,', titleEm: 'mint tea.', subtitle: 'Each riad keeps a private hammam warmed with cedar embers. Book the Royal Ritual for a ninety-minute ceremony.', ctaLabel: 'Book a ritual', ctaHref: '/booking', image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=2000&q=80' },
 ]
 
-const allRoomListings = [
-  { name: 'Eclipse Haven Lodge', type: 'Sea View', bed: 'Semi Double', bedDetail: '1 king bed', capacity: '2 Adults', nights: '1 Night', size: '58 m²', price: 126, originalPrice: 160, rating: 5, reviews: 0, image: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1400&q=80', address: 'House 168/170, Road 02, Avenue 01, Brooklyn, NY', distance: '2 km to city center', amenities: ['tv-line', 'temp-cold-line', 'safe-2-line', 'wifi-line', 'phone-line'], amenityLabels: ['TV', 'Heater', 'Saving Safe', 'Free Wifi', 'Phone'], badge: 'Breakfast Included', cancellation: 'Free cancellation before 48 hours' },
-  { name: 'Twilight Serenity Manor', type: 'Family Room', bed: 'Quin Modern Room', bedDetail: '1 king bed', capacity: '2 Adults', nights: '1 Night', size: '74 m²', price: 46, originalPrice: null, rating: 4.5, reviews: 1, image: 'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?auto=format&fit=crop&w=1400&q=80', address: 'House 168/170, Road 02, Avenue 01, Brooklyn, NY', distance: '2 km to city center', amenities: ['tv-line', 'temp-cold-line', 'safe-2-line', 'wifi-line', 'phone-line'], amenityLabels: ['TV', 'Heater', 'Saving Safe', 'Free Wifi', 'Phone'], badge: 'Breakfast Included', cancellation: 'Free cancellation before 48 hours' },
-  { name: 'Garden Pavilion Suite', type: 'Garden View', bed: 'Deluxe Suite', bedDetail: '2 queen beds', capacity: '4 Adults', nights: '1 Night', size: '86 m²', price: 279, originalPrice: 320, rating: 5, reviews: 12, image: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1400&q=80', address: '450 Park Avenue, Manhattan, NY', distance: '0.5 km to city center', amenities: ['tv-line', 'temp-cold-line', 'safe-2-line', 'wifi-line', 'phone-line', 'restaurant-line'], amenityLabels: ['TV', 'Heater', 'Saving Safe', 'Free Wifi', 'Phone', 'Dining'], badge: 'Best Seller', cancellation: 'Free cancellation before 72 hours' },
-  { name: 'Horizon Sky Penthouse', type: 'Skyline View', bed: 'Premium King', bedDetail: '1 king bed + sofa', capacity: '3 Adults', nights: '1 Night', size: '102 m²', price: 389, originalPrice: 450, rating: 5, reviews: 8, image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1400&q=80', address: '789 5th Avenue, Manhattan, NY', distance: '0.3 km to city center', amenities: ['tv-line', 'temp-cold-line', 'safe-2-line', 'wifi-line', 'phone-line', 'goblet-line'], amenityLabels: ['TV', 'Heater', 'Saving Safe', 'Free Wifi', 'Phone', 'Mini Bar'], badge: 'Premium Choice', cancellation: 'Free cancellation before 48 hours' },
-  { name: 'Coastal Breeze Retreat', type: 'Ocean Front', bed: 'Twin Comfort', bedDetail: '2 twin beds', capacity: '2 Adults', nights: '1 Night', size: '44 m²', price: 98, originalPrice: null, rating: 4, reviews: 3, image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1400&q=80', address: '12 Harbor Drive, Brooklyn, NY', distance: '3 km to city center', amenities: ['tv-line', 'wifi-line', 'phone-line'], amenityLabels: ['TV', 'Free Wifi', 'Phone'], badge: null, cancellation: 'Free cancellation before 24 hours' },
+const allRiads = [
+  { id: 'riad-zellige', featured: true, name: 'Riad Zellige', category: 'Signature Riad', city: 'Marrakech Medina', address: 'Derb Bouhsain, Marrakech Medina', beds: 4, capacity: 8, size: 180, price: 320, originalPrice: 420, rating: 4.97, reviews: 214, image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1400&q=80', amenities: ['water-flash-line', 'restaurant-line', 'hotel-bed-line', 'leaf-line', 'moon-line'], amenityLabels: ['Courtyard pool', 'In-riad chef', '4 en-suites', 'Orange grove', 'Rooftop terrace'], badge: 'Signature Stay', cancellation: 'Free cancellation until 48h before check-in', description: 'Nestled within the ancient walls of the Marrakech Medina, Riad Zellige is a masterwork of Andalusian architecture with mosaic zellige floors, hand-carved cedarwood ceilings, and a private courtyard with a rose-water fountain.', highlights: ['Private rose-water courtyard', 'Traditional hammam suite', 'Personal in-riad chef', 'Rooftop terrace & plunge pool'] },
+  { id: 'dar-andalusi', featured: true, name: 'Dar Andalusi', category: 'Heritage Palace', city: 'Fes el-Bali', address: 'Talaa Kebira, Fes el-Bali', beds: 5, capacity: 10, size: 240, price: 380, originalPrice: null, rating: 4.99, reviews: 158, image: 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1400&q=80', amenities: ['ancient-gate-line', 'book-open-line', 'goblet-line', 'cake-3-line', 'service-line'], amenityLabels: ['14th-century arches', 'Medina library', 'Andalusian bar', 'Traditional breakfast', 'House concierge'], badge: 'UNESCO district', cancellation: 'Free cancellation until 72h before check-in', description: 'A restored 14th-century palace in the heart of Fes el-Bali with carved stucco galleries, a grand central courtyard with an 8-metre mosaic fountain, and hand-painted tiles.', highlights: ['Tannery private viewing balcony', 'Medina artisan workshop tours', 'Roof terrace with medina panorama', 'Library of Moroccan manuscripts'] },
+  { id: 'riad-zaitoune', featured: true, name: 'Riad Zaitoune', category: 'Courtyard House', city: 'Marrakech Medina', address: 'Derb el-Ferrane, Marrakech', beds: 3, capacity: 6, size: 140, price: 240, originalPrice: 290, rating: 4.92, reviews: 96, image: 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?auto=format&fit=crop&w=1400&q=80', amenities: ['water-flash-line', 'fire-line', 'restaurant-line', 'plant-line'], amenityLabels: ['Reflecting pool', 'Fireplace salon', 'Tajine kitchen', 'Mint garden'], badge: 'New opening', cancellation: 'Free cancellation until 24h before check-in', description: 'A newly restored courtyard house with a reflecting pool, fireplace salon, and a mint garden where breakfast is served each morning.', highlights: ['Reflecting pool courtyard', 'Fireplace salon', 'Tajine kitchen', 'Mint garden breakfast'] },
+  { id: 'dar-zaouia', featured: false, name: 'Dar Zaouia', category: 'Artist Residence', city: 'Chefchaouen', address: 'Plaza Uta el-Hammam, Chefchaouen', beds: 3, capacity: 6, size: 120, price: 180, originalPrice: null, rating: 4.88, reviews: 87, image: 'https://images.unsplash.com/photo-1553025934-296397db4010?auto=format&fit=crop&w=1400&q=80', amenities: ['palette-line', 'sun-foggy-line', 'moon-line', 'cup-line'], amenityLabels: ['Atelier studio', 'Rif-valley view', 'Rooftop suite', 'Mint-tea service'], badge: 'Blue City', cancellation: 'Free cancellation until 48h before check-in', description: 'An artist residence in the blue city of Chefchaouen with an atelier studio, Rif-valley views, and a rooftop suite.', highlights: ['Atelier studio', 'Rif-valley panorama', 'Rooftop suite', 'Daily mint-tea service'] },
+  { id: 'riad-noor', featured: false, name: 'Riad Noor', category: 'Boutique Riad', city: 'Essaouira', address: 'Rue de la Skala, Essaouira', beds: 4, capacity: 8, size: 160, price: 260, originalPrice: 310, rating: 4.85, reviews: 142, image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1400&q=80', amenities: ['ship-line', 'music-2-line', 'restaurant-line', 'water-flash-line'], amenityLabels: ['Atlantic terrace', 'Gnaoua evenings', 'Seafood table', 'Plunge pool'], badge: 'Ocean views', cancellation: 'Free cancellation until 48h before check-in', description: 'A boutique riad on the Essaouira coast with an Atlantic terrace, gnaoua music evenings, and a seafood table.', highlights: ['Atlantic terrace', 'Gnaoua music evenings', 'Fresh seafood table', 'Plunge pool'] },
+  { id: 'dar-tadelakt', featured: false, name: 'Dar Tadelakt', category: 'Private Palace', city: 'Palmeraie, Marrakech', address: 'Route de Fes, Palmeraie', beds: 6, capacity: 12, size: 360, price: 540, originalPrice: 680, rating: 4.98, reviews: 189, image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1400&q=80', amenities: ['water-flash-line', 'leaf-line', 'service-line', 'heart-pulse-line', 'car-line', 'restaurant-line'], amenityLabels: ['25m palm pool', 'Olive orchard', 'Full staff', 'Private hammam', 'Airport transfer', 'Chef kitchen'], badge: 'Family favourite', cancellation: 'Free cancellation until 96h before check-in', description: 'A private palace in the Palmeraie with a 25-metre palm pool, olive orchard, full staff, and private hammam.', highlights: ['25m private palm pool', 'Olive orchard', 'Full live-in staff', 'Private hammam & spa'] },
 ]
 
-const featuredRooms = allRoomListings.slice(0, 3)
+const experiences = [
+  { id: 'medina-walk', title: 'Medina Artisan Walk', category: 'Culture', duration: '4 hours', groupSize: 'Max 6', price: 75, difficulty: 'Easy', rating: 4.9, reviews: 204, image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1200&q=80', highlights: ['Copper souk visit', 'Tannery balcony', 'Calligraphy workshop'], excerpt: 'Follow a local historian through the oldest working medina on Earth.' },
+  { id: 'tajine-class', title: 'Courtyard Tajine Class', category: 'Culinary', duration: '3 hours', groupSize: 'Max 4', price: 95, difficulty: 'Easy', rating: 5.0, reviews: 128, image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80', highlights: ['Spice souk shopping', 'Charcoal braising', 'Shared courtyard lunch'], excerpt: 'Shop the spice souk at dawn, return to a riad courtyard, and learn the architecture of a perfect tajine.' },
+  { id: 'dune-dawn', title: 'Erg Chebbi Dawn Ride', category: 'Adventure', duration: '6 hours', groupSize: 'Max 8', price: 180, difficulty: 'Moderate', rating: 4.95, reviews: 173, image: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=1200&q=80', highlights: ['Camel ascent at 5am', 'Summit sunrise breakfast', 'Berber drumming circle'], excerpt: 'Ride a camel to the crest of Erg Chebbi before dawn.' },
+  { id: 'hammam-ritual', title: 'Royal Hammam Ritual', category: 'Wellness', duration: '2.5 hours', groupSize: 'Private', price: 140, difficulty: 'Easy', rating: 4.98, reviews: 341, image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1200&q=80', highlights: ['Savon beldi scrub', 'Rhassoul clay wrap', 'Rose-water rinse'], excerpt: 'The oldest ceremony in Moroccan wellness â€” steam, black soap, argan oil, and mint tea.' },
+  { id: 'atlas-trek', title: 'Atlas Mountain Day Trek', category: 'Adventure', duration: '8 hours', groupSize: 'Max 10', price: 120, difficulty: 'Moderate', rating: 4.87, reviews: 98, image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80', highlights: ['Berber village visit', 'Waterfall swim', 'Mountain lunch'], excerpt: 'A full-day guided trek through the High Atlas with Berber village stops.' },
+  { id: 'stargazing', title: 'Sahara Stargazing Night', category: 'Astronomy', duration: '3 hours', groupSize: 'Max 8', price: 95, difficulty: 'Easy', rating: 4.92, reviews: 156, image: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=1200&q=80', highlights: ['Research telescope', 'Constellation tour', 'Thermal recliners'], excerpt: 'Morocco\u2019s Sahara ranks among the world\u2019s top dark-sky destinations.' },
+]
 
-const tourPackages = [
-  { title: 'Old City Architecture Walk', duration: '3 hours', spots: '7 landmarks', guide: 'Licensed local curator', price: '$49', image: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=80', difficulty: 'Easy', groupSize: 'Max 12', rating: 4.9, reviews: 214, highlights: ['Roman Forum ruins', 'Gothic Cathedral', 'Hidden courtyards'], includes: ['map-pin-line', 'drink-line', 'camera-line'] },
-  { title: 'Sunset Bay Sailing Tour', duration: '2.5 hours', spots: 'Private marina route', guide: 'On-board host included', price: '$89', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', difficulty: 'Moderate', groupSize: 'Max 8', rating: 4.8, reviews: 156, highlights: ['Open-bar cocktails', 'Sunset photography', 'Coastal cliff views'], includes: ['goblet-line', 'camera-line', 'music-2-line'] },
-  { title: 'Culinary Market Trail', duration: '4 hours', spots: '5 chef-selected stops', guide: 'Food specialist host', price: '$65', image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80', difficulty: 'Easy', groupSize: 'Max 10', rating: 5.0, reviews: 98, highlights: ['Artisan cheese tasting', 'Seafood market tour', 'Wine pairing session'], includes: ['restaurant-line', 'goblet-line', 'shopping-bag-line'] },
+const packages = [
+  { id: 'desert-romance', name: 'Sahara Romance Escape', location: 'Merzouga Desert', duration: '4 nights', price: 3200, pricePer: 'per couple', badge: 'Bestseller', tagline: 'The most romantic desert on Earth, perfectly curated', description: 'Four nights in the Sahara Star Pavilion with private sunset camel trek, rooftop hammam, and candlelit dinner on your own private dune.', image: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=1400&q=80', includes: ['4 nights luxury tent', 'Private camel trek', 'Hammam for two', 'Dune dinner', 'All transfers'] },
+  { id: 'imperial-tour', name: 'Imperial Cities Grand Tour', location: 'Marrakech Â· Fes Â· Chefchaouen', duration: '8 nights', price: 7400, pricePer: 'per person', badge: 'Signature', tagline: 'Three extraordinary cities, one seamless journey', description: 'Begin in Marrakech, train to Fes, drive to Chefchaouen. Private guides, artisan workshops, and the finest riads in each city.', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1400&q=80', includes: ['8 nights in 3 cities', 'Private guides', 'Artisan workshops', 'All transfers', 'Daily breakfast'] },
+  { id: 'atlas-adventure', name: 'Atlas & Desert Adventure', location: 'Atlas Mountains Â· Merzouga', duration: '6 nights', price: 4900, pricePer: 'per person', badge: 'Adventure', tagline: 'Snow peaks at dawn, star dunes at dusk', description: 'Three nights in the Atlas Mountain Lodge followed by three nights in the Sahara. Summit hiking, Berber villages, and desert silence.', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1400&q=80', includes: ['3 nights Atlas lodge', '3 nights desert camp', 'Guided treks', 'Camel trek', 'All meals'] },
+  { id: 'coastal-serenity', name: 'Atlantic Coastal Serenity', location: 'Essaouira Coast', duration: '5 nights', price: 3800, pricePer: 'per couple', badge: 'Coastal', tagline: 'Salt air, Atlantic surf, and the art of doing nothing', description: 'Five nights in the Atlantic Kasbah with kitesurf lessons, hammam rituals, and fresh seafood at the harbor.', image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1400&q=80', includes: ['5 nights ocean riad', 'Kitesurf lessons', 'Hammam ritual', 'Seafood dinner', 'Argan grove visit'] },
 ]
 
 const amenities = [
-  { icon: 'customer-service-2-line', title: '24/7 Concierge Desk', description: 'Personal itineraries, transport, and table reservations managed at any hour.' },
-  { icon: 'water-flash-line', title: 'Rooftop Infinity Pool', description: 'Temperature-controlled pool with skyline deck seating and sunset bar service.' },
-  { icon: 'taxi-line', title: 'Airport Transfer', description: 'Door-to-door transfer with premium vehicles and real-time flight tracking.' },
-  { icon: 'heart-pulse-line', title: 'Wellness & Spa', description: 'Thermal rituals, massage suites, and recovery treatments by certified experts.' },
-  { icon: 'macbook-line', title: 'Work Lounge', description: 'Private pods, fast internet, and boardroom-ready areas for business travelers.' },
-  { icon: 'restaurant-line', title: 'All-day Dining', description: 'Seasonal menus, chef tables, and curated tasting routes across local cuisines.' },
+  { icon: 'hotel-bed-line', title: 'Private Courtyards', description: 'Every riad is organised around its own open-air inner courtyard â€” a room without a roof.' },
+  { icon: 'water-flash-line', title: 'Zellige Hammam', description: 'A hammam warmed with cedar embers, with hand-cut tile, savon beldi, and argan oil rituals.' },
+  { icon: 'restaurant-line', title: 'In-riad Kitchens', description: 'A house chef cooks tajines, msemen, and seasonal salads in traditional clay vessels.' },
+  { icon: 'sparkling-2-line', title: 'Rooftop Terraces', description: 'Each riad opens onto a rooftop with cushions, lanterns, and shade for mint tea.' },
+  { icon: 'plant-line', title: 'Orange & Olive Gardens', description: 'Sour orange, jasmine, pomegranate, and olive â€” the four classical courtyard plants.' },
+  { icon: 'service-line', title: '24-hour House Staff', description: 'Every riad is staffed day and night by a resident team dedicated to your stay.' },
 ]
 
 const testimonials = [
-  { name: 'Sophia Lee', role: 'Frequent Traveler', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80', review: 'A rare blend of design and service precision. The concierge team handled every detail before we asked.', rating: 5 },
-  { name: 'Daniel Cruz', role: 'Family Vacation', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=320&q=80', review: 'Rooms were spacious, tours were excellent, and the staff made the entire week easy for our family.', rating: 5 },
-  { name: 'Mia Thompson', role: 'Business Traveler', avatar: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=320&q=80', review: 'Efficient check-in, quiet work areas, and premium sleep quality. Perfect for a productive city trip.', rating: 4 },
+  { name: 'Isabelle Fontaine', role: 'Travel Editor, Paris', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=160&q=80', review: 'Riad Zellige is the quietest place I have ever slept. The courtyard absorbs sound the way a Cistercian cloister does.', rating: 5 },
+  { name: 'Daniel Okafor', role: 'Architect, Lagos', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&q=80', review: 'Dar Andalusi is the finest restoration I have seen in the Maghreb. Every arch is honest, every tile is correct.', rating: 5 },
+  { name: 'Yuki Tanaka', role: 'Ceramicist, Kyoto', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=160&q=80', review: 'The zellige workshop they arranged with a master tiler in Fes was the most moving afternoon of our trip.', rating: 5 },
+  { name: 'Marco Vitale', role: 'Hotelier, Florence', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=160&q=80', review: 'I own hotels and so I arrive as a critic. I left Riad Noor as a guest, properly humbled.', rating: 5 },
 ]
 
 const blogPosts = [
-  { title: 'Top Hotel Amenities Guests Prioritize in 2026', excerpt: 'How hospitality teams are shifting from generic perks to curated, guest-specific experiences that build loyalty and drive direct bookings.', image: 'https://images.unsplash.com/photo-1468824357306-a439d58ccb1c?auto=format&fit=crop&w=1200&q=80', date: 'Apr 09, 2026', category: 'Hospitality', readTime: '6 min read', author: 'Ava Hart' },
-  { title: 'Interior Trends Defining Next-Gen Boutique Hotels', excerpt: 'A practical look at lighting layers, tactile materials, and biophilic layouts redefining the modern hotel room.', image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80', date: 'Mar 26, 2026', category: 'Design', readTime: '5 min read', author: 'Luna Sato' },
-  { title: 'Planning the Perfect Two-Night Urban Retreat', excerpt: 'A destination planner built around culinary stops, wellness blocks, and flexible downtime for busy professionals.', image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80', date: 'Mar 11, 2026', category: 'Travel', readTime: '7 min read', author: 'Mateo Rivera' },
-  { title: 'Sustainable Luxury: How Hotels Are Going Green Without Losing Elegance', excerpt: 'From solar-powered suites to zero-waste dining — the practices reshaping five-star sustainability standards.', image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80', date: 'Feb 28, 2026', category: 'Sustainability', readTime: '8 min read', author: 'Ava Hart' },
-  { title: 'The Rise of Bleisure Travel: Work Meets Wanderlust', excerpt: 'Business travelers are extending trips for leisure. Here is how hotels are adapting with co-working lounges and weekend packages.', image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80', date: 'Feb 14, 2026', category: 'Trends', readTime: '5 min read', author: 'Noah Bennet' },
-  { title: 'Hidden Gem Destinations for 2026: Off the Beaten Path', excerpt: 'From coastal villages in Portugal to mountain retreats in Georgia — undiscovered places ready for discerning travelers.', image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80', date: 'Jan 30, 2026', category: 'Travel', readTime: '9 min read', author: 'Mateo Rivera' },
-  { title: 'Wellness Tourism: Beyond the Spa Day', excerpt: 'How immersive wellness retreats with breathwork, cold plunge, and forest bathing are becoming mainstream hotel offerings.', image: 'https://images.unsplash.com/photo-1540555700478-4be289fbec6e?auto=format&fit=crop&w=1200&q=80', date: 'Jan 15, 2026', category: 'Wellness', readTime: '6 min read', author: 'Luna Sato' },
-  { title: 'Food & Wine Pairings: A Hotel Chef\'s Guide', excerpt: 'Our in-house sommelier shares the principles behind the perfect pairing for every season and palate.', image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80', date: 'Jan 02, 2026', category: 'Dining', readTime: '4 min read', author: 'Luna Sato' },
+  { id: 'zellige-craft', title: 'The geometry of zellige: why each tile is chipped by hand', excerpt: 'A master tiler in Fes explains why the hand-chipped edge catches light in a way no machine-cut tile can.', image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', date: 'April 14, 2026', category: 'Craft', readTime: 8, author: 'Salima Benhima' },
+  { id: 'mint-tea', title: 'Mint tea is not a drink, it is an argument', excerpt: 'The pour, the height, the three glasses â€” every step of the ceremony has meaning.', image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80', date: 'March 28, 2026', category: 'Culture', readTime: 5, author: 'Omar Tazi' },
+  { id: 'riad-history', title: 'How the riad was invented: Moorish architecture after 711', excerpt: 'The Moroccan courtyard house is a direct descendant of Andalusian patio design.', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', date: 'March 10, 2026', category: 'History', readTime: 12, author: 'Mehdi Laraki' },
+  { id: 'hammam-guide', title: 'A first-timer\u2019s guide to the traditional hammam', excerpt: 'Two hours, black soap, a warm marble slab, and a complete stranger.', image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80', date: 'February 22, 2026', category: 'Wellness', readTime: 6, author: 'Aicha Benhassi' },
+  { id: 'medina-markets', title: 'Buying saffron in the Fes souk without getting cheated', excerpt: 'A short field guide to spice-market pricing and the five words of Darija that change everything.', image: 'https://images.unsplash.com/photo-1604909052743-94e838986d24?auto=format&fit=crop&w=800&q=80', date: 'February 08, 2026', category: 'Travel', readTime: 7, author: 'Yassine El Idrissi' },
+  { id: 'atlas-hike', title: 'The three-day trek to Jbel Toubkal from an Imlil riad', excerpt: 'North Africa\u2019s highest peak is closer than you think.', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80', date: 'January 19, 2026', category: 'Adventure', readTime: 10, author: 'Hakim Alaoui' },
 ]
 
 const team = [
-  { name: 'Ava Hart', role: 'General Manager', image: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80' },
-  { name: 'Noah Bennet', role: 'Guest Experience Director', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80' },
-  { name: 'Luna Sato', role: 'Creative Chef', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80' },
-  { name: 'Mateo Rivera', role: 'Tour Guide Lead', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80' },
+  { name: 'Salima Benhima', role: 'Founder & Curator', bio: 'A Fes-born architect who spent fifteen years restoring riads before founding Dar Zellige.', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=500&q=80' },
+  { name: 'Omar Tazi', role: 'Head of Hospitality', bio: 'Formerly of La Mamounia, Omar trains every riad team in the art of the slow welcome.', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80' },
+  { name: 'Aicha Benhassi', role: 'Chef de Cuisine', bio: 'A seventh-generation Marrakshi cook who still grinds her spices on her grandmother\u2019s basalt slab.', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=500&q=80' },
+  { name: 'Hakim Alaoui', role: 'Experiences Director', bio: 'A licensed mountain and medina guide who designs every cultural walk and trek.', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80' },
 ]
 
 const whyUsFeatures = [
-  { icon: 'earth-line', title: 'Worldwide Coverage', desc: 'Properties curated across scenic urban and coastal destinations on 4 continents.' },
-  { icon: 'money-dollar-circle-line', title: 'Competitive Pricing', desc: 'Guaranteed best rates on direct bookings with flexible date management.' },
-  { icon: 'flashlight-line', title: 'Fast Booking', desc: 'Streamlined three-step reservation process takes under two minutes.' },
-  { icon: 'compass-3-line', title: 'Guided Tours', desc: 'Professional on-ground experts run premium walking, sailing, and culinary excursions.' },
-  { icon: 'headphone-line', title: 'Best Support 24/7', desc: 'Live concierge available around the clock with average response under 4 minutes.' },
-  { icon: 'calendar-check-line', title: 'Ultimate Flexibility', desc: 'Free cancellation and last-minute swaps ensure zero stress for travel changes.' },
+  { icon: 'award-line', title: 'Eleven restored riads', desc: 'Each with its own architect, its own history, and its own head of house.' },
+  { icon: 'heart-line', title: 'Craft-led restoration', desc: 'Traditional tadelakt plaster, cedarwood carving, and hand-cut zellige. Never faked.' },
+  { icon: 'service-line', title: 'Live-in staff', desc: 'Your butler, chef, and hammam attendant live on-site â€” not at a hotel across town.' },
+  { icon: 'global-line', title: 'In three cities', desc: 'Marrakech, Fes, and Chefchaouen â€” move between them with our private drivers.' },
 ]
 
 const stats = [
-  { icon: 'group-line', value: '0.5k+', label: 'Happy Travelers' },
-  { icon: 'thumb-up-line', value: '0.4k+', label: 'Tour Success' },
-  { icon: 'star-smile-line', value: '31%', label: 'Positive Reviews' },
-  { icon: 'guide-line', value: '7', label: 'Travel Guides' },
+  { icon: 'hotel-line', value: '11', label: 'Restored Riads' },
+  { icon: 'star-fill', value: '4.94', label: 'Guest Rating' },
+  { icon: 'time-line', value: '7yrs', label: 'Avg. Restoration' },
+  { icon: 'heart-3-line', value: '96%', label: 'Guest Return' },
 ]
 
 const activityItems = [
-  { icon: 'landscape-line', label: 'Zip Lining', title: 'Thrill Above Ground: The Zip Line Adventure', desc: 'Embark on an adrenaline-fueled journey, zipping through lush landscapes, feeling the wind rush past you, and experiencing nature from breathtaking heights. Unleash your inner adventurer today.', tags: ['Treetop Views', 'Adrenaline Rush', 'Safety Measures', 'Nature Immersion'] },
-  { icon: 'run-line', label: 'Bungee Jumping', title: 'Take the Leap: Bungee Jumping Thrill', desc: 'Experience the ultimate free-fall rush from towering platforms above gorges and rivers. Professional safety systems and expert guides ensure a heart-pounding yet secure experience.', tags: ['Free Fall', 'Canyon Views', 'Safety Harness', 'Group Packages'] },
-  { icon: 'sailboat-line', label: 'Rafting', title: 'Navigate the Rapids: White Water Rafting', desc: 'Join a team of fellow adventurers as you conquer rapids ranging from gentle class I to intense class IV. Expert river guides and premium equipment provided.', tags: ['River Rapids', 'Team Building', 'Scenic Routes', 'All Levels'] },
-  { icon: 'flight-takeoff-line', label: 'Paragliding', title: 'Soar the Skies: Paragliding Experience', desc: 'Glide over majestic valleys and coastlines with a tandem paragliding flight. Certified pilots and premium gear make this unforgettable aerial experience safe for all.', tags: ['Aerial Views', 'Tandem Flight', 'Certified Pilots', 'Photo Package'] },
-  { icon: 'bike-line', label: 'Ski Touring', title: 'Alpine Discovery: Backcountry Ski Touring', desc: 'Explore untouched powder and pristine alpine terrain with experienced mountain guides. All equipment and safety briefing included in this premium winter excursion.', tags: ['Fresh Powder', 'Mountain Guides', 'Gear Included', 'Winter Package'] },
+  { id: 'hammam', icon: 'drop-line', label: 'Hammam', title: 'The Royal Hammam Ritual', desc: 'A ninety-minute ceremony: steam room, black-soap exfoliation, rhassoul clay, argan oil massage, and rose-water rinse.', tags: ['Savon beldi', 'Rhassoul', 'Argan', 'Mint tea'], image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1000&q=80' },
+  { id: 'cuisine', icon: 'restaurant-line', label: 'Cuisine', title: 'Courtyard Tajine Class', desc: 'Shop the spice souk at dawn with Chef Aicha, return to a riad courtyard, and spend three hours learning the architecture of a perfect tajine.', tags: ['Souk walk', 'Charcoal', 'Spice blending', 'Lunch'], image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1000&q=80' },
+  { id: 'craft', icon: 'hammer-line', label: 'Craft', title: 'Zellige & Calligraphy', desc: 'Spend an afternoon with a master tiler in Fes, then move to a Koranic calligraphy workshop.', tags: ['Tile-making', 'Kufic', 'Master guild', 'Keepsake'], image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1000&q=80' },
+  { id: 'desert', icon: 'landscape-line', label: 'Desert', title: 'Erg Chebbi Dawn Ride', desc: 'A private camel trek from the dune base to the crest of Erg Chebbi before dawn.', tags: ['Camel trek', 'Sunrise', 'Berber camp', 'Silence'], image: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=1000&q=80' },
 ]
 
-const megaMenus = {
-  rooms: {
-    heading: 'Rooms & Suites',
-    columns: [
-      { title: 'Room Types', links: [{ label: 'Signature Suites', to: '/rooms', icon: 'vip-crown-line' }, { label: 'Premium Collection', to: '/rooms', icon: 'star-line' }, { label: 'Family Collection', to: '/rooms', icon: 'parent-line' }] },
-      { title: 'Room Features', links: [{ label: 'Sea & Skyline Views', to: '/rooms', icon: 'building-2-line' }, { label: 'In-room Dining', to: '/rooms', icon: 'restaurant-line' }, { label: 'Private Lounge Access', to: '/rooms', icon: 'sofa-line' }] },
-    ],
-    promo: { title: 'Suite Upgrade Program', text: 'Stay 3 nights and get complimentary room-category upgrade.', image: 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=900&q=80' },
-  },
-  pages: {
-    heading: 'Inner Pages',
-    columns: [
-      { title: 'About & Contact', links: [{ label: 'About Us', to: '/about', icon: 'team-line' }, { label: 'Contact', to: '/contact', icon: 'mail-send-line' }, { label: 'FAQ', to: '/contact', icon: 'question-line' }] },
-      { title: 'Insights', links: [{ label: 'Blog', to: '/blog', icon: 'article-line' }, { label: 'News', to: '/blog', icon: 'newspaper-line' }, { label: 'Press Kit', to: '/blog', icon: 'folder-download-line' }] },
-    ],
-    promo: { title: 'Guest Storytelling Journal', text: 'Explore destination notes, chef picks, and curated travel routes.', image: 'https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?auto=format&fit=crop&w=900&q=80' },
-  },
+const faqs = [
+  { q: 'Where exactly are the Dar Zellige riads located?', a: 'We operate eleven riads across three Moroccan cities: six in the Marrakech Medina and Palmeraie, three in Fes el-Bali, and two in Chefchaouen.' },
+  { q: 'Can we book the whole riad for our group?', a: 'Yes. Every riad can be booked exclusively. Pricing is per riad per night, and a private chef, housekeeper, and butler are included.' },
+  { q: 'Are children welcome?', a: 'Children are welcome at all properties except Dar Andalusi (adults-only due to steep 14th-century staircases).' },
+  { q: 'Do you arrange airport transfers?', a: 'Private airport transfers are included in every booking of 3 nights or more.' },
+  { q: 'Is the hammam ritual co-ed?', a: 'No. All hammam rituals are single-sex, in keeping with traditional Moroccan hammam practice.' },
+  { q: 'How do I cancel or change my booking?', a: 'Free cancellation is available up to 48 hours before check-in for individual bookings, and 7 days for full-riad bookings.' },
+]
+
+const _MegaMenus = {
+  stays: { heading: 'Riads by City', columns: [
+    { title: 'Marrakech', links: [{ label: 'Riad Zellige', href: '/rooms' }, { label: 'Riad Zaitoune', href: '/rooms' }, { label: 'Dar Tadelakt', href: '/rooms' }] },
+    { title: 'Fes', links: [{ label: 'Dar Andalusi', href: '/rooms' }, { label: 'Riad Talaa', href: '/rooms' }] },
+    { title: 'Coast & North', links: [{ label: 'Riad Noor', href: '/rooms' }, { label: 'Dar Zaouia', href: '/rooms' }] },
+  ], promo: { title: 'Private Buy-outs', desc: 'Book an entire palace for your family or retreat.', href: '/contact', cta: 'Request a quote', image: 'https://images.unsplash.com/photo-1539020140153-e479b8c64e3a?auto=format&fit=crop&w=600&q=80' } },
 }
 
-/* ── Utility Components ── */
-function Stars({ rating, size }) {
-  const full = Math.floor(rating)
-  const half = rating % 1 >= 0.5
-  const empty = 5 - full - (half ? 1 : 0)
+const featuredRiads = (() => { const f = allRiads.filter(r => r.featured).slice(0, 3); return f.length === 3 ? f : allRiads.slice(0, 3) })()
+
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   UTILITIES
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function useReveal(threshold = 0.1) {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [threshold])
+  return [ref, visible]
+}
+
+function Reveal({ children, className = '', as = 'div', delay = 0, ...rest }) {
+  const [ref, visible] = useReveal(0.1)
+  const Comp = as
+  return (<Comp ref={ref} className={`reveal ${visible ? 'is-visible' : ''} ${className}`} style={{ transitionDelay: `${delay}ms` }} {...rest}>{children}</Comp>)
+}
+
+function BreadcrumbHero({ title, titleEm, crumbs, image }) {
   return (
-    <span className="stars" style={{ fontSize: size || '1rem' }}>
-      {Array.from({ length: full }).map((_, i) => <I key={`f${i}`} name="star-fill" />)}
-      {half && <I name="star-half-fill" />}
-      {Array.from({ length: empty }).map((_, i) => <I key={`e${i}`} name="star-line" />)}
-    </span>
-  )
-}
-
-function runModernAnimations(selector, mode) {
-  if (mode !== 'modern' || typeof window === 'undefined' || !window.gsap) return
-  const els = document.querySelectorAll(selector)
-  if (!els.length) return
-  window.gsap.fromTo(els, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.07, ease: 'power2.out' })
-}
-
-/* ── TopBar ── */
-function TopBar({ mode, setMode }) {
-  return (
-    <div className="topbar-wrap">
-      <div className="topbar contain">
-        <p className="topbar-slogan"><I name="leaf-line" /> Boutique Luxury Hotel & Resort Collection</p>
-        <a className="topbar-hotline" href="tel:+12125550147"><I name="phone-line" /> (+1) 212 555 0147</a>
-        <div className="topbar-right">
-          <div className="socials">
-            <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><I name="facebook-fill" /></a>
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram"><I name="instagram-line" /></a>
-            <a href="https://x.com" target="_blank" rel="noreferrer" aria-label="X"><I name="twitter-x-line" /></a>
-            <a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><I name="youtube-line" /></a>
-          </div>
-          <div className="mode-switcher" role="group" aria-label="view mode switch">
-            {MODES.map((o) => (
-              <button key={o} type="button" className={mode === o ? 'mode-pill active' : 'mode-pill'} onClick={() => setMode(o)} aria-label={o}>
-                <I name={o === 'light' ? 'sun-line' : o === 'dark' ? 'moon-line' : o === 'classic' ? 'quill-pen-line' : 'rocket-line'} />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ── Mega Menu ── */
-function MegaMenu({ menuKey, openMenu, setOpenMenu }) {
-  const menu = megaMenus[menuKey]
-  const isOpen = openMenu === menuKey
-  return (
-    <div className="nav-mega" onMouseEnter={() => setOpenMenu(menuKey)} onMouseLeave={() => setOpenMenu(null)}>
-      <button type="button" className={isOpen ? 'nav-link active nav-trigger' : 'nav-link nav-trigger'} onClick={() => setOpenMenu(isOpen ? null : menuKey)}>
-        {menuKey.charAt(0).toUpperCase() + menuKey.slice(1)} <I name="arrow-down-s-line" />
-      </button>
-      {isOpen && (
-        <div className="mega-panel" role="menu">
-          <p className="mega-heading">{menu.heading}</p>
-          <div className="mega-content">
-            {menu.columns.map((col) => (
-              <div key={col.title} className="mega-column">
-                <h4>{col.title}</h4>
-                {col.links.map((lnk) => <Link key={lnk.label} to={lnk.to} onClick={() => setOpenMenu(null)}><I name={lnk.icon} /> {lnk.label}</Link>)}
-              </div>
-            ))}
-            <article className="mega-promo">
-              <img src={menu.promo.image} alt={menu.promo.title} loading="lazy" />
-              <div><h4>{menu.promo.title}</h4><p>{menu.promo.text}</p></div>
-            </article>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ── Site Header ── */
-function SiteHeader() {
-  const [openMenu, setOpenMenu] = useState(null)
-  const [mobileOpen, setMobileOpen] = useState(false)
-  return (
-    <div className="header-wrap">
-      <header className="site-header contain" onMouseLeave={() => setOpenMenu(null)}>
-        <Link className="brand" to="/">Rivora</Link>
-        <nav className={mobileOpen ? 'site-nav open' : 'site-nav'} aria-label="main navigation">
-          <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')} onClick={() => setMobileOpen(false)}><I name="home-4-line" /> Home</NavLink>
-          <MegaMenu menuKey="rooms" openMenu={openMenu} setOpenMenu={setOpenMenu} />
-          <MegaMenu menuKey="pages" openMenu={openMenu} setOpenMenu={setOpenMenu} />
-          <NavLink to="/rooms" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')} onClick={() => setMobileOpen(false)}><I name="hotel-bed-line" /> Rooms</NavLink>
-          <NavLink to="/blog" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')} onClick={() => setMobileOpen(false)}><I name="article-line" /> Blog</NavLink>
-          <NavLink to="/contact" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')} onClick={() => setMobileOpen(false)}><I name="mail-line" /> Contact</NavLink>
+    <section className="rd-breadhero">
+      <div className="rd-breadhero__bg" style={{ backgroundImage: `url(${image})` }} aria-hidden="true" />
+      <div className="contain rd-breadhero__inner">
+        <nav className="rd-breadhero__crumbs" aria-label="Breadcrumb">
+          {crumbs.map((c, i) => (<span key={c.label}>{i > 0 && <I name="arrow-right-s-line" />}{c.href ? <Link to={c.href}>{c.label}</Link> : <span>{c.label}</span>}</span>))}
         </nav>
-        <button type="button" className="mobile-menu-btn" aria-label="Toggle menu" onClick={() => setMobileOpen(v => !v)}>
-          <I name={mobileOpen ? 'close-line' : 'menu-line'} />
-        </button>
-        <Link to="/contact" className="reservation-button"><I name="calendar-check-line" /> Book Now</Link>
-      </header>
-    </div>
-  )
-}
-
-/* ── Breadcrumb Hero ── */
-function BreadcrumbHero({ title, current, image }) {
-  return (
-    <section className="breadcrumb-hero reveal" style={{ backgroundImage: `url(${image})` }}>
-      <div className="breadcrumb-overlay" />
-      <div className="breadcrumb-content">
-        <p className="eyebrow">Rivora Hotel</p>
-        <h1>{title}</h1>
-        <p><Link to="/">Home</Link> / {current}</p>
+        <h1>{title} {titleEm && <em>{titleEm}</em>}</h1>
       </div>
     </section>
   )
 }
 
-/* ══════════════════════════════════════════════════════
+function HexBrandMark({ showText = true }) {
+  return (
+    <span className="rd-brand-2">
+      <span className="rd-brand-2__hex" aria-hidden="true">
+        <svg viewBox="0 0 44 44" fill="none"><path d="M22 2 L39 12 L39 32 L22 42 L5 32 L5 12 Z" fill="currentColor" /><path d="M22 7 L35 14.5 L35 29.5 L22 37 L9 29.5 L9 14.5 Z" stroke="rgba(255,255,255,.3)" strokeWidth="1" fill="none" /></svg>
+        <span className="rd-brand-2__initials">DZ</span>
+      </span>
+      {showText && <span className="rd-brand-2__text"><span className="rd-brand-2__name">Dar Zellige</span><span className="rd-brand-2__tag">Restored Riads</span></span>}
+    </span>
+  )
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   HEADER (floating island â€” kept from v2)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+const PRIMARY_NAV = [
+  { to: '/', label: 'Home', end: true },
+  { to: '/rooms', label: 'Riads' },
+  { to: '/packages', label: 'Packages' },
+  { to: '/activities', label: 'Activities' },
+  { to: '/about', label: 'About' },
+  { to: '/blog', label: 'Journal' },
+  { to: '/contact', label: 'Contact' },
+]
+
+function SiteHeader({ mode, setMode }) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [hoverIdx, setHoverIdx] = useState(-1)
+  const [indicator, setIndicator] = useState({ left: 0, width: 0, visible: false })
+  const navRef = useRef(null)
+  const linkRefs = useRef([])
+  const toggleBtnRef = useRef(null)
+  const location = useLocation()
+  const prevPath = useRef(location.pathname)
+  const [scrollPct, setScrollPct] = useState(0)
+
+  const activeIdx = useMemo(() => {
+    const exact = PRIMARY_NAV.findIndex(n => n.end ? location.pathname === n.to : location.pathname.startsWith(n.to))
+    return exact
+  }, [location.pathname])
+
+  useEffect(() => { if (prevPath.current !== location.pathname) { prevPath.current = location.pathname; setMobileOpen(false) } }, [location.pathname])
+  useEffect(() => { if (!mobileOpen) return; const h = (e) => { if (e.key === 'Escape') { setMobileOpen(false); toggleBtnRef.current?.focus() } }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h) }, [mobileOpen])
+  useEffect(() => { const h = () => { const d = document.documentElement; const t = d.scrollHeight - d.clientHeight; setScrollPct(t > 0 ? Math.min(100, (d.scrollTop / t) * 100) : 0) }; h(); window.addEventListener('scroll', h, { passive: true }); return () => window.removeEventListener('scroll', h) }, [])
+
+  useEffect(() => {
+    const targetIdx = hoverIdx !== -1 ? hoverIdx : activeIdx
+    if (targetIdx < 0 || !linkRefs.current[targetIdx] || !navRef.current) { setIndicator(s => ({ ...s, visible: false })); return }
+    const navRect = navRef.current.getBoundingClientRect()
+    const linkRect = linkRefs.current[targetIdx].getBoundingClientRect()
+    setIndicator({ left: linkRect.left - navRect.left, width: linkRect.width, visible: true })
+  }, [hoverIdx, activeIdx])
+
+  const cities = ['Marrakech', 'Fes', 'Chefchaouen', 'Essaouira', 'Rabat', 'Tangier', 'Meknes', 'TÃ©touan']
+
+  return (
+    <header className="rd-hdr-wrap">
+      <div className="rd-hdr-strip">
+        <div className="contain rd-hdr-strip__inner">
+          <div className="rd-hdr-strip__left">
+            <span className="rd-hdr-strip__badge"><I name="moon-clear-line" /> Eleven restored riads Â· est. 2019</span>
+          </div>
+          <div className="rd-hdr-strip__marquee" aria-hidden="true">
+            <div className="rd-hdr-strip__marquee-track">{[...cities, ...cities].map((c, i) => <span key={`${c}-${i}`}>{c}</span>)}</div>
+          </div>
+          <div className="rd-hdr-strip__right">
+            <a href="tel:+212524388812"><I name="phone-line" /> +212 524 388 812</a>
+            <div className="rd-ms-mini" role="group" aria-label="Theme mode">
+              {MODES.map(m => (<button key={m} type="button" className="rd-ms-mini__btn" aria-label={`${m} mode`} aria-pressed={mode === m} onClick={() => setMode(m)}><I name={MODE_ICONS[m]} /></button>))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rd-island">
+        <div className="rd-island__inner">
+          <Link to="/" aria-label="Dar Zellige home"><HexBrandMark /></Link>
+          <nav ref={navRef} className="rd-nav-2" aria-label="Primary" onMouseLeave={() => setHoverIdx(-1)}>
+            <span className={`rd-nav-2__pill-bg ${indicator.visible ? 'is-visible' : ''}`} style={{ transform: `translateX(${indicator.left}px)`, width: indicator.width }} aria-hidden="true" />
+            {PRIMARY_NAV.map((n, i) => (
+              <NavLink key={n.to} to={n.to} end={n.end} ref={el => { linkRefs.current[i] = el }} className={({ isActive }) => `rd-nav-2__link ${isActive ? 'is-active' : ''}`} onMouseEnter={() => setHoverIdx(i)} onFocus={() => setHoverIdx(i)} onBlur={() => setHoverIdx(-1)}>{n.label}</NavLink>
+            ))}
+            <span className={`rd-nav-2__indicator ${indicator.visible ? 'is-visible' : ''}`} style={{ transform: `translateX(${indicator.left}px)`, width: indicator.width }} aria-hidden="true" />
+          </nav>
+          <div className="rd-island__cta">
+            <Link to="/booking" className="rd-btn rd-btn-primary rd-btn-sm"><I name="calendar-line" /> Book Now</Link>
+            <button ref={toggleBtnRef} type="button" className="rd-mt-2" aria-expanded={mobileOpen} aria-label="Toggle navigation" onClick={() => setMobileOpen(v => !v)}><I name={mobileOpen ? 'close-line' : 'menu-3-line'} /></button>
+          </div>
+        </div>
+      </div>
+
+      <div className="rd-scroll-progress" aria-hidden="true"><div className="rd-scroll-progress__fill" style={{ '--rd-scroll': `${scrollPct}%` }} /></div>
+
+      <div className={`rd-mobile-drawer ${mobileOpen ? 'is-open' : ''}`} aria-hidden={!mobileOpen}>
+        <div className="rd-mobile-drawer__head">
+          <Link to="/"><HexBrandMark /></Link>
+          <button type="button" className="rd-mobile-drawer__close" aria-label="Close menu" onClick={() => { setMobileOpen(false); toggleBtnRef.current?.focus() }}><I name="close-line" /></button>
+        </div>
+        <nav>{PRIMARY_NAV.map(n => <Link key={n.to} to={n.to}>{n.label}</Link>)}</nav>
+        <Link to="/booking" className="rd-btn rd-btn-primary rd-btn-full"><I name="calendar-line" /> Book Your Stay</Link>
+      </div>
+    </header>
+  )
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   FOOTER (theatrical walnut â€” kept from v2)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function Footer() {
+  const year = new Date().getFullYear()
+  const cities = ['Marrakech', 'Fes', 'Chefchaouen', 'Essaouira', 'Tangier', 'Meknes']
+  return (
+    <footer className="rd-ftr">
+      <div className="rd-ftr__tess" aria-hidden="true" />
+      <div className="rd-ftr__mq" aria-hidden="true"><div className="rd-ftr__mq-track">{[...cities, ...cities, ...cities].map((c, i) => <span key={`f-${c}-${i}`}>{c}</span>)}</div></div>
+      <div className="contain rd-ftr__body">
+        <div className="rd-ftr__head">
+          <div>
+            <span className="rd-ftr__head-eyebrow">Begin your journey</span>
+            <p className="rd-ftr__tagline">Eleven restored Moroccan riads, each with its own <em>courtyard</em>, its own chef, and its own <em>seven-year story</em>.</p>
+          </div>
+          <div className="rd-ftr__news">
+            <span className="rd-ftr__news-label">Letters from the medina</span>
+            <h5>One careful <em>email</em> a month.<br />Nothing else.</h5>
+            <form className="rd-ftr__news-form" onSubmit={e => e.preventDefault()}><input type="email" placeholder="your@email.com" aria-label="Email" /><button type="submit">Subscribe <I name="arrow-right-line" /></button></form>
+          </div>
+        </div>
+        <div className="rd-ftr__cols">
+          <div className="rd-ftr__col">
+            <Link to="/" className="rd-ftr__brand-2"><HexBrandMark showText={false} /><strong>Dar Zellige</strong></Link>
+            <p>A curated collection of restored Moroccan riads. Architecture, silence, and the slow ceremony of the courtyard.</p>
+            <div className="rd-ftr__socials">
+              <a href="#" aria-label="Instagram"><I name="instagram-line" /></a>
+              <a href="#" aria-label="Facebook"><I name="facebook-line" /></a>
+              <a href="#" aria-label="Pinterest"><I name="pinterest-line" /></a>
+              <a href="#" aria-label="YouTube"><I name="youtube-line" /></a>
+            </div>
+          </div>
+          <div className="rd-ftr__col"><span className="rd-ftr__col-head">Explore</span><ul><li><Link to="/rooms">Our Riads</Link></li><li><Link to="/packages">Packages</Link></li><li><Link to="/activities">Activities</Link></li><li><Link to="/about">Our Story</Link></li><li><Link to="/blog">The Journal</Link></li><li><Link to="/booking">Book a Stay</Link></li></ul></div>
+          <div className="rd-ftr__col"><span className="rd-ftr__col-head">Cities</span><ul><li><Link to="/rooms"><i className="ri-map-pin-line" />Marrakech</Link></li><li><Link to="/rooms"><i className="ri-map-pin-line" />Fes el-Bali</Link></li><li><Link to="/rooms"><i className="ri-map-pin-line" />Chefchaouen</Link></li><li><Link to="/rooms"><i className="ri-map-pin-line" />Essaouira</Link></li></ul></div>
+          <div className="rd-ftr__col"><span className="rd-ftr__col-head">Visit</span><ul><li><i className="ri-map-pin-line" />Derb Bouhsain 24, Marrakech</li><li><i className="ri-phone-line" /><a href="tel:+212524388812">+212 524 388 812</a></li><li><i className="ri-mail-line" /><a href="mailto:hello@darzellige.ma">hello@darzellige.ma</a></li><li><i className="ri-time-line" />Reception Â· 24h</li></ul></div>
+        </div>
+        <div className="rd-ftr__wordmark" aria-hidden="true"><span>Dar&nbsp;Zellige</span></div>
+        <div className="rd-ftr__bottom">
+          <span>Â© {year} Dar Zellige â€” A Collection of Restored Riads.</span>
+          <div className="rd-ftr__crest"><I name="award-line" /> Preserving Moroccan craft</div>
+          <nav className="rd-ftr__bottom-legal" aria-label="Legal"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Cookies</a></nav>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    HOME PAGE
-   ══════════════════════════════════════════════════════ */
-function HomePage({ mode }) {
-  const [activeSlide, setActiveSlide] = useState(0)
-  const [activeReview, setActiveReview] = useState(0)
-  const [bookingTab, setBookingTab] = useState('rooms')
-  const [bookingStatus, setBookingStatus] = useState('')
-  const [bookingErrors, setBookingErrors] = useState({})
-  const [formData, setFormData] = useState({
-    checkIn: null, checkOut: null, roomAdults: 2, roomChildren: 0,
-    tourDate: null, tourGuests: 2, tourType: 'old-city-architecture', tourEmail: '',
-    diningDate: null, diningTime: '19:30', diningGuests: 2, diningArea: 'chef-table', diningName: '',
-  })
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function HomePage() {
+  const [heroIdx, setHeroIdx] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const pauseRef = useRef(null)
+  const [testIdx, setTestIdx] = useState(0)
 
-  useEffect(() => {
-    const t = setInterval(() => setActiveSlide(v => (v + 1) % heroSlides.length), 5500)
-    return () => clearInterval(t)
-  }, [])
+  useEffect(() => { if (paused) return; const t = setInterval(() => setHeroIdx(i => (i + 1) % heroSlides.length), 7000); return () => clearInterval(t) }, [paused])
+  useEffect(() => { const t = setInterval(() => setTestIdx(i => (i + 1) % testimonials.length), 7000); return () => clearInterval(t) }, [])
 
-  useEffect(() => {
-    const t = setInterval(() => setActiveReview(v => (v + 1) % testimonials.length), 5200)
-    return () => clearInterval(t)
-  }, [])
-
-  useEffect(() => {
-    if (mode !== 'modern' || !window.gsap) return
-    const tl = window.gsap.timeline()
-    tl.fromTo('.hero-layer-eyebrow', { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.32 })
-      .fromTo('.hero-layer-title', { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.42 }, '-=0.1')
-      .fromTo('.hero-layer-desc', { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, '-=0.18')
-      .fromTo('.hero-layer-actions', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.32 }, '-=0.17')
-    window.gsap.fromTo('.home-slide-image', { opacity: 0.6, scale: 1.04 }, { opacity: 1, scale: 1, duration: 0.66, ease: 'power2.out' })
-  }, [activeSlide, mode])
-
-  const slide = heroSlides[activeSlide]
-
-  const setField = (f, v) => { setFormData(p => ({ ...p, [f]: v })); setBookingErrors(p => ({ ...p, [f]: '' })) }
-  const adjustCounter = (f, mn, mx, d) => { setFormData(p => ({ ...p, [f]: Math.min(mx, Math.max(mn, p[f] + d)) })); setBookingErrors(p => ({ ...p, [f]: '' })) }
-
-  const validateBooking = () => {
-    const e = {}
-    if (bookingTab === 'rooms') {
-      if (!formData.checkIn) e.checkIn = 'Check-in date is required.'
-      if (!formData.checkOut) e.checkOut = 'Check-out date is required.'
-      if (formData.checkIn && formData.checkOut && formData.checkOut <= formData.checkIn) e.checkOut = 'Check-out must be after check-in.'
-      if (formData.roomAdults < 1) e.roomAdults = 'At least 1 adult required.'
-    }
-    if (bookingTab === 'tours') {
-      if (!formData.tourDate) e.tourDate = 'Tour date is required.'
-      if (!formData.tourEmail.trim()) e.tourEmail = 'Email is required.'
-      else if (!formData.tourEmail.includes('@')) e.tourEmail = 'Valid email required.'
-      if (formData.tourGuests < 1) e.tourGuests = 'At least 1 guest required.'
-    }
-    if (bookingTab === 'dining') {
-      if (!formData.diningDate) e.diningDate = 'Date is required.'
-      if (!formData.diningTime) e.diningTime = 'Time is required.'
-      if (!formData.diningName.trim()) e.diningName = 'Name is required.'
-      if (formData.diningGuests < 1) e.diningGuests = 'At least 1 guest required.'
-    }
-    setBookingErrors(e)
-    return Object.keys(e).length === 0
-  }
-
-  const handleBookingSubmit = (ev) => {
-    ev.preventDefault()
-    setBookingStatus('')
-    if (!validateBooking()) return
-    setBookingStatus(bookingTab === 'rooms' ? 'Room availability request submitted!' : bookingTab === 'tours' ? 'Tour inquiry submitted!' : 'Dining reservation submitted!')
-  }
-
-  const handleHeroMouseMove = (ev) => {
-    if (mode !== 'modern' || !window.gsap) return
-    const r = ev.currentTarget.getBoundingClientRect()
-    const x = (ev.clientX - r.left - r.width / 2) / r.width
-    const y = (ev.clientY - r.top - r.height / 2) / r.height
-    window.gsap.to('.home-slide-image', { x: x * 18, y: y * 14, duration: 0.45, ease: 'power2.out', overwrite: true })
-    window.gsap.to('.hero-layer', { x: x * 10, y: y * 8, duration: 0.45, ease: 'power2.out', overwrite: true })
-  }
-
-  const handleHeroMouseLeave = () => {
-    if (mode !== 'modern' || !window.gsap) return
-    window.gsap.to(['.home-slide-image', '.hero-layer'], { x: 0, y: 0, duration: 0.55, ease: 'power2.out', overwrite: true })
-  }
+  const pauseFor = () => { setPaused(true); clearTimeout(pauseRef.current); pauseRef.current = setTimeout(() => setPaused(false), 7000) }
+  const gotoSlide = (n) => { setHeroIdx(((n % heroSlides.length) + heroSlides.length) % heroSlides.length); pauseFor() }
+  const slide = heroSlides[heroIdx]
 
   return (
     <>
-      {/* ── Hero Slider with padding + rounded ── */}
-      <section className="slider-section reveal" onMouseMove={handleHeroMouseMove} onMouseLeave={handleHeroMouseLeave}>
-        <div className="home-slider">
-          <img className="home-slide-image" src={slide.image} alt="Rivora hotel" loading="eager" />
-          <div className="home-slide-overlay" />
-          <div className="home-slide-content">
-            <p className="eyebrow hero-layer hero-layer-eyebrow"><I name="shining-line" /> {slide.subtitle}</p>
-            <h1 className="hero-layer hero-layer-title">{slide.title}</h1>
-            <p className="hero-layer hero-layer-desc">{slide.description}</p>
-            <div className="hero-actions hero-layer hero-layer-actions">
-              <Link to="/contact" className="btn-primary"><I name="calendar-check-line" /> Reservation</Link>
-              <Link to="/rooms" className="btn-ghost"><I name="eye-line" /> Explore Rooms</Link>
-            </div>
-          </div>
-          <button className="slider-arrow left" type="button" onClick={() => setActiveSlide(v => (v - 1 + heroSlides.length) % heroSlides.length)} aria-label="Previous slide"><I name="arrow-left-s-line" /></button>
-          <button className="slider-arrow right" type="button" onClick={() => setActiveSlide(v => (v + 1) % heroSlides.length)} aria-label="Next slide"><I name="arrow-right-s-line" /></button>
-          <div className="slider-dots-hero">
-            {heroSlides.map((_, i) => (
-              <button key={i} type="button" className={i === activeSlide ? 'dot active' : 'dot'} onClick={() => setActiveSlide(i)} aria-label={`Slide ${i + 1}`} />
-            ))}
+      {/* HERO */}
+      <section className="rd-hero">
+        <div className="rd-hero__bg">{heroSlides.map((s, i) => <img key={s.id} src={s.image} alt={`${s.title} ${s.titleEm}`} className={i === heroIdx ? '' : 'is-prev'} loading={i === 0 ? 'eager' : 'lazy'} />)}</div>
+        <div className="rd-hero__overlay" />
+        <div className="contain rd-hero__content">
+          <p className="rd-hero__eyebrow">{slide.eyebrow}</p>
+          <h1 className="rd-hero__title">{slide.title} <em>{slide.titleEm}</em></h1>
+          <p className="rd-hero__sub">{slide.subtitle}</p>
+          <div className="rd-hero__actions">
+            <Link to={slide.ctaHref} className="rd-btn rd-btn-primary">{slide.ctaLabel} <I name="arrow-right-line" /></Link>
+            <Link to="/about" className="rd-btn rd-btn-ghost" style={{ borderColor: 'rgba(255,255,255,.4)', color: '#fff' }}>Our story</Link>
           </div>
         </div>
+        <div className="rd-hero__controls contain">
+          <div className="rd-hero__dots">{heroSlides.map((_, i) => <button key={i} type="button" className={`rd-hero__dot ${i === heroIdx ? 'is-active' : ''}`} onClick={() => gotoSlide(i)} aria-label={`Slide ${i + 1}`} />)}</div>
+          <span className="rd-hero__counter"><strong>{String(heroIdx + 1).padStart(2, '0')}</strong> / {String(heroSlides.length).padStart(2, '0')}</span>
+        </div>
+        <div className="rd-hero__scroll"><span className="rd-hero__scroll-label">Scroll</span><span className="rd-hero__scroll-bar" /></div>
       </section>
 
-      {/* ── Booking Engine (separated, not affected by slider) ── */}
-      <section className="booking-engine contain reveal">
-        <div className="booking-tabs" role="tablist">
-          {[{ key: 'rooms', icon: 'hotel-bed-line', label: 'Rooms' }, { key: 'tours', icon: 'compass-3-line', label: 'Tours' }, { key: 'dining', icon: 'restaurant-line', label: 'Dining' }].map(t => (
-            <button key={t.key} type="button" role="tab" aria-selected={bookingTab === t.key} className={bookingTab === t.key ? 'booking-tab active' : 'booking-tab'} onClick={() => { setBookingTab(t.key); setBookingStatus(''); setBookingErrors({}) }}>
-              <I name={t.icon} /> {t.label}
-            </button>
-          ))}
-        </div>
-        <form className="booking-form" onSubmit={handleBookingSubmit}>
-          {bookingTab === 'rooms' && (
-            <>
-              <div className={bookingErrors.checkIn ? 'form-field has-error' : 'form-field'}>
-                <label><I name="calendar-event-line" /> Check In</label>
-                <DatePicker selected={formData.checkIn} onChange={d => setField('checkIn', d)} selectsStart startDate={formData.checkIn} endDate={formData.checkOut} placeholderText="Select date" dateFormat="MMM dd, yyyy" className="dp-input" />
-                {bookingErrors.checkIn && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.checkIn}</span>}
-              </div>
-              <div className={bookingErrors.checkOut ? 'form-field has-error' : 'form-field'}>
-                <label><I name="calendar-check-line" /> Check Out</label>
-                <DatePicker selected={formData.checkOut} onChange={d => setField('checkOut', d)} selectsEnd startDate={formData.checkIn} endDate={formData.checkOut} minDate={formData.checkIn} placeholderText="Select date" dateFormat="MMM dd, yyyy" className="dp-input" />
-                {bookingErrors.checkOut && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.checkOut}</span>}
-              </div>
-              <div className={bookingErrors.roomAdults ? 'form-field counter-field has-error' : 'form-field counter-field'}>
-                <label><I name="user-line" /> Adults</label>
-                <div className="counter-row">
-                  <button type="button" onClick={() => adjustCounter('roomAdults', 1, 8, -1)}><I name="subtract-line" /></button>
-                  <span>{formData.roomAdults}</span>
-                  <button type="button" onClick={() => adjustCounter('roomAdults', 1, 8, 1)}><I name="add-line" /></button>
-                </div>
-                {bookingErrors.roomAdults && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.roomAdults}</span>}
-              </div>
-              <div className="form-field counter-field">
-                <label><I name="user-heart-line" /> Children</label>
-                <div className="counter-row">
-                  <button type="button" onClick={() => adjustCounter('roomChildren', 0, 6, -1)}><I name="subtract-line" /></button>
-                  <span>{formData.roomChildren}</span>
-                  <button type="button" onClick={() => adjustCounter('roomChildren', 0, 6, 1)}><I name="add-line" /></button>
-                </div>
-              </div>
-              <button type="submit" className="btn-primary booking-submit"><I name="search-line" /> Check Availability</button>
-            </>
-          )}
-          {bookingTab === 'tours' && (
-            <>
-              <div className={bookingErrors.tourDate ? 'form-field has-error' : 'form-field'}>
-                <label><I name="calendar-line" /> Tour Date</label>
-                <DatePicker selected={formData.tourDate} onChange={d => setField('tourDate', d)} placeholderText="Select date" dateFormat="MMM dd, yyyy" className="dp-input" minDate={new Date()} />
-                {bookingErrors.tourDate && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.tourDate}</span>}
-              </div>
-              <div className="form-field">
-                <label><I name="compass-3-line" /> Tour Type</label>
-                <select value={formData.tourType} onChange={e => setField('tourType', e.target.value)}>
-                  <option value="old-city-architecture">Old City Architecture</option>
-                  <option value="sunset-sailing">Sunset Sailing</option>
-                  <option value="culinary-market">Culinary Market Trail</option>
-                </select>
-              </div>
-              <div className={bookingErrors.tourGuests ? 'form-field counter-field has-error' : 'form-field counter-field'}>
-                <label><I name="group-line" /> Guests</label>
-                <div className="counter-row">
-                  <button type="button" onClick={() => adjustCounter('tourGuests', 1, 12, -1)}><I name="subtract-line" /></button>
-                  <span>{formData.tourGuests}</span>
-                  <button type="button" onClick={() => adjustCounter('tourGuests', 1, 12, 1)}><I name="add-line" /></button>
-                </div>
-                {bookingErrors.tourGuests && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.tourGuests}</span>}
-              </div>
-              <div className={bookingErrors.tourEmail ? 'form-field has-error' : 'form-field'}>
-                <label><I name="mail-line" /> Email</label>
-                <input type="email" placeholder="you@example.com" value={formData.tourEmail} onChange={e => setField('tourEmail', e.target.value)} />
-                {bookingErrors.tourEmail && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.tourEmail}</span>}
-              </div>
-              <button type="submit" className="btn-primary booking-submit"><I name="compass-3-line" /> Find Tours</button>
-            </>
-          )}
-          {bookingTab === 'dining' && (
-            <>
-              <div className={bookingErrors.diningDate ? 'form-field has-error' : 'form-field'}>
-                <label><I name="calendar-line" /> Date</label>
-                <DatePicker selected={formData.diningDate} onChange={d => setField('diningDate', d)} placeholderText="Select date" dateFormat="MMM dd, yyyy" className="dp-input" minDate={new Date()} />
-                {bookingErrors.diningDate && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.diningDate}</span>}
-              </div>
-              <div className={bookingErrors.diningTime ? 'form-field has-error' : 'form-field'}>
-                <label><I name="time-line" /> Time</label>
-                <input type="time" value={formData.diningTime} onChange={e => setField('diningTime', e.target.value)} />
-                {bookingErrors.diningTime && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.diningTime}</span>}
-              </div>
-              <div className={bookingErrors.diningGuests ? 'form-field counter-field has-error' : 'form-field counter-field'}>
-                <label><I name="group-line" /> Guests</label>
-                <div className="counter-row">
-                  <button type="button" onClick={() => adjustCounter('diningGuests', 1, 10, -1)}><I name="subtract-line" /></button>
-                  <span>{formData.diningGuests}</span>
-                  <button type="button" onClick={() => adjustCounter('diningGuests', 1, 10, 1)}><I name="add-line" /></button>
-                </div>
-                {bookingErrors.diningGuests && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.diningGuests}</span>}
-              </div>
-              <div className="form-field">
-                <label><I name="store-2-line" /> Area</label>
-                <select value={formData.diningArea} onChange={e => setField('diningArea', e.target.value)}>
-                  <option value="chef-table">Chef Table</option>
-                  <option value="rooftop">Rooftop Terrace</option>
-                  <option value="private-lounge">Private Lounge</option>
-                </select>
-              </div>
-              <div className={bookingErrors.diningName ? 'form-field span-full has-error' : 'form-field span-full'}>
-                <label><I name="user-3-line" /> Guest Name</label>
-                <input type="text" placeholder="Full name" value={formData.diningName} onChange={e => setField('diningName', e.target.value)} />
-                {bookingErrors.diningName && <span className="field-error"><I name="error-warning-line" /> {bookingErrors.diningName}</span>}
-              </div>
-              <button type="submit" className="btn-primary booking-submit"><I name="restaurant-line" /> Reserve Table</button>
-            </>
-          )}
-        </form>
-        {bookingStatus && <p className="booking-status"><I name="checkbox-circle-line" /> {bookingStatus}</p>}
-      </section>
-
-      {/* ── Featured Rooms ── */}
-      <section className="section contain reveal section-spaced" id="rooms">
-        <div className="section-heading">
-          <p className="eyebrow"><I name="hotel-bed-line" /> Featured Rooms</p>
-          <h2>Stay categories engineered for comfort, privacy, and style</h2>
-        </div>
-        <div className="cards-grid rooms-grid">
-          {featuredRooms.map(room => (
-            <article className="card room-card" key={room.name}>
-              <div className="card-img-wrap">
-                {room.badge && <span className="card-badge"><I name="checkbox-circle-fill" /> {room.badge}</span>}
-                <img src={room.image} alt={room.name} loading="lazy" />
-              </div>
-              <div className="card-copy">
-                <div className="card-top-row"><Stars rating={room.rating} size="0.85rem" /><span className="review-count">({room.reviews})</span></div>
-                <h3>{room.name}</h3>
-                <p className="room-meta"><I name="ruler-line" /> {room.size} · <I name="user-line" /> {room.capacity} · <I name="hotel-bed-line" /> {room.bedDetail}</p>
-                <div className="room-footer">
-                  <strong className="room-price">${room.price}<span>/night</span></strong>
-                  {room.originalPrice && <span className="original-price">${room.originalPrice}</span>}
-                </div>
-                <Link to="/rooms" className="text-button"><I name="eye-line" /> View Details</Link>
+      {/* FEATURED RIADS */}
+      <section className="section contain">
+        <Reveal className="section-heading"><p className="eyebrow">Featured Riads</p><h2>Three courtyards, three cities, three different mornings.</h2></Reveal>
+        <Reveal className="rd-grid rd-grid--3">
+          {featuredRiads.map(r => (
+            <article key={r.id} className="rd-card">
+              <Link to={`/rooms/${r.id}`} className="rd-card__img rd-card__img--arch"><img src={r.image} alt={`${r.name}, ${r.city}`} loading="lazy" /><span className="rd-card__badge">{r.badge}</span></Link>
+              <div className="rd-card__body">
+                <div className="rd-card__meta"><span>{r.category}</span><span className="rd-card__rating"><I name="star-fill" /> {r.rating}</span></div>
+                <h3 className="rd-card__title"><Link to={`/rooms/${r.id}`}>{r.name}</Link></h3>
+                <span className="rd-card__loc"><I name="map-pin-line" /> {r.city}</span>
+                <div className="rd-card__footer"><div className="rd-card__price">{r.originalPrice && <span className="rd-card__price-was">${r.originalPrice}</span>}<strong>${r.price}</strong><small>/ night</small></div><Link to={`/rooms/${r.id}`} className="rd-btn rd-btn-ghost rd-btn-sm">Explore</Link></div>
               </div>
             </article>
           ))}
-        </div>
-        <div className="section-cta"><Link to="/rooms" className="btn-primary"><I name="arrow-right-line" /> View All Rooms</Link></div>
+        </Reveal>
       </section>
 
-      {/* ── Mini About ── */}
-      <section className="section contain reveal mini-about section-spaced">
-        <img src="https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1400&q=80" alt="Rivora entrance" loading="lazy" />
-        <div>
-          <p className="eyebrow"><I name="information-line" /> About Rivora</p>
-          <h2>Where timeless hospitality meets modern design</h2>
-          <p>Rivora creates spaces that balance warmth and refinement, with attentive service and curated local experiences built around each guest. Every stay is crafted to feel personal, from the carefully selected room amenities to the locally inspired dining menus.</p>
-          <Link to="/about" className="btn-primary link-btn"><I name="arrow-right-line" /> Learn More</Link>
-        </div>
+      {/* BRAND STORY */}
+      <section className="section contain">
+        <Reveal className="rd-story">
+          <div className="rd-story__imgwrap"><img src="https://images.unsplash.com/photo-1591825729269-caeb344f6df2?auto=format&fit=crop&w=1000&q=80" alt="Courtyard fountain" loading="lazy" /><div className="rd-story__badge"><strong>07</strong><span>Years restoring</span></div></div>
+          <div><p className="eyebrow">Our story</p><h2>Every riad we restore takes seven years.</h2><p style={{ marginTop: '1rem', lineHeight: 1.7 }}>Dar Zellige was founded by an architect from Fes who wanted to bring the slow, honest restoration practice to a small collection of riads. Real tadelakt, hand-cut zellige, carved cedar â€” everything patient, everything right.</p><div style={{ marginTop: '1.5rem' }}><Link to="/about" className="rd-btn rd-btn-primary">Read our story <I name="arrow-right-line" /></Link></div></div>
+        </Reveal>
       </section>
 
-      {/* ── Tours ── */}
-      <section className="section contain reveal section-spaced">
-        <div className="section-heading">
-          <p className="eyebrow"><I name="compass-3-line" /> Tours & Experiences</p>
-          <h2>Curated routes designed with local experts</h2>
-        </div>
-        <div className="cards-grid tours-grid">
-          {tourPackages.map(tour => (
-            <article className="card tour-card" key={tour.title}>
-              <div className="card-img-wrap">
-                <span className="card-badge top-badge"><I name="flashlight-line" /> {tour.difficulty}</span>
-                <img src={tour.image} alt={tour.title} loading="lazy" />
-              </div>
-              <div className="card-copy">
-                <div className="card-top-row"><Stars rating={tour.rating} size="0.85rem" /><span className="review-count">({tour.reviews})</span></div>
-                <h3>{tour.title}</h3>
-                <div className="tour-meta-row">
-                  <span><I name="time-line" /> {tour.duration}</span>
-                  <span><I name="map-pin-line" /> {tour.spots}</span>
-                  <span><I name="group-line" /> {tour.groupSize}</span>
-                </div>
-                <div className="tour-highlights">
-                  {tour.highlights.map(h => <span key={h}><I name="check-line" /> {h}</span>)}
-                </div>
-                <div className="tour-includes">
-                  {tour.includes.map(ic => <span key={ic} className="tour-include-icon"><I name={ic} /></span>)}
-                </div>
-                <div className="room-footer">
-                  <strong className="room-price">{tour.price}<span>/person</span></strong>
-                  <button type="button" className="btn-primary" style={{ fontSize: '0.82rem', padding: '0.55rem 0.9rem' }}><I name="calendar-check-line" /> Book Now</button>
-                </div>
-              </div>
+      {/* EXPERIENCES PREVIEW */}
+      <section className="section contain">
+        <Reveal className="section-heading"><p className="eyebrow">Experiences</p><h2>Four ways to spend a Moroccan afternoon.</h2></Reveal>
+        <Reveal className="rd-grid rd-grid--4">
+          {experiences.slice(0, 4).map(e => (
+            <article key={e.id} className="rd-act-card">
+              <div className="rd-act-card__img"><img src={e.image} alt={e.title} loading="lazy" /><div className="rd-act-card__overlay"><span className="rd-act-card__pill"><I name="time-line" /> {e.duration}</span><span className="rd-act-card__pill"><I name="group-line" /> {e.groupSize}</span></div></div>
+              <div className="rd-act-card__body"><span className="rd-act-card__cat">{e.category}</span><h3 className="rd-act-card__title">{e.title}</h3><p className="rd-act-card__desc">{e.excerpt}</p><div className="rd-act-card__footer"><span className="rd-act-card__price"><strong>${e.price}</strong> <small>/ person</small></span><Link to="/activities" className="rd-btn rd-btn-ghost rd-btn-sm">Details</Link></div></div>
             </article>
           ))}
+        </Reveal>
+      </section>
+
+      {/* CTA BANNER */}
+      <section className="rd-banner full-bleed">
+        <div className="contain rd-banner__inner">
+          <div><p className="eyebrow" style={{ color: 'rgba(255,255,255,.85)' }}>Private riad buy-outs</p><h2>Book an entire palace for your family, wedding, or retreat.</h2><p>Exclusive use from four nights. Dedicated chef, butler, and hammam attendant included.</p></div>
+          <Link to="/contact" className="rd-btn rd-btn-white">Request a quote <I name="arrow-right-line" /></Link>
         </div>
       </section>
 
-      {/* ── Banner ── */}
-      <section className="full-banner full-bleed reveal section-spaced" style={{ backgroundImage: 'linear-gradient(rgba(14,17,22,0.4),rgba(14,17,22,0.5)), url(https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=2200&q=80)' }}>
-        <p className="eyebrow"><I name="vip-crown-line" /> Luxury Reimagined</p>
-        <h2>Book direct to unlock breakfast, flexible check-in, and premium transfer credits.</h2>
-        <Link to="/contact" className="btn-primary banner-cta"><I name="calendar-check-line" /> Book Direct Now</Link>
+      {/* AMENITIES */}
+      <section className="section contain">
+        <Reveal className="section-heading section-heading--center"><p className="eyebrow" style={{ justifyContent: 'center', display: 'inline-flex' }}>What you&apos;ll find inside</p><h2>Six things every Dar Zellige riad has.</h2></Reveal>
+        <Reveal className="rd-amenities-grid">{amenities.map(a => (<div key={a.title} className="rd-amenity"><div className="rd-amenity__icon"><I name={a.icon} /></div><h4>{a.title}</h4><p>{a.description}</p></div>))}</Reveal>
       </section>
 
-      {/* ── Amenities ── */}
-      <section className="section contain reveal section-spaced">
-        <div className="section-heading">
-          <p className="eyebrow"><I name="service-line" /> Amenities</p>
-          <h2>What we provide</h2>
-        </div>
-        <div className="amenities-grid">
-          {amenities.map(item => (
-            <article key={item.title} className="amenity-card">
-              <div className="amenity-icon"><I name={item.icon} /></div>
-              <div>
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-              </div>
-            </article>
-          ))}
-        </div>
+      {/* TESTIMONIALS */}
+      <section className="rd-testimonials full-bleed">
+        <div className="contain"><div className="rd-testimonial-wrap">
+          <p className="eyebrow" style={{ justifyContent: 'center', display: 'inline-flex' }}>In our guests&apos; words</p>
+          <p className="rd-testimonial__text">{testimonials[testIdx].review}</p>
+          <div className="rd-testimonial__person"><img src={testimonials[testIdx].avatar} alt={testimonials[testIdx].name} className="rd-testimonial__avatar" /><div style={{ textAlign: 'left' }}><div className="rd-testimonial__name">{testimonials[testIdx].name}</div><div className="rd-testimonial__role">{testimonials[testIdx].role}</div></div></div>
+          <div className="rd-testimonial-dots">{testimonials.map((_, i) => <button key={i} type="button" aria-current={i === testIdx} aria-label={`Testimonial ${i + 1}`} onClick={() => setTestIdx(i)} />)}</div>
+        </div></div>
       </section>
 
-      {/* ── Testimonials ── */}
-      <section className="section contain reveal reviews-wrap section-spaced">
-        <div className="section-heading">
-          <p className="eyebrow"><I name="chat-quote-line" /> Testimonials</p>
-          <h2>Guests consistently rate Rivora exceptional</h2>
-        </div>
-        <div className="testimonial-carousel">
-          <div className="testimonial-track" style={{ transform: `translateX(-${activeReview * 100}%)` }}>
-            {testimonials.map(item => (
-              <article className="testimonial-slide" key={item.name}>
-                <img className="review-avatar" src={item.avatar} alt={item.name} loading="lazy" />
-                <div className="testimonial-card">
-                  <Stars rating={item.rating} size="1rem" />
-                  <p className="review-text">"{item.review}"</p>
-                  <h3>{item.name}</h3>
-                  <span>{item.role}</span>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-        <div className="testimonial-controls">
-          <button type="button" onClick={() => setActiveReview(v => (v - 1 + testimonials.length) % testimonials.length)} aria-label="Previous"><I name="arrow-left-s-line" /></button>
-          <div className="slider-dots">
-            {testimonials.map((_, i) => <button key={i} type="button" className={i === activeReview ? 'dot active' : 'dot'} onClick={() => setActiveReview(i)} aria-label={`Testimonial ${i + 1}`} />)}
-          </div>
-          <button type="button" onClick={() => setActiveReview(v => (v + 1) % testimonials.length)} aria-label="Next"><I name="arrow-right-s-line" /></button>
-        </div>
+      {/* LATEST BLOG */}
+      <section className="section contain">
+        <Reveal className="section-heading"><p className="eyebrow">Latest from the journal</p><h2>Letters from the medina.</h2></Reveal>
+        <Reveal className="rd-grid rd-grid--3">{blogPosts.slice(0, 3).map(p => (<article key={p.id} className="rd-card"><div className="rd-card__img rd-card__img--arch"><img src={p.image} alt={p.title} loading="lazy" /><span className="rd-card__badge">{p.category}</span></div><div className="rd-card__body"><div className="rd-card__meta"><span>{p.date}</span><span>{p.readTime} min</span></div><h3 className="rd-card__title"><Link to="/blog">{p.title}</Link></h3><p className="rd-card__excerpt">{p.excerpt}</p></div></article>))}</Reveal>
       </section>
 
-      {/* ── Blog ── */}
-      <section className="section contain reveal section-spaced" id="blog">
-        <div className="section-heading">
-          <p className="eyebrow"><I name="article-line" /> Blog</p>
-          <h2>Latest stories & hospitality insights</h2>
-          <p>Curated articles from our team on design, travel, wellness, and the future of boutique hospitality.</p>
-        </div>
-        <div className="cards-grid blog-grid">
-          {blogPosts.slice(0, 3).map(post => (
-            <article className="card blog-card" key={post.title}>
-              <div className="card-img-wrap">
-                <span className="card-badge top-badge"><I name="bookmark-line" /> {post.category}</span>
-                <img src={post.image} alt={post.title} loading="lazy" />
-              </div>
-              <div className="card-copy">
-                <p className="meta"><I name="user-line" /> {post.author} · <I name="calendar-line" /> {post.date} · <I name="time-line" /> {post.readTime}</p>
-                <h3>{post.title}</h3>
-                <p>{post.excerpt}</p>
-                <Link to="/blog" className="text-button"><I name="arrow-right-line" /> Read More</Link>
-              </div>
-            </article>
-          ))}
-        </div>
-        <div className="section-cta"><Link to="/blog" className="btn-primary"><I name="arrow-right-line" /> View All Articles</Link></div>
-      </section>
-
-      {/* ── Newsletter ── */}
-      <section className="newsletter contain reveal section-spaced">
-        <div>
-          <p className="eyebrow"><I name="mail-send-line" /> Newsletter</p>
-          <h2>Get offers, destination guides, and insider updates</h2>
-          <p>Receive one curated email per month. No spam, ever.</p>
-        </div>
-        <form onSubmit={e => e.preventDefault()}>
-          <input type="email" placeholder="Enter your email" required />
-          <button type="submit" className="btn-primary"><I name="send-plane-line" /> Subscribe</button>
-        </form>
+      {/* NEWSLETTER */}
+      <section className="section contain">
+        <Reveal className="rd-newsletter"><p className="eyebrow" style={{ justifyContent: 'center', display: 'inline-flex' }}>Stay in touch</p><h2>Mint tea, once a month.</h2><p style={{ maxWidth: 520, marginInline: 'auto', marginTop: '.6rem' }}>One carefully-written letter from the medina each month.</p><form className="rd-newsletter__form" onSubmit={e => e.preventDefault()}><input type="email" placeholder="your@email.com" aria-label="Email" /><button type="submit" className="rd-btn rd-btn-primary">Subscribe</button></form></Reveal>
       </section>
     </>
   )
 }
 
-/* ══════════════════════════════════════════════════════
-   ROOMS LISTING PAGE
-   ══════════════════════════════════════════════════════ */
-function RoomsPage() {
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RIADS PAGE (listings)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function RiadsPage() {
+  const [sort, setSort] = useState('featured')
+  const sorted = useMemo(() => { const a = [...allRiads]; if (sort === 'price-asc') a.sort((x, y) => x.price - y.price); else if (sort === 'price-desc') a.sort((x, y) => y.price - x.price); return a }, [sort])
+
   return (
     <>
-      <BreadcrumbHero title="Rooms & Suites" current="Rooms" image="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=2200&q=80" />
-
-      <section className="section contain reveal section-spaced">
-        <div className="section-heading">
-          <p className="eyebrow"><I name="hotel-bed-line" /> Our Accommodations</p>
-          <h2>Find your perfect room</h2>
-          <p>Browse our full collection of rooms and suites. Each room is equipped with premium amenities, high-speed WiFi, and 24/7 room service. Use the filters or just scroll to find the perfect match for your stay.</p>
+      <BreadcrumbHero title="The" titleEm="Collection" crumbs={[{ label: 'Home', href: '/' }, { label: 'Riads' }]} image="https://images.unsplash.com/photo-1539020140153-e479b8c64e3a?auto=format&fit=crop&w=1800&q=80" />
+      <section className="section contain">
+        <div className="rd-sort-bar">
+          <div className="rd-sort-bar__count"><strong>{sorted.length}</strong> riads across three cities</div>
+          <div className="rd-sort-bar__options">{[{ id: 'featured', label: 'Curated' }, { id: 'price-asc', label: 'Price â†‘' }, { id: 'price-desc', label: 'Price â†“' }].map(o => <button key={o.id} type="button" className={sort === o.id ? 'is-active' : ''} onClick={() => setSort(o.id)}>{o.label}</button>)}</div>
         </div>
-
-        <div className="room-listings">
-          {allRoomListings.map(room => (
-            <article className="rl-card" key={room.name}>
-              <div className="rl-image-col">
-                {room.badge && <span className="rl-badge"><I name="checkbox-circle-fill" /> {room.badge}</span>}
-                <img src={room.image} alt={room.name} loading="lazy" />
-                <div className="rl-image-dots">
-                  <span className="dot active" /><span className="dot" /><span className="dot" />
-                </div>
+        <div className="rd-riad-row">
+          {sorted.map(r => (
+            <Reveal as="article" key={r.id} className="rd-riad-card">
+              <Link to={`/rooms/${r.id}`} className="rd-riad-card__img"><img src={r.image} alt={`${r.name}, ${r.city}`} loading="lazy" />{r.badge && <span className="rd-riad-card__badge">{r.badge}</span>}</Link>
+              <div className="rd-riad-card__body">
+                <div className="rd-riad-card__meta"><span>{r.category}</span><span>Â·</span><span>{r.city}</span></div>
+                <h3 className="rd-riad-card__title"><Link to={`/rooms/${r.id}`}>{r.name}</Link></h3>
+                <span className="rd-riad-card__loc"><I name="map-pin-line" /> {r.address}</span>
+                <div className="rd-riad-card__facts"><span><I name="hotel-bed-line" /> {r.beds} bedrooms</span><span><I name="group-line" /> Sleeps {r.capacity}</span><span><I name="ruler-line" /> {r.size} mÂ²</span></div>
+                <div className="rd-riad-card__amens">{r.amenities.slice(0, 4).map((a, i) => <span key={a}><I name={a} /> {r.amenityLabels[i]}</span>)}</div>
+                <span className="rd-riad-card__cancel"><I name="shield-check-line" /> {r.cancellation}</span>
               </div>
-              <div className="rl-details">
-                <div className="rl-top">
-                  <Stars rating={room.rating} size="0.88rem" />
-                  <span className="review-count">({room.reviews})</span>
-                </div>
-                <h3>{room.name}</h3>
-                <p className="rl-address"><I name="map-pin-line" /> {room.address} · <a href="#map">See Map</a> {room.distance}</p>
-                <div className="rl-amenities">
-                  {room.amenities.map((a, i) => (
-                    <span key={a + i}><I name={a} /> {room.amenityLabels[i]}</span>
-                  ))}
-                </div>
-                <div className="rl-bottom">
-                  <div className="rl-type-info">
-                    <p><strong>{room.type}</strong></p>
-                    <p>{room.bed}</p>
-                    <p className="rl-bed-detail"><I name="hotel-bed-line" /> {room.bedDetail}</p>
-                    <p className="rl-cancellation"><I name="checkbox-circle-line" /> {room.cancellation}</p>
-                  </div>
-                  <div className="rl-pricing">
-                    <p className="rl-nights">{room.nights}, {room.capacity}</p>
-                    <p className="rl-price">
-                      <strong>${room.price}</strong>
-                      {room.originalPrice && <span className="original-price">${room.originalPrice}</span>}
-                    </p>
-                    <button className="btn-primary rl-cta"><I name="arrow-right-line" /> Check Availability</button>
-                  </div>
-                </div>
+              <div className="rd-riad-card__side">
+                <div className="rd-riad-card__rating"><I name="star-fill" /> {r.rating} <small>({r.reviews})</small></div>
+                <div className="rd-riad-card__price">{r.originalPrice && <span className="rd-riad-card__was">${r.originalPrice}</span>}<strong>${r.price}</strong><small>per night</small></div>
+                <Link to={`/rooms/${r.id}`} className="rd-btn rd-btn-primary">View details <I name="arrow-right-line" /></Link>
               </div>
-            </article>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -688,237 +459,38 @@ function RoomsPage() {
   )
 }
 
-/* ══════════════════════════════════════════════════════
-   ABOUT PAGE (TripRex-inspired)
-   ══════════════════════════════════════════════════════ */
-function AboutPage() {
-  const [activeActivity, setActiveActivity] = useState(0)
-  const act = activityItems[activeActivity]
-
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   STAY DETAIL PAGE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function StayDetailPage() {
+  const { id } = useParams()
+  const riad = allRiads.find(r => r.id === id) || allRiads[0]
   return (
     <>
-      <BreadcrumbHero title="About" current="About" image="https://images.unsplash.com/photo-1455587734955-081b22074882?auto=format&fit=crop&w=2200&q=80" />
-
-      {/* About Intro */}
-      <section className="about-intro contain reveal section-spaced">
-        <div className="about-text">
-          <p className="eyebrow"><I name="information-line" /> About Us</p>
-          <h2>We provide the best tour facilities.</h2>
-          <p>Dolor sit amet, consectetur adipiscing elit. Sed natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nulla facilisi. Curabitur at lacus vel velit ornare lobortis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>
-          <p>Maecenas vitae mattis tellus. Nullam quis imperdiet augue. Vestibulum auctor ornare leo, non suscipit magna interdum eu. Curabitur pellentesque nibh vitae porta imperdiet.</p>
-          <div className="about-badges-row">
-            <span className="about-badge"><I name="award-fill" /> Expertise And Experience</span>
-            <span className="about-badge"><I name="time-line" /> Time And Stress Savings</span>
+      <section className="rd-stay-hero">
+        <div className="rd-stay-hero__bg"><img src={riad.image} alt={riad.name} /></div>
+        <div className="rd-stay-hero__overlay" />
+        <div className="contain rd-stay-hero__content">
+          <span className="rd-stay-hero__badge">{riad.badge}</span>
+          <h1>{riad.name}</h1>
+          <span className="rd-stay-hero__loc"><I name="map-pin-line" /> {riad.address}</span>
+        </div>
+      </section>
+      <section className="section contain">
+        <div className="rd-stay-detail">
+          <div className="rd-stay-detail__main">
+            <div><p className="eyebrow">{riad.category}</p><h2>{riad.name}</h2><p style={{ marginTop: '1rem', lineHeight: 1.7 }}>{riad.description}</p></div>
+            <div className="rd-stay-detail__facts"><span className="rd-stay-detail__fact"><I name="hotel-bed-line" /> {riad.beds} bedrooms</span><span className="rd-stay-detail__fact"><I name="group-line" /> Sleeps {riad.capacity}</span><span className="rd-stay-detail__fact"><I name="ruler-line" /> {riad.size} mÂ²</span><span className="rd-stay-detail__fact"><I name="map-pin-line" /> {riad.city}</span></div>
+            <div><h3>Highlights</h3><ul style={{ marginTop: '.8rem', display: 'grid', gap: '.5rem' }}>{riad.highlights.map(h => <li key={h} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', color: 'var(--text)' }}><I name="check-line" className="rd-card__rating" /> {h}</li>)}</ul></div>
+            <div><h3>Amenities</h3><div className="rd-stay-detail__amenities" style={{ marginTop: '.8rem' }}>{riad.amenities.map((a, i) => <div key={a} className="rd-stay-detail__amenity"><I name={a} /> {riad.amenityLabels[i]}</div>)}</div></div>
+            <div style={{ padding: '1.2rem', background: 'color-mix(in srgb, var(--accent), transparent 92%)', borderRadius: 'var(--rd-r-md)', display: 'flex', alignItems: 'center', gap: '.6rem' }}><I name="shield-check-line" className="rd-card__rating" /> <span style={{ fontSize: '.9rem' }}>{riad.cancellation}</span></div>
           </div>
-          <div className="about-ctas">
-            <Link to="/contact" className="btn-primary"><I name="search-line" /> Find Out More</Link>
-            <button type="button" className="btn-play"><I name="play-circle-line" /> Watch Tour</button>
-          </div>
-        </div>
-        <div className="about-image-wrap">
-          <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80" alt="Tour facilities" loading="lazy" />
-          <div className="experience-badge">
-            <strong>05</strong>
-            <span>Years of<br />Experience</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Bar */}
-      <section className="stats-bar contain reveal section-spaced">
-        {stats.map(s => (
-          <article key={s.label} className="stat-item">
-            <I name={s.icon} className="stat-icon" />
-            <div>
-              <strong>{s.value}</strong>
-              <p>{s.label}</p>
-            </div>
-          </article>
-        ))}
-        <div className="trustpilot-bar">
-          <p className="tp-label">Excellent</p>
-          <Stars rating={4.5} size="0.85rem" />
-          <p className="tp-text">Rating of 4.8 based on 143,241 reviews</p>
-          <p className="tp-brand"><I name="star-fill" /> Trustpilot</p>
-        </div>
-      </section>
-
-      {/* Why Us */}
-      <section className="section contain reveal section-spaced">
-        <div className="section-heading center">
-          <p className="eyebrow"><I name="shield-check-line" /> Why Choose Us</p>
-          <h2>Why Rivora Is Best</h2>
-        </div>
-        <div className="why-us-grid">
-          {whyUsFeatures.map(f => (
-            <article key={f.title} className="why-card">
-              <div className="why-icon"><I name={f.icon} /></div>
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Activities */}
-      <section className="activities-section full-bleed reveal section-spaced">
-        <div className="activities-inner contain">
-          <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1400&q=80" alt="Activities" className="activities-image" loading="lazy" />
-          <div className="activities-content">
-            <p className="eyebrow"><I name="compass-3-line" /> What We Do</p>
-            <h2>Our Particular Activities</h2>
-            <div className="activities-tabs">
-              {activityItems.map((a, i) => (
-                <button key={a.label} type="button" className={i === activeActivity ? 'activity-tab active' : 'activity-tab'} onClick={() => setActiveActivity(i)}>
-                  <I name={a.icon} /> {a.label}
-                </button>
-              ))}
-            </div>
-            <div className="activity-detail">
-              <h3>{act.title}</h3>
-              <p>{act.desc}</p>
-              <div className="activity-tags">
-                {act.tags.map(tag => <span key={tag}>+ {tag}</span>)}
-              </div>
-              <div className="activity-ctas">
-                <Link to="/contact" className="btn-primary"><I name="calendar-check-line" /> Check Availability</Link>
-                <button type="button" className="btn-play"><I name="play-circle-line" /> Watch Culture</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Travel Guides */}
-      <section className="section contain reveal section-spaced">
-        <div className="section-heading center">
-          <p className="eyebrow"><I name="guide-line" /> Tour Guide</p>
-          <h2>Our Travel Guide</h2>
-        </div>
-        <div className="guides-grid">
-          {team.map(m => (
-            <article key={m.name} className="guide-card">
-              <img src={m.image} alt={m.name} loading="lazy" />
-              <h3>{m.name}</h3>
-              <p>{m.role}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Articles */}
-      <section className="section contain reveal section-spaced">
-        <div className="section-heading center">
-          <p className="eyebrow"><I name="article-line" /> Articles</p>
-          <h2>Travel Article Enthusiast</h2>
-        </div>
-        <div className="cards-grid blog-grid-2col">
-          {blogPosts.slice(0, 2).map(post => (
-            <article className="card blog-card" key={post.title}>
-              <div className="card-img-wrap">
-                <span className="card-badge top-badge"><I name="bookmark-line" /> {post.category}</span>
-                <img src={post.image} alt={post.title} loading="lazy" />
-              </div>
-              <div className="card-copy">
-                <p className="meta"><I name="user-line" /> By Admin · <I name="calendar-line" /> {post.date}</p>
-                <h3>{post.title}</h3>
-                <Link to="/blog" className="text-button accent"><I name="arrow-right-up-line" /> View Post</Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Newsletter Full-width */}
-      <section className="newsletter-full full-bleed reveal section-spaced" style={{ backgroundImage: 'linear-gradient(rgba(14,17,22,0.88),rgba(14,17,22,0.85)), url(https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?auto=format&fit=crop&w=2200&q=80)' }}>
-        <div className="newsletter-inner contain">
-          <h2>Join The Newsletter</h2>
-          <p>To receive our best monthly deals</p>
-          <form onSubmit={e => e.preventDefault()}>
-            <input type="email" placeholder="Enter your email" required />
-            <button type="submit" className="btn-primary"><I name="send-plane-line" /> Subscribe</button>
-          </form>
-        </div>
-      </section>
-    </>
-  )
-}
-
-/* ══════════════════════════════════════════════════════
-   BLOG PAGE
-   ══════════════════════════════════════════════════════ */
-function BlogPage() {
-  const [activeCategory, setActiveCategory] = useState('All')
-  const categories = ['All', ...new Set(blogPosts.map(p => p.category))]
-  const filtered = activeCategory === 'All' ? blogPosts : blogPosts.filter(p => p.category === activeCategory)
-
-  return (
-    <>
-      <BreadcrumbHero title="Blog" current="Blog" image="https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?auto=format&fit=crop&w=2200&q=80" />
-      <section className="section contain reveal section-spaced">
-        <div className="section-heading">
-          <p className="eyebrow"><I name="article-line" /> Latest Articles</p>
-          <h2>News, trends, and travel ideas</h2>
-        </div>
-
-        <div className="blog-layout">
-          <div className="blog-main">
-            <div className="blog-listing-grid">
-              {filtered.map(post => (
-                <article className="card blog-card" key={post.title}>
-                  <div className="card-img-wrap">
-                    <span className="card-badge top-badge"><I name="bookmark-line" /> {post.category}</span>
-                    <img src={post.image} alt={post.title} loading="lazy" />
-                  </div>
-                  <div className="card-copy">
-                    <p className="meta"><I name="user-line" /> {post.author} · <I name="calendar-line" /> {post.date} · <I name="time-line" /> {post.readTime}</p>
-                    <h3>{post.title}</h3>
-                    <p>{post.excerpt}</p>
-                    <button type="button" className="text-button"><I name="arrow-right-line" /> Read More</button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-
-          <aside className="blog-sidebar">
-            <div className="sidebar-card">
-              <h4><I name="search-line" /> Search</h4>
-              <input type="text" placeholder="Search articles..." className="sidebar-search" />
-            </div>
-
-            <div className="sidebar-card">
-              <h4><I name="folder-line" /> Categories</h4>
-              <div className="sidebar-categories">
-                {categories.map(c => (
-                  <button key={c} type="button" className={activeCategory === c ? 'sidebar-cat active' : 'sidebar-cat'} onClick={() => setActiveCategory(c)}>
-                    {c} {c === 'All' ? `(${blogPosts.length})` : `(${blogPosts.filter(p => p.category === c).length})`}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="sidebar-card">
-              <h4><I name="fire-line" /> Popular Posts</h4>
-              {blogPosts.slice(0, 3).map((post, i) => (
-                <div key={post.title} className="sidebar-post">
-                  <span className="sidebar-post-num">{String(i + 1).padStart(2, '0')}</span>
-                  <div>
-                    <p className="sidebar-post-title">{post.title}</p>
-                    <p className="meta">{post.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="sidebar-card sidebar-cta-card">
-              <I name="mail-send-line" className="sidebar-cta-icon" />
-              <h4>Newsletter</h4>
-              <p>Get travel tips and exclusive deals monthly.</p>
-              <form onSubmit={e => e.preventDefault()}>
-                <input type="email" placeholder="Your email" />
-                <button type="submit" className="btn-primary" style={{ width: '100%' }}><I name="send-plane-line" /> Subscribe</button>
-              </form>
+          <aside className="rd-stay-sidebar">
+            <div className="rd-stay-sidebar__card">
+              <div className="rd-stay-sidebar__price">{riad.originalPrice && <del>${riad.originalPrice}</del>}<strong>${riad.price}</strong> <small>/ night</small></div>
+              <div className="rd-stay-sidebar__rating"><I name="star-fill" /> {riad.rating} <small>Â· {riad.reviews} reviews</small></div>
+              <Link to="/booking" className="rd-btn rd-btn-primary rd-btn-full" style={{ marginBottom: '1rem' }}>Book this riad <I name="arrow-right-line" /></Link>
+              <Link to="/contact" className="rd-btn rd-btn-ghost rd-btn-full">Ask a question</Link>
             </div>
           </aside>
         </div>
@@ -927,169 +499,213 @@ function BlogPage() {
   )
 }
 
-/* ══════════════════════════════════════════════════════
-   CONTACT PAGE
-   ══════════════════════════════════════════════════════ */
-function ContactPage() {
-  const [openFaq, setOpenFaq] = useState(null)
-  const faqs = [
-    { q: 'What are your check-in and check-out times?', a: 'Check-in is at 3:00 PM and check-out is at 11:00 AM. Early check-in and late check-out may be available upon request and subject to availability.' },
-    { q: 'Do you offer airport transportation?', a: 'Yes, we provide complimentary airport shuttle service for guests. Please contact us at least 24 hours in advance to arrange pickup.' },
-    { q: 'Are pets allowed at Rivora?', a: 'We welcome well-behaved pets up to 25 lbs. A $75 pet fee per stay applies. Please inform us in advance if you plan to bring a pet.' },
-    { q: 'What amenities are included in the room rate?', a: 'All rooms include complimentary Wi-Fi, daily breakfast, access to fitness center and pool, parking, and premium toiletries.' },
-    { q: 'What is your cancellation policy?', a: 'Free cancellation up to 48 hours before arrival. Cancellations within 48 hours are subject to a one-night charge.' },
-    { q: 'Do you have meeting and event spaces?', a: 'Yes, we offer versatile meeting rooms and event spaces with full AV equipment. Contact our events team for availability and pricing.' }
-  ]
-
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PACKAGES PAGE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function PackagesPage() {
   return (
     <>
-      <BreadcrumbHero title="Contact" current="Contact" image="https://images.unsplash.com/photo-1444201983204-c43cbd584d93?auto=format&fit=crop&w=2200&q=80" />
-      <section className="section contain reveal contact-grid section-spaced">
-        <div>
-          <p className="eyebrow"><I name="mail-send-line" /> Contact Us</p>
-          <h2>Plan your next stay with Rivora</h2>
-          <p>Share your dates and preferences. Our team typically responds within 24 hours.</p>
-          <div className="contact-cards">
-            <article><div className="contact-icon"><I name="map-pin-2-fill" /></div><div><h3>Address</h3><p>2464 Royal Lane, Brooklyn, NY 11206</p></div></article>
-            <article><div className="contact-icon"><I name="phone-fill" /></div><div><h3>Phone</h3><p>(+1) 212 555 0147</p></div></article>
-            <article><div className="contact-icon"><I name="mail-fill" /></div><div><h3>Email</h3><p>booking@rivora.com</p></div></article>
-            <article><div className="contact-icon"><I name="time-fill" /></div><div><h3>Hours</h3><p>24/7 — Front desk always open</p></div></article>
-          </div>
-        </div>
-        <form className="contact-form" onSubmit={e => e.preventDefault()}>
-          <label><I name="user-line" /> Full name <input type="text" placeholder="Jane Cooper" required /></label>
-          <label><I name="mail-line" /> Email <input type="email" placeholder="jane@example.com" required /></label>
-          <label><I name="bookmark-line" /> Subject <input type="text" placeholder="Suite booking inquiry" required /></label>
-          <label><I name="chat-1-line" /> Message <textarea rows="5" placeholder="Tell us your dates and preferences" required /></label>
-          <button type="submit" className="btn-primary"><I name="send-plane-line" /> Send Message</button>
-        </form>
-      </section>
-
-      <section className="section contain reveal section-spaced">
-        <div className="section-heading">
-          <p className="eyebrow"><I name="question-line" /> Frequently Asked</p>
-          <h2>Common Questions</h2>
-        </div>
-        <div className="faq-list">
-          {faqs.map((faq, i) => (
-            <div key={i} className={openFaq === i ? 'faq-item open' : 'faq-item'}>
-              <button type="button" className="faq-question" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-                <span>{faq.q}</span>
-                <I name={openFaq === i ? 'subtract-line' : 'add-line'} />
-              </button>
-              {openFaq === i && <div className="faq-answer"><p>{faq.a}</p></div>}
-            </div>
+      <BreadcrumbHero title="Curated" titleEm="Packages" crumbs={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} image="https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1800&q=80" />
+      <section className="section contain">
+        <Reveal className="section-heading"><p className="eyebrow">Multi-night journeys</p><h2>Packages designed for the unhurried traveller.</h2><p className="lede" style={{ marginTop: '1rem' }}>Each package combines our finest riads with curated experiences, private transfers, and a dedicated concierge.</p></Reveal>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {packages.map(pkg => (
+            <Reveal key={pkg.id} className="rd-pkg-card">
+              <div className="rd-pkg-card__img"><img src={pkg.image} alt={pkg.name} loading="lazy" /><span className="rd-pkg-card__badge">{pkg.badge}</span></div>
+              <div className="rd-pkg-card__body">
+                <div className="rd-pkg-card__meta"><span><I name="map-pin-line" /> {pkg.location}</span><span><I name="time-line" /> {pkg.duration}</span></div>
+                <h3 className="rd-pkg-card__title">{pkg.name}</h3>
+                <p className="rd-pkg-card__tagline">{pkg.tagline}</p>
+                <p className="rd-pkg-card__desc">{pkg.description}</p>
+                <div className="rd-pkg-card__includes">{pkg.includes.map(inc => <span key={inc}><I name="check-line" /> {inc}</span>)}</div>
+                <div className="rd-pkg-card__footer"><div className="rd-pkg-card__price"><strong>${pkg.price.toLocaleString()}</strong><small>{pkg.pricePer}</small></div><Link to="/booking" className="rd-btn rd-btn-primary">Book package <I name="arrow-right-line" /></Link></div>
+              </div>
+            </Reveal>
           ))}
-        </div>
-      </section>
-
-      <section className="section contain reveal section-spaced">
-        <div className="section-heading">
-          <p className="eyebrow"><I name="map-pin-line" /> Find Us</p>
-          <h2>Our Location</h2>
-          <p>2464 Royal Lane, Brooklyn, NY 11206</p>
-        </div>
-        <div className="map-container">
-          <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d-74.00369368428698!3d40.71312937933174!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c2598db8000001%3A0xfc5d1a8b87e8a0d8!2sBrooklyn%2C%20NY%2C%20USA!5e0!3m2!1sen!2s!4v1647000000000!5m2!1sen!2s"
-            width="100%" 
-            height="450" 
-            style={{ border: 0, borderRadius: '16px' }} 
-            allowFullScreen="" 
-            loading="lazy" 
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Rivora Hotel Location"
-          />
         </div>
       </section>
     </>
   )
 }
 
-/* ══════════════════════════════════════════════════════
-   FOOTER
-   ══════════════════════════════════════════════════════ */
-function Footer() {
+function ActivitiesPage() {
   return (
-    <div className="footer-wrap">
-      <footer className="site-footer contain">
-        <div className="footer-grid">
-          <section>
-            <h3>Rivora</h3>
-            <p>Signature hospitality for design-conscious travelers across urban and coastal destinations.</p>
-            <div className="socials">
-              <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><I name="facebook-fill" /></a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram"><I name="instagram-line" /></a>
-              <a href="https://x.com" target="_blank" rel="noreferrer" aria-label="X"><I name="twitter-x-line" /></a>
-              <a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><I name="youtube-line" /></a>
-            </div>
-          </section>
-          <section>
-            <h4>Quick Links</h4>
-            <Link to="/"><I name="arrow-right-s-line" /> Home</Link>
-            <Link to="/rooms"><I name="arrow-right-s-line" /> Rooms</Link>
-            <Link to="/about"><I name="arrow-right-s-line" /> About</Link>
-            <Link to="/blog"><I name="arrow-right-s-line" /> Blog</Link>
-            <Link to="/contact"><I name="arrow-right-s-line" /> Contact</Link>
-          </section>
-          <section>
-            <h4><I name="phone-line" /> More Inquiry</h4>
-            <a href="tel:+12125550147"><I name="phone-fill" /> (+1) 212 555 0147</a>
-            <h4><I name="mail-line" /> Send Mail</h4>
-            <a href="mailto:booking@rivora.com"><I name="mail-fill" /> booking@rivora.com</a>
-            <h4><I name="map-pin-line" /> Address</h4>
-            <p>2464 Royal Lane, Brooklyn, NY 11206</p>
-          </section>
-          <section>
-            <h4>We Are Here</h4>
-            <p>Discover prime locations, facilities, and curated routes across Rivora destinations worldwide.</p>
-            <h4>Payment Partners</h4>
-            <div className="payment-icons">
-              <I name="visa-line" /><I name="mastercard-line" /><I name="paypal-line" /><I name="bank-card-line" />
-            </div>
-          </section>
-        </div>
-        <div className="footer-bottom">
-          <p>© Copyright 2026 Rivora. Design by <strong>Rivora Team</strong></p>
-          <p><a href="#">Privacy Policy</a> · <a href="#">Terms & Condition</a></p>
-        </div>
-      </footer>
-    </div>
+    <>
+      <BreadcrumbHero title="Moroccan" titleEm="Experiences" crumbs={[{ label: 'Home', href: '/' }, { label: 'Activities' }]} image="https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1800&q=80" />
+      <section className="section contain">
+        <Reveal className="section-heading"><p className="eyebrow">Curated by locals</p><h2>Experiences that go beyond the guidebook.</h2></Reveal>
+        <Reveal className="rd-grid rd-grid--3">
+          {experiences.map(e => (
+            <article key={e.id} className="rd-act-card">
+              <div className="rd-act-card__img"><img src={e.image} alt={e.title} loading="lazy" /><div className="rd-act-card__overlay"><span className="rd-act-card__pill"><I name="time-line" /> {e.duration}</span><span className="rd-act-card__pill">{e.difficulty}</span></div></div>
+              <div className="rd-act-card__body">
+                <span className="rd-act-card__cat">{e.category}</span>
+                <h3 className="rd-act-card__title">{e.title}</h3>
+                <p className="rd-act-card__desc">{e.excerpt}</p>
+                <div className="rd-act-card__footer"><span className="rd-act-card__price"><strong>${e.price}</strong> <small>/ person</small></span><Link to="/booking" className="rd-btn rd-btn-primary rd-btn-sm">Book <I name="arrow-right-line" /></Link></div>
+              </div>
+            </article>
+          ))}
+        </Reveal>
+      </section>
+    </>
   )
 }
 
-/* ══════════════════════════════════════════════════════
-   APP SHELL
-   ══════════════════════════════════════════════════════ */
+function AboutPage() {
+  const [tab, setTab] = useState(activityItems[0].id)
+  const active = activityItems.find(a => a.id === tab) || activityItems[0]
+  return (
+    <>
+      <BreadcrumbHero title="Our" titleEm="Story" crumbs={[{ label: 'Home', href: '/' }, { label: 'About' }]} image="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1800&q=80" />
+      <section className="section contain">
+        <Reveal className="rd-about-intro">
+          <div className="rd-story__imgwrap"><img src="https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1000&q=80" alt="Riad courtyard" loading="lazy" /><div className="rd-story__badge"><strong>07</strong><span>Year restorations</span></div></div>
+          <div><p className="eyebrow">Craft first, always</p><h2>A small collection of Moroccan riads, restored the way they were built.</h2><p style={{ marginTop: '1rem', lineHeight: 1.7 }}>We believe a riad is a living building. Our restorations average seven years. Every property is restored in partnership with a local master-tiler, plasterer, and carpenter.</p></div>
+        </Reveal>
+      </section>
+      <section className="section contain"><Reveal className="rd-stats-bar">{stats.map(s => <div key={s.label} className="rd-stat"><I name={s.icon} /><strong>{s.value}</strong><span>{s.label}</span></div>)}</Reveal></section>
+      <section className="section contain">
+        <Reveal className="section-heading section-heading--center"><p className="eyebrow" style={{ justifyContent:'center',display:'inline-flex' }}>Why our guests return</p><h2>Four commitments we never break.</h2></Reveal>
+        <Reveal className="rd-why-grid">{whyUsFeatures.map(f => <div key={f.title} className="rd-why"><div className="rd-why__ic"><I name={f.icon} /></div><h4>{f.title}</h4><p>{f.desc}</p></div>)}</Reveal>
+      </section>
+      <section className="section contain">
+        <Reveal className="section-heading section-heading--center"><p className="eyebrow" style={{ justifyContent:'center',display:'inline-flex' }}>What you can do</p><h2>Four Moroccan afternoons.</h2></Reveal>
+        <Reveal>
+          <div className="rd-tabs" role="tablist">{activityItems.map(a => <button key={a.id} role="tab" aria-selected={tab===a.id} className="rd-tab" type="button" onClick={() => setTab(a.id)}><I name={a.icon} /> {a.label}</button>)}</div>
+          <div className="rd-tab-panel" role="tabpanel"><img src={active.image} alt={active.title} className="rd-tab-panel__img" /><div><p className="eyebrow">{active.label}</p><h3 style={{ fontSize:'clamp(1.4rem,3vw,2rem)',marginBottom:'.8rem' }}>{active.title}</h3><p style={{ lineHeight:1.7 }}>{active.desc}</p><div className="rd-tab-panel__tags">{active.tags.map(t => <span key={t}>{t}</span>)}</div></div></div>
+        </Reveal>
+      </section>
+      <section className="section contain">
+        <Reveal className="section-heading"><p className="eyebrow">The hosts</p><h2>The team who lives where you stay.</h2></Reveal>
+        <Reveal className="rd-team-grid">{team.map(m => <div key={m.name} className="rd-team"><div className="rd-team__img-wrap"><img src={m.image} alt={m.name} loading="lazy" /></div><h4>{m.name}</h4><span>{m.role}</span><p>{m.bio}</p></div>)}</Reveal>
+      </section>
+    </>
+  )
+}
+
+function BlogPage() {
+  const [category, setCategory] = useState('All')
+  const [query, setQuery] = useState('')
+  const categories = useMemo(() => ['All', ...new Set(blogPosts.map(p => p.category))], [])
+  const filtered = useMemo(() => { const q = query.trim().toLowerCase(); return blogPosts.filter(p => { const catOk = category === 'All' || p.category.toLowerCase() === category.toLowerCase(); const qOk = !q || (p.title + ' ' + p.excerpt).toLowerCase().includes(q); return catOk && qOk }) }, [category, query])
+  return (
+    <>
+      <BreadcrumbHero title="The" titleEm="Journal" crumbs={[{ label: 'Home', href: '/' }, { label: 'Journal' }]} image="https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=1800&q=80" />
+      <section className="section contain">
+        <div className="rd-blog-layout">
+          <div>{filtered.length === 0 ? <div className="rd-empty"><I name="search-eye-line" />No posts match your filters.</div> : <Reveal className="rd-blog-grid">{filtered.map(p => <article key={p.id} className="rd-card"><div className="rd-card__img rd-card__img--arch"><img src={p.image} alt={p.title} loading="lazy" /><span className="rd-card__badge">{p.category}</span></div><div className="rd-card__body"><div className="rd-card__meta"><span>{p.date}</span><span>{p.readTime} min</span></div><h3 className="rd-card__title">{p.title}</h3><p className="rd-card__excerpt">{p.excerpt}</p><span className="rd-card__loc"><I name="user-line" /> {p.author}</span></div></article>)}</Reveal>}</div>
+          <aside className="rd-blog-sidebar">
+            <div className="rd-sidebar-card"><h5><I name="search-line" /> Search</h5><div className="rd-sidebar-search"><I name="search-2-line" /><input type="search" placeholder="Search articles..." maxLength={100} value={query} onChange={e => setQuery(e.target.value)} /></div></div>
+            <div className="rd-sidebar-card"><h5><I name="folder-line" /> Categories</h5><div className="rd-cat-list">{categories.map(c => <button key={c} type="button" className={category===c?'is-active':''} onClick={() => setCategory(c)}>{c}</button>)}</div></div>
+            <div className="rd-sidebar-card"><h5><I name="fire-line" /> Popular</h5><div className="rd-pop-list">{blogPosts.slice(0,4).map(p => <button key={p.id} className="rd-pop-item" type="button"><img src={p.image} alt={p.title} /><div><h6>{p.title.slice(0,50)}</h6><small>{p.date}</small></div></button>)}</div></div>
+          </aside>
+        </div>
+      </section>
+    </>
+  )
+}
+
+function ContactPage() {
+  const [form, setForm] = useState({ name:'', email:'', subject:'', message:'' })
+  const [errors, setErrors] = useState({})
+  const [success, setSuccess] = useState(false)
+  const [openFaq, setOpenFaq] = useState(null)
+  const onChange = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+  const submit = e => { e.preventDefault(); const errs = {}; Object.keys(form).forEach(k => { if (!form[k].trim()) errs[k] = 'Required.' }); if (!errs.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Invalid email.'; setErrors(errs); if (Object.keys(errs).length) return; setSuccess(true); setForm({ name:'',email:'',subject:'',message:'' }); setTimeout(() => setSuccess(false), 6000) }
+  return (
+    <>
+      <BreadcrumbHero title="Let us" titleEm="welcome you" crumbs={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} image="https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=1800&q=80" />
+      <section className="section contain">
+        <Reveal className="rd-contact-grid">
+          <div className="rd-contact-info">
+            <p className="eyebrow">Reach us directly</p><h2>Talk to the house.</h2>
+            <div className="rd-contact-item"><div className="rd-contact-item__ic"><I name="map-pin-line" /></div><div><h5>Address</h5><p>Derb Bouhsain 24, Marrakech Medina 40000</p></div></div>
+            <div className="rd-contact-item"><div className="rd-contact-item__ic"><I name="phone-line" /></div><div><h5>Hotline</h5><a href="tel:+212524388812">+212 524 388 812</a></div></div>
+            <div className="rd-contact-item"><div className="rd-contact-item__ic"><I name="mail-line" /></div><div><h5>Email</h5><a href="mailto:hello@darzellige.ma">hello@darzellige.ma</a></div></div>
+            <div className="rd-contact-item"><div className="rd-contact-item__ic"><I name="time-line" /></div><div><h5>Hours</h5><ul className="rd-contact-hours"><li><strong>Mon-Fri</strong><span>09:00-19:00</span></li><li><strong>Sat</strong><span>10:00-17:00</span></li><li><strong>Sun</strong><span>Reception only</span></li></ul></div></div>
+          </div>
+          <form className="rd-form" onSubmit={submit} noValidate>
+            {success && <div className="rd-form__success"><I name="check-line" /> Thank you! We will reply within one working day.</div>}
+            <div className="rd-form__row"><div><label>Name</label><input type="text" value={form.name} onChange={onChange('name')} placeholder="Full name" />{errors.name && <span className="rd-form__error">{errors.name}</span>}</div><div><label>Email</label><input type="email" value={form.email} onChange={onChange('email')} placeholder="your@email.com" />{errors.email && <span className="rd-form__error">{errors.email}</span>}</div></div>
+            <div><label>Subject</label><input type="text" value={form.subject} onChange={onChange('subject')} placeholder="Stay enquiry" />{errors.subject && <span className="rd-form__error">{errors.subject}</span>}</div>
+            <div><label>Message</label><textarea value={form.message} onChange={onChange('message')} placeholder="Tell us about your plans..." />{errors.message && <span className="rd-form__error">{errors.message}</span>}</div>
+            <button type="submit" className="rd-btn rd-btn-primary">Send <I name="arrow-right-line" /></button>
+          </form>
+        </Reveal>
+      </section>
+      <section className="section contain">
+        <Reveal className="section-heading section-heading--center"><p className="eyebrow" style={{ justifyContent:'center',display:'inline-flex' }}>Before you write</p><h2>Questions guests often ask.</h2></Reveal>
+        <Reveal className="rd-faq-list">{faqs.map((f,i) => <div key={f.q} className={`rd-faq ${openFaq===i?'is-open':''}`}><button type="button" className="rd-faq__q" aria-expanded={openFaq===i} onClick={() => setOpenFaq(openFaq===i?null:i)}>{f.q}<I name="add-line" /></button><div className="rd-faq__a">{f.a}</div></div>)}</Reveal>
+      </section>
+      <section className="section contain"><Reveal className="rd-map"><iframe title="Dar Zellige location" src="https://www.openstreetmap.org/export/embed.html?bbox=-7.999%2C31.623%2C-7.975%2C31.635&layer=mapnik&marker=31.629%2C-7.987" loading="lazy" /></Reveal></section>
+    </>
+  )
+}
+
+function BookingPage() {
+  const [step, setStep] = useState(0)
+  const steps = ['Dates', 'Guests', 'Accommodation', 'Extras', 'Your Details', 'Confirm']
+  return (
+    <>
+      <BreadcrumbHero title="Book Your" titleEm="Stay" crumbs={[{ label: 'Home', href: '/' }, { label: 'Booking' }]} image="https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1800&q=80" />
+      <section className="section contain">
+        <div className="rd-booking-wizard">
+          <div className="rd-booking-wizard__stepper">
+            {steps.map((s, i) => (<><button key={s} type="button" className={`rd-booking-wizard__step ${i===step?'is-active':''} ${i<step?'is-done':''}`} onClick={() => i<=step && setStep(i)}><span className="rd-booking-wizard__step-num">{i+1}</span> {s}</button>{i<steps.length-1 && <span key={`l-${i}`} className="rd-booking-wizard__step-line" />}</>))}
+          </div>
+          <div className="rd-booking-wizard__body">
+            <div className="rd-booking-wizard__main">
+              {step===0 && <div><h3><I name="calendar-2-line" /> When are you visiting?</h3><p className="rd-wiz-desc">Select your dates and tell us about your group.</p><p style={{color:'var(--text-soft)',textAlign:'center',padding:'3rem 0'}}>Select check-in and check-out dates using the calendar.</p></div>}
+              {step===1 && <div><h3><I name="group-line" /> Travellers</h3><p className="rd-wiz-desc">How many guests will be staying?</p><div className="rd-guest-row"><div className="rd-guest-row__info"><strong>Adults</strong><span>Ages 13+</span></div><div className="rd-guest-stepper"><button type="button">-</button><span className="rd-guest-stepper__val">2</span><button type="button">+</button></div></div><div className="rd-guest-row"><div className="rd-guest-row__info"><strong>Children</strong><span>Ages 2-12</span></div><div className="rd-guest-stepper"><button type="button">-</button><span className="rd-guest-stepper__val">0</span><button type="button">+</button></div></div></div>}
+              {step===2 && <div><h3><I name="hotel-bed-line" /> Accommodation</h3><p className="rd-wiz-desc">Choose your riad or room.</p><div className="rd-room-options">{allRiads.slice(0,3).map(r => <div key={r.id} className="rd-room-opt"><img src={r.image} alt={r.name} className="rd-room-opt__img" /><h5>{r.name}</h5><p>{r.category} · {r.city}</p><div className="rd-room-opt__price">${r.price}/night</div></div>)}</div></div>}
+              {step===3 && <div><h3><I name="sparkling-2-line" /> Extras & Services</h3><p className="rd-wiz-desc">Enhance your stay with optional add-ons.</p><div className="rd-extras-grid"><div className="rd-extra"><div className="rd-extra__check"><I name="check-line" /></div><div className="rd-extra__info"><h5>Airport Transfer</h5><p>Private car from Marrakech airport</p></div><span className="rd-extra__price">$45</span></div><div className="rd-extra"><div className="rd-extra__check"><I name="check-line" /></div><div className="rd-extra__info"><h5>Hammam Ritual</h5><p>90-minute traditional ceremony</p></div><span className="rd-extra__price">$140</span></div><div className="rd-extra"><div className="rd-extra__check"><I name="check-line" /></div><div className="rd-extra__info"><h5>Private Chef Dinner</h5><p>5-course Moroccan feast</p></div><span className="rd-extra__price">$95</span></div></div></div>}
+              {step===4 && <div><h3><I name="user-line" /> Your Details</h3><p className="rd-wiz-desc">Tell us who is travelling.</p><div className="rd-wiz-form"><div className="rd-wiz-form__row"><div className="rd-wiz-field"><label>First Name</label><input type="text" placeholder="First name" /></div><div className="rd-wiz-field"><label>Last Name</label><input type="text" placeholder="Last name" /></div></div><div className="rd-wiz-field"><label>Email</label><input type="email" placeholder="your@email.com" /></div><div className="rd-wiz-field"><label>Phone</label><input type="tel" placeholder="+212..." /></div><div className="rd-wiz-field"><label>Special Requests</label><textarea placeholder="Dietary needs, celebrations, accessibility..." /></div></div></div>}
+              {step===5 && <div><h3><I name="check-double-line" /> Confirm Booking</h3><p className="rd-wiz-desc">Review your selections and confirm.</p><div style={{padding:'2rem',textAlign:'center',color:'var(--text-soft)'}}><I name="checkbox-circle-line" className="rd-card__rating" style={{fontSize:'3rem',display:'block',marginBottom:'1rem'}} /><p>Your booking summary is ready. Click confirm to complete your reservation.</p></div></div>}
+              <div className="rd-wiz-nav">
+                {step > 0 && <button type="button" className="rd-btn rd-btn-ghost" onClick={() => setStep(s => s-1)}><I name="arrow-left-line" /> Back</button>}
+                {step < steps.length-1 ? <button type="button" className="rd-btn rd-btn-primary" onClick={() => setStep(s => s+1)}>Continue <I name="arrow-right-line" /></button> : <button type="button" className="rd-btn rd-btn-primary">Confirm Booking <I name="check-line" /></button>}
+              </div>
+            </div>
+            <div className="rd-booking-wizard__sidebar">
+              <div className="rd-summary-card">
+                <h4><I name="file-list-3-line" /> Booking Summary</h4>
+                <div className="rd-summary-item"><span className="rd-summary-item__label"><I name="calendar-2-line" /> Stay Period</span><span className="rd-summary-item__value">Select dates</span></div>
+                <div className="rd-summary-item"><span className="rd-summary-item__label"><I name="group-line" /> Guests</span><span className="rd-summary-item__value">2 adults</span></div>
+                <div className="rd-summary-item"><span className="rd-summary-item__label"><I name="hotel-bed-line" /> Accommodation</span><span className="rd-summary-item__value" style={{color:'var(--text-soft)',fontStyle:'italic'}}>Not selected</span></div>
+                <div className="rd-summary-total"><span><I name="information-line" /> Add items to see pricing</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
+  )
+}
+
+function readStoredMode() { try { const v = window.localStorage.getItem(STORAGE_KEY); if (MODES.indexOf(v) === -1) { try { window.localStorage.setItem(STORAGE_KEY, 'light') } catch { /* */ } return 'light' } return v } catch { return 'light' } }
+
 function AppShell() {
   const location = useLocation()
-  const [mode, setMode] = useState(() => {
-    const saved = typeof window !== 'undefined' ? window.localStorage.getItem('rivora-mode') : null
-    return MODES.includes(saved) ? saved : 'light'
-  })
-
-  useEffect(() => {
-    document.body.dataset.mode = mode
-    window.localStorage.setItem('rivora-mode', mode)
-  }, [mode])
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-    runModernAnimations('.reveal', mode)
-  }, [mode, location.pathname])
-
+  const [mode, setMode] = useState(readStoredMode)
+  useEffect(() => { document.body.dataset.mode = mode; document.documentElement.setAttribute('data-mode', mode); try { window.localStorage.setItem(STORAGE_KEY, mode) } catch { /* */ } }, [mode])
+  useEffect(() => { window.scrollTo({ top: 0 }) }, [location.pathname])
+  const setModeSafe = useCallback(m => { if (MODES.indexOf(m) !== -1) setMode(m) }, [])
   return (
-    <div className="app-shell">
-      <TopBar mode={mode} setMode={setMode} />
-      <SiteHeader />
+    <div className="rd-app-shell">
+      <SiteHeader mode={mode} setMode={setModeSafe} />
       <main>
         <Routes>
-          <Route path="/" element={<HomePage mode={mode} />} />
-          <Route path="/rooms" element={<RoomsPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/rooms" element={<RiadsPage />} />
+          <Route path="/rooms/:id" element={<StayDetailPage />} />
+          <Route path="/packages" element={<PackagesPage />} />
+          <Route path="/activities" element={<ActivitiesPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/contact" element={<ContactPage />} />
-          <Route path="*" element={<HomePage mode={mode} />} />
+          <Route path="/booking" element={<BookingPage />} />
+          <Route path="*" element={<HomePage />} />
         </Routes>
       </main>
       <Footer />

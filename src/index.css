@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500&display=swap');
 
 * {
   box-sizing: border-box;
@@ -12,18 +12,22 @@ body,
 
 html {
   overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  font-family: 'Manrope', sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   line-height: 1.6;
   background:
-    radial-gradient(circle at 12% 16%, color-mix(in srgb, var(--accent), transparent 88%) 0%, transparent 30%),
-    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--line), transparent 55%) 0%, transparent 28%),
+    radial-gradient(circle at 10% 14%, color-mix(in srgb, var(--accent), transparent 86%) 0%, transparent 32%),
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--line), transparent 60%) 0%, transparent 28%),
+    radial-gradient(circle at 50% 98%, color-mix(in srgb, var(--surface-soft), transparent 40%) 0%, transparent 40%),
     var(--bg);
   color: var(--text);
-  transition: background 250ms ease, color 250ms ease;
+  transition: background 300ms ease, color 300ms ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -38,6 +42,12 @@ img {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent), transparent 70%);
+  color: var(--heading);
 }
