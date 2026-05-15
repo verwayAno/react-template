@@ -6,39 +6,57 @@ const I = ({ name, className = '' }) => <i className={`ri-${name} ${className}`}
 const MODES = ['light', 'dark', 'classic', 'modern']
 const STORAGE_KEY = 'riad-mode'
 const MODE_ICONS = { light: 'sun-line', dark: 'moon-clear-line', classic: 'ancient-pavilion-line', modern: 'leaf-line' }
+const IMG = {
+  bahiaCourtyard: 'https://images.unsplash.com/photo-1758621710112-7f3461ad194b?auto=format&fit=crop&w=2000&q=80',
+  benYoussefDetail: 'https://images.unsplash.com/photo-1772531073388-5b9b232d27df?auto=format&fit=crop&w=2000&q=80',
+  riadDoor: 'https://images.unsplash.com/photo-1628642393776-70a715f2cc40?auto=format&fit=crop&w=1600&q=80',
+  riadPool: 'https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?auto=format&fit=crop&w=1600&q=80',
+  fesCourtyard: 'https://images.unsplash.com/photo-1773500164240-eac0111621b6?auto=format&fit=crop&w=2000&q=80',
+  chefchaouenStreet: 'https://images.unsplash.com/photo-1762538190384-c78b301be187?auto=format&fit=crop&w=1600&q=80',
+  essaouiraTerrace: 'https://images.unsplash.com/photo-1760726743595-a1e7fc25cab3?auto=format&fit=crop&w=1600&q=80',
+  desertCamp: 'https://images.unsplash.com/photo-1677836157562-5e24481b6b69?auto=format&fit=crop&w=1600&q=80',
+  spiceSouk: 'https://images.unsplash.com/photo-1713607763620-dbfe9c10b3ff?auto=format&fit=crop&w=1600&q=80',
+  atlasVillage: 'https://images.unsplash.com/photo-1729442045686-fe062f3c6c16?auto=format&fit=crop&w=1600&q=80',
+  hammamSpa: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1600&q=80',
+  nightSky: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=1600&q=80',
+  mintTea: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=1600&q=80',
+  atlasPeaks: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=80',
+  moroccanFood: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=80',
+  oceanRocks: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80',
+}
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    DATA
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const heroSlides = [
-  { id: 'courtyard', eyebrow: 'Courtyard Collection', title: 'An inner courtyard,', titleEm: 'an outer silence.', subtitle: 'Step through a carved cedar door and the medina falls away. Dar Zellige is a collection of eleven restored riads across Marrakech, Fes, and Chefchaouen.', ctaLabel: 'Browse riads', ctaHref: '/rooms', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=2000&q=80' },
-  { id: 'zellige', eyebrow: 'Hand-set Zellige', title: 'Ten thousand tiles,', titleEm: 'cut by hand.', subtitle: 'Every mosaic floor and fountain basin is laid in the traditional way â€” tesserae chipped to shape, set in plaster, grouted by masters.', ctaLabel: 'Meet the craftsmen', ctaHref: '/about', image: 'https://images.unsplash.com/photo-1539020140153-e479b8c64e3a?auto=format&fit=crop&w=2000&q=80' },
-  { id: 'hammam', eyebrow: 'Hammam Ritual', title: 'Steam, savon beldi,', titleEm: 'mint tea.', subtitle: 'Each riad keeps a private hammam warmed with cedar embers. Book the Royal Ritual for a ninety-minute ceremony.', ctaLabel: 'Book a ritual', ctaHref: '/booking', image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=2000&q=80' },
+  { id: 'courtyard', eyebrow: 'Courtyard Collection', title: 'An inner courtyard,', titleEm: 'an outer silence.', subtitle: 'Step through a carved cedar door and the medina falls away. Dar Zellige is a collection of eleven restored riads across Marrakech, Fes, and Chefchaouen.', ctaLabel: 'Browse riads', ctaHref: '/rooms', image: IMG.bahiaCourtyard },
+  { id: 'zellige', eyebrow: 'Hand-set Zellige', title: 'Ten thousand tiles,', titleEm: 'cut by hand.', subtitle: 'Every mosaic floor and fountain basin is laid in the traditional way â€” tesserae chipped to shape, set in plaster, grouted by masters.', ctaLabel: 'Meet the craftsmen', ctaHref: '/about', image: IMG.benYoussefDetail },
+  { id: 'hammam', eyebrow: 'Hammam Ritual', title: 'Steam, savon beldi,', titleEm: 'mint tea.', subtitle: 'Each riad keeps a private hammam warmed with cedar embers. Book the Royal Ritual for a ninety-minute ceremony.', ctaLabel: 'Book a ritual', ctaHref: '/booking', image: IMG.hammamSpa },
 ]
 
 const allRiads = [
-  { id: 'riad-zellige', featured: true, name: 'Riad Zellige', category: 'Signature Riad', city: 'Marrakech Medina', address: 'Derb Bouhsain, Marrakech Medina', beds: 4, capacity: 8, size: 180, price: 320, originalPrice: 420, rating: 4.97, reviews: 214, image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1400&q=80', amenities: ['water-flash-line', 'restaurant-line', 'hotel-bed-line', 'leaf-line', 'moon-line'], amenityLabels: ['Courtyard pool', 'In-riad chef', '4 en-suites', 'Orange grove', 'Rooftop terrace'], badge: 'Signature Stay', cancellation: 'Free cancellation until 48h before check-in', description: 'Nestled within the ancient walls of the Marrakech Medina, Riad Zellige is a masterwork of Andalusian architecture with mosaic zellige floors, hand-carved cedarwood ceilings, and a private courtyard with a rose-water fountain.', highlights: ['Private rose-water courtyard', 'Traditional hammam suite', 'Personal in-riad chef', 'Rooftop terrace & plunge pool'] },
-  { id: 'dar-andalusi', featured: true, name: 'Dar Andalusi', category: 'Heritage Palace', city: 'Fes el-Bali', address: 'Talaa Kebira, Fes el-Bali', beds: 5, capacity: 10, size: 240, price: 380, originalPrice: null, rating: 4.99, reviews: 158, image: 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1400&q=80', amenities: ['ancient-gate-line', 'book-open-line', 'goblet-line', 'cake-3-line', 'service-line'], amenityLabels: ['14th-century arches', 'Medina library', 'Andalusian bar', 'Traditional breakfast', 'House concierge'], badge: 'UNESCO district', cancellation: 'Free cancellation until 72h before check-in', description: 'A restored 14th-century palace in the heart of Fes el-Bali with carved stucco galleries, a grand central courtyard with an 8-metre mosaic fountain, and hand-painted tiles.', highlights: ['Tannery private viewing balcony', 'Medina artisan workshop tours', 'Roof terrace with medina panorama', 'Library of Moroccan manuscripts'] },
-  { id: 'riad-zaitoune', featured: true, name: 'Riad Zaitoune', category: 'Courtyard House', city: 'Marrakech Medina', address: 'Derb el-Ferrane, Marrakech', beds: 3, capacity: 6, size: 140, price: 240, originalPrice: 290, rating: 4.92, reviews: 96, image: 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?auto=format&fit=crop&w=1400&q=80', amenities: ['water-flash-line', 'fire-line', 'restaurant-line', 'plant-line'], amenityLabels: ['Reflecting pool', 'Fireplace salon', 'Tajine kitchen', 'Mint garden'], badge: 'New opening', cancellation: 'Free cancellation until 24h before check-in', description: 'A newly restored courtyard house with a reflecting pool, fireplace salon, and a mint garden where breakfast is served each morning.', highlights: ['Reflecting pool courtyard', 'Fireplace salon', 'Tajine kitchen', 'Mint garden breakfast'] },
-  { id: 'dar-zaouia', featured: false, name: 'Dar Zaouia', category: 'Artist Residence', city: 'Chefchaouen', address: 'Plaza Uta el-Hammam, Chefchaouen', beds: 3, capacity: 6, size: 120, price: 180, originalPrice: null, rating: 4.88, reviews: 87, image: 'https://images.unsplash.com/photo-1553025934-296397db4010?auto=format&fit=crop&w=1400&q=80', amenities: ['palette-line', 'sun-foggy-line', 'moon-line', 'cup-line'], amenityLabels: ['Atelier studio', 'Rif-valley view', 'Rooftop suite', 'Mint-tea service'], badge: 'Blue City', cancellation: 'Free cancellation until 48h before check-in', description: 'An artist residence in the blue city of Chefchaouen with an atelier studio, Rif-valley views, and a rooftop suite.', highlights: ['Atelier studio', 'Rif-valley panorama', 'Rooftop suite', 'Daily mint-tea service'] },
-  { id: 'riad-noor', featured: false, name: 'Riad Noor', category: 'Boutique Riad', city: 'Essaouira', address: 'Rue de la Skala, Essaouira', beds: 4, capacity: 8, size: 160, price: 260, originalPrice: 310, rating: 4.85, reviews: 142, image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1400&q=80', amenities: ['ship-line', 'music-2-line', 'restaurant-line', 'water-flash-line'], amenityLabels: ['Atlantic terrace', 'Gnaoua evenings', 'Seafood table', 'Plunge pool'], badge: 'Ocean views', cancellation: 'Free cancellation until 48h before check-in', description: 'A boutique riad on the Essaouira coast with an Atlantic terrace, gnaoua music evenings, and a seafood table.', highlights: ['Atlantic terrace', 'Gnaoua music evenings', 'Fresh seafood table', 'Plunge pool'] },
-  { id: 'dar-tadelakt', featured: false, name: 'Dar Tadelakt', category: 'Private Palace', city: 'Palmeraie, Marrakech', address: 'Route de Fes, Palmeraie', beds: 6, capacity: 12, size: 360, price: 540, originalPrice: 680, rating: 4.98, reviews: 189, image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1400&q=80', amenities: ['water-flash-line', 'leaf-line', 'service-line', 'heart-pulse-line', 'car-line', 'restaurant-line'], amenityLabels: ['25m palm pool', 'Olive orchard', 'Full staff', 'Private hammam', 'Airport transfer', 'Chef kitchen'], badge: 'Family favourite', cancellation: 'Free cancellation until 96h before check-in', description: 'A private palace in the Palmeraie with a 25-metre palm pool, olive orchard, full staff, and private hammam.', highlights: ['25m private palm pool', 'Olive orchard', 'Full live-in staff', 'Private hammam & spa'] },
+  { id: 'riad-zellige', featured: true, name: 'Riad Zellige', category: 'Signature Riad', city: 'Marrakech Medina', address: 'Derb Bouhsain, Marrakech Medina', beds: 4, capacity: 8, size: 180, price: 320, originalPrice: 420, rating: 4.97, reviews: 214, image: IMG.bahiaCourtyard, amenities: ['water-flash-line', 'restaurant-line', 'hotel-bed-line', 'leaf-line', 'moon-line'], amenityLabels: ['Courtyard pool', 'In-riad chef', '4 en-suites', 'Orange grove', 'Rooftop terrace'], badge: 'Signature Stay', cancellation: 'Free cancellation until 48h before check-in', description: 'Nestled within the ancient walls of the Marrakech Medina, Riad Zellige is a masterwork of Andalusian architecture with mosaic zellige floors, hand-carved cedarwood ceilings, and a private courtyard with a rose-water fountain.', highlights: ['Private rose-water courtyard', 'Traditional hammam suite', 'Personal in-riad chef', 'Rooftop terrace & plunge pool'] },
+  { id: 'dar-andalusi', featured: true, name: 'Dar Andalusi', category: 'Heritage Palace', city: 'Fes el-Bali', address: 'Talaa Kebira, Fes el-Bali', beds: 5, capacity: 10, size: 240, price: 380, originalPrice: null, rating: 4.99, reviews: 158, image: IMG.fesCourtyard, amenities: ['ancient-gate-line', 'book-open-line', 'goblet-line', 'cake-3-line', 'service-line'], amenityLabels: ['14th-century arches', 'Medina library', 'Andalusian bar', 'Traditional breakfast', 'House concierge'], badge: 'UNESCO district', cancellation: 'Free cancellation until 72h before check-in', description: 'A restored 14th-century palace in the heart of Fes el-Bali with carved stucco galleries, a grand central courtyard with an 8-metre mosaic fountain, and hand-painted tiles.', highlights: ['Tannery private viewing balcony', 'Medina artisan workshop tours', 'Roof terrace with medina panorama', 'Library of Moroccan manuscripts'] },
+  { id: 'riad-zaitoune', featured: true, name: 'Riad Zaitoune', category: 'Courtyard House', city: 'Marrakech Medina', address: 'Derb el-Ferrane, Marrakech', beds: 3, capacity: 6, size: 140, price: 240, originalPrice: 290, rating: 4.92, reviews: 96, image: IMG.riadDoor, amenities: ['water-flash-line', 'fire-line', 'restaurant-line', 'plant-line'], amenityLabels: ['Reflecting pool', 'Fireplace salon', 'Tajine kitchen', 'Mint garden'], badge: 'New opening', cancellation: 'Free cancellation until 24h before check-in', description: 'A newly restored courtyard house with a reflecting pool, fireplace salon, and a mint garden where breakfast is served each morning.', highlights: ['Reflecting pool courtyard', 'Fireplace salon', 'Tajine kitchen', 'Mint garden breakfast'] },
+  { id: 'dar-zaouia', featured: false, name: 'Dar Zaouia', category: 'Artist Residence', city: 'Chefchaouen', address: 'Plaza Uta el-Hammam, Chefchaouen', beds: 3, capacity: 6, size: 120, price: 180, originalPrice: null, rating: 4.88, reviews: 87, image: IMG.chefchaouenStreet, amenities: ['palette-line', 'sun-foggy-line', 'moon-line', 'cup-line'], amenityLabels: ['Atelier studio', 'Rif-valley view', 'Rooftop suite', 'Mint-tea service'], badge: 'Blue City', cancellation: 'Free cancellation until 48h before check-in', description: 'An artist residence in the blue city of Chefchaouen with an atelier studio, Rif-valley views, and a rooftop suite.', highlights: ['Atelier studio', 'Rif-valley panorama', 'Rooftop suite', 'Daily mint-tea service'] },
+  { id: 'riad-noor', featured: false, name: 'Riad Noor', category: 'Boutique Riad', city: 'Essaouira', address: 'Rue de la Skala, Essaouira', beds: 4, capacity: 8, size: 160, price: 260, originalPrice: 310, rating: 4.85, reviews: 142, image: IMG.essaouiraTerrace, amenities: ['ship-line', 'music-2-line', 'restaurant-line', 'water-flash-line'], amenityLabels: ['Atlantic terrace', 'Gnaoua evenings', 'Seafood table', 'Plunge pool'], badge: 'Ocean views', cancellation: 'Free cancellation until 48h before check-in', description: 'A boutique riad on the Essaouira coast with an Atlantic terrace, gnaoua music evenings, and a seafood table.', highlights: ['Atlantic terrace', 'Gnaoua music evenings', 'Fresh seafood table', 'Plunge pool'] },
+  { id: 'dar-tadelakt', featured: false, name: 'Dar Tadelakt', category: 'Private Palace', city: 'Palmeraie, Marrakech', address: 'Route de Fes, Palmeraie', beds: 6, capacity: 12, size: 360, price: 540, originalPrice: 680, rating: 4.98, reviews: 189, image: IMG.riadPool, amenities: ['water-flash-line', 'leaf-line', 'service-line', 'heart-pulse-line', 'car-line', 'restaurant-line'], amenityLabels: ['25m palm pool', 'Olive orchard', 'Full staff', 'Private hammam', 'Airport transfer', 'Chef kitchen'], badge: 'Family favourite', cancellation: 'Free cancellation until 96h before check-in', description: 'A private palace in the Palmeraie with a 25-metre palm pool, olive orchard, full staff, and private hammam.', highlights: ['25m private palm pool', 'Olive orchard', 'Full live-in staff', 'Private hammam & spa'] },
 ]
 
 const experiences = [
-  { id: 'medina-walk', title: 'Medina Artisan Walk', category: 'Culture', duration: '4 hours', groupSize: 'Max 6', price: 75, difficulty: 'Easy', rating: 4.9, reviews: 204, image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1200&q=80', highlights: ['Copper souk visit', 'Tannery balcony', 'Calligraphy workshop'], excerpt: 'Follow a local historian through the oldest working medina on Earth.' },
-  { id: 'tajine-class', title: 'Courtyard Tajine Class', category: 'Culinary', duration: '3 hours', groupSize: 'Max 4', price: 95, difficulty: 'Easy', rating: 5.0, reviews: 128, image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80', highlights: ['Spice souk shopping', 'Charcoal braising', 'Shared courtyard lunch'], excerpt: 'Shop the spice souk at dawn, return to a riad courtyard, and learn the architecture of a perfect tajine.' },
-  { id: 'dune-dawn', title: 'Erg Chebbi Dawn Ride', category: 'Adventure', duration: '6 hours', groupSize: 'Max 8', price: 180, difficulty: 'Moderate', rating: 4.95, reviews: 173, image: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=1200&q=80', highlights: ['Camel ascent at 5am', 'Summit sunrise breakfast', 'Berber drumming circle'], excerpt: 'Ride a camel to the crest of Erg Chebbi before dawn.' },
-  { id: 'hammam-ritual', title: 'Royal Hammam Ritual', category: 'Wellness', duration: '2.5 hours', groupSize: 'Private', price: 140, difficulty: 'Easy', rating: 4.98, reviews: 341, image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1200&q=80', highlights: ['Savon beldi scrub', 'Rhassoul clay wrap', 'Rose-water rinse'], excerpt: 'The oldest ceremony in Moroccan wellness â€” steam, black soap, argan oil, and mint tea.' },
-  { id: 'atlas-trek', title: 'Atlas Mountain Day Trek', category: 'Adventure', duration: '8 hours', groupSize: 'Max 10', price: 120, difficulty: 'Moderate', rating: 4.87, reviews: 98, image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80', highlights: ['Berber village visit', 'Waterfall swim', 'Mountain lunch'], excerpt: 'A full-day guided trek through the High Atlas with Berber village stops.' },
-  { id: 'stargazing', title: 'Sahara Stargazing Night', category: 'Astronomy', duration: '3 hours', groupSize: 'Max 8', price: 95, difficulty: 'Easy', rating: 4.92, reviews: 156, image: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=1200&q=80', highlights: ['Research telescope', 'Constellation tour', 'Thermal recliners'], excerpt: 'Morocco\u2019s Sahara ranks among the world\u2019s top dark-sky destinations.' },
+  { id: 'medina-walk', title: 'Medina Artisan Walk', category: 'Culture', duration: '4 hours', groupSize: 'Max 6', price: 75, difficulty: 'Easy', rating: 4.9, reviews: 204, image: IMG.benYoussefDetail, highlights: ['Copper souk visit', 'Tannery balcony', 'Calligraphy workshop'], excerpt: 'Follow a local historian through the oldest working medina on Earth.' },
+  { id: 'tajine-class', title: 'Courtyard Tajine Class', category: 'Culinary', duration: '3 hours', groupSize: 'Max 4', price: 95, difficulty: 'Easy', rating: 5.0, reviews: 128, image: IMG.spiceSouk, highlights: ['Spice souk shopping', 'Charcoal braising', 'Shared courtyard lunch'], excerpt: 'Shop the spice souk at dawn, return to a riad courtyard, and learn the architecture of a perfect tajine.' },
+  { id: 'dune-dawn', title: 'Erg Chebbi Dawn Ride', category: 'Adventure', duration: '6 hours', groupSize: 'Max 8', price: 180, difficulty: 'Moderate', rating: 4.95, reviews: 173, image: IMG.desertCamp, highlights: ['Camel ascent at 5am', 'Summit sunrise breakfast', 'Berber drumming circle'], excerpt: 'Ride a camel to the crest of Erg Chebbi before dawn.' },
+  { id: 'hammam-ritual', title: 'Royal Hammam Ritual', category: 'Wellness', duration: '2.5 hours', groupSize: 'Private', price: 140, difficulty: 'Easy', rating: 4.98, reviews: 341, image: IMG.hammamSpa, highlights: ['Savon beldi scrub', 'Rhassoul clay wrap', 'Rose-water rinse'], excerpt: 'The oldest ceremony in Moroccan wellness â€” steam, black soap, argan oil, and mint tea.' },
+  { id: 'atlas-trek', title: 'Atlas Mountain Day Trek', category: 'Adventure', duration: '8 hours', groupSize: 'Max 10', price: 120, difficulty: 'Moderate', rating: 4.87, reviews: 98, image: IMG.atlasVillage, highlights: ['Berber village visit', 'Waterfall swim', 'Mountain lunch'], excerpt: 'A full-day guided trek through the High Atlas with Berber village stops.' },
+  { id: 'stargazing', title: 'Sahara Stargazing Night', category: 'Astronomy', duration: '3 hours', groupSize: 'Max 8', price: 95, difficulty: 'Easy', rating: 4.92, reviews: 156, image: IMG.nightSky, highlights: ['Research telescope', 'Constellation tour', 'Thermal recliners'], excerpt: 'Morocco\u2019s Sahara ranks among the world\u2019s top dark-sky destinations.' },
 ]
 
 const packages = [
-  { id: 'desert-romance', name: 'Sahara Romance Escape', location: 'Merzouga Desert', duration: '4 nights', price: 3200, pricePer: 'per couple', badge: 'Bestseller', tagline: 'The most romantic desert on Earth, perfectly curated', description: 'Four nights in the Sahara Star Pavilion with private sunset camel trek, rooftop hammam, and candlelit dinner on your own private dune.', image: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=1400&q=80', includes: ['4 nights luxury tent', 'Private camel trek', 'Hammam for two', 'Dune dinner', 'All transfers'] },
-  { id: 'imperial-tour', name: 'Imperial Cities Grand Tour', location: 'Marrakech Â· Fes Â· Chefchaouen', duration: '8 nights', price: 7400, pricePer: 'per person', badge: 'Signature', tagline: 'Three extraordinary cities, one seamless journey', description: 'Begin in Marrakech, train to Fes, drive to Chefchaouen. Private guides, artisan workshops, and the finest riads in each city.', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1400&q=80', includes: ['8 nights in 3 cities', 'Private guides', 'Artisan workshops', 'All transfers', 'Daily breakfast'] },
-  { id: 'atlas-adventure', name: 'Atlas & Desert Adventure', location: 'Atlas Mountains Â· Merzouga', duration: '6 nights', price: 4900, pricePer: 'per person', badge: 'Adventure', tagline: 'Snow peaks at dawn, star dunes at dusk', description: 'Three nights in the Atlas Mountain Lodge followed by three nights in the Sahara. Summit hiking, Berber villages, and desert silence.', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1400&q=80', includes: ['3 nights Atlas lodge', '3 nights desert camp', 'Guided treks', 'Camel trek', 'All meals'] },
-  { id: 'coastal-serenity', name: 'Atlantic Coastal Serenity', location: 'Essaouira Coast', duration: '5 nights', price: 3800, pricePer: 'per couple', badge: 'Coastal', tagline: 'Salt air, Atlantic surf, and the art of doing nothing', description: 'Five nights in the Atlantic Kasbah with kitesurf lessons, hammam rituals, and fresh seafood at the harbor.', image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1400&q=80', includes: ['5 nights ocean riad', 'Kitesurf lessons', 'Hammam ritual', 'Seafood dinner', 'Argan grove visit'] },
+  { id: 'desert-romance', name: 'Sahara Romance Escape', location: 'Merzouga Desert', duration: '4 nights', price: 3200, pricePer: 'per couple', badge: 'Bestseller', tagline: 'The most romantic desert on Earth, perfectly curated', description: 'Four nights in the Sahara Star Pavilion with private sunset camel trek, rooftop hammam, and candlelit dinner on your own private dune.', image: IMG.desertCamp, includes: ['4 nights luxury tent', 'Private camel trek', 'Hammam for two', 'Dune dinner', 'All transfers'] },
+  { id: 'imperial-tour', name: 'Imperial Cities Grand Tour', location: 'Marrakech Â· Fes Â· Chefchaouen', duration: '8 nights', price: 7400, pricePer: 'per person', badge: 'Signature', tagline: 'Three extraordinary cities, one seamless journey', description: 'Begin in Marrakech, train to Fes, drive to Chefchaouen. Private guides, artisan workshops, and the finest riads in each city.', image: IMG.bahiaCourtyard, includes: ['8 nights in 3 cities', 'Private guides', 'Artisan workshops', 'All transfers', 'Daily breakfast'] },
+  { id: 'atlas-adventure', name: 'Atlas & Desert Adventure', location: 'Atlas Mountains Â· Merzouga', duration: '6 nights', price: 4900, pricePer: 'per person', badge: 'Adventure', tagline: 'Snow peaks at dawn, star dunes at dusk', description: 'Three nights in the Atlas Mountain Lodge followed by three nights in the Sahara. Summit hiking, Berber villages, and desert silence.', image: IMG.atlasVillage, includes: ['3 nights Atlas lodge', '3 nights desert camp', 'Guided treks', 'Camel trek', 'All meals'] },
+  { id: 'coastal-serenity', name: 'Atlantic Coastal Serenity', location: 'Essaouira Coast', duration: '5 nights', price: 3800, pricePer: 'per couple', badge: 'Coastal', tagline: 'Salt air, Atlantic surf, and the art of doing nothing', description: 'Five nights in the Atlantic Kasbah with kitesurf lessons, hammam rituals, and fresh seafood at the harbor.', image: IMG.essaouiraTerrace, includes: ['5 nights ocean riad', 'Kitesurf lessons', 'Hammam ritual', 'Seafood dinner', 'Argan grove visit'] },
 ]
 
 const amenities = [
@@ -58,12 +76,12 @@ const testimonials = [
 ]
 
 const blogPosts = [
-  { id: 'zellige-craft', title: 'The geometry of zellige: why each tile is chipped by hand', excerpt: 'A master tiler in Fes explains why the hand-chipped edge catches light in a way no machine-cut tile can.', image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', date: 'April 14, 2026', category: 'Craft', readTime: 8, author: 'Salima Benhima' },
-  { id: 'mint-tea', title: 'Mint tea is not a drink, it is an argument', excerpt: 'The pour, the height, the three glasses â€” every step of the ceremony has meaning.', image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80', date: 'March 28, 2026', category: 'Culture', readTime: 5, author: 'Omar Tazi' },
-  { id: 'riad-history', title: 'How the riad was invented: Moorish architecture after 711', excerpt: 'The Moroccan courtyard house is a direct descendant of Andalusian patio design.', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', date: 'March 10, 2026', category: 'History', readTime: 12, author: 'Mehdi Laraki' },
-  { id: 'hammam-guide', title: 'A first-timer\u2019s guide to the traditional hammam', excerpt: 'Two hours, black soap, a warm marble slab, and a complete stranger.', image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80', date: 'February 22, 2026', category: 'Wellness', readTime: 6, author: 'Aicha Benhassi' },
-  { id: 'medina-markets', title: 'Buying saffron in the Fes souk without getting cheated', excerpt: 'A short field guide to spice-market pricing and the five words of Darija that change everything.', image: 'https://images.unsplash.com/photo-1604909052743-94e838986d24?auto=format&fit=crop&w=800&q=80', date: 'February 08, 2026', category: 'Travel', readTime: 7, author: 'Yassine El Idrissi' },
-  { id: 'atlas-hike', title: 'The three-day trek to Jbel Toubkal from an Imlil riad', excerpt: 'North Africa\u2019s highest peak is closer than you think.', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80', date: 'January 19, 2026', category: 'Adventure', readTime: 10, author: 'Hakim Alaoui' },
+  { id: 'zellige-craft', title: 'The geometry of zellige: why each tile is chipped by hand', excerpt: 'A master tiler in Fes explains why the hand-chipped edge catches light in a way no machine-cut tile can.', image: IMG.benYoussefDetail, date: 'April 14, 2026', category: 'Craft', readTime: 8, author: 'Salima Benhima' },
+  { id: 'mint-tea', title: 'Mint tea is not a drink, it is an argument', excerpt: 'The pour, the height, the three glasses â€” every step of the ceremony has meaning.', image: IMG.mintTea, date: 'March 28, 2026', category: 'Culture', readTime: 5, author: 'Omar Tazi' },
+  { id: 'riad-history', title: 'How the riad was invented: Moorish architecture after 711', excerpt: 'The Moroccan courtyard house is a direct descendant of Andalusian patio design.', image: IMG.bahiaCourtyard, date: 'March 10, 2026', category: 'History', readTime: 12, author: 'Mehdi Laraki' },
+  { id: 'hammam-guide', title: 'A first-timer\u2019s guide to the traditional hammam', excerpt: 'Two hours, black soap, a warm marble slab, and a complete stranger.', image: IMG.hammamSpa, date: 'February 22, 2026', category: 'Wellness', readTime: 6, author: 'Aicha Benhassi' },
+  { id: 'medina-markets', title: 'Buying saffron in the Fes souk without getting cheated', excerpt: 'A short field guide to spice-market pricing and the five words of Darija that change everything.', image: IMG.spiceSouk, date: 'February 08, 2026', category: 'Travel', readTime: 7, author: 'Yassine El Idrissi' },
+  { id: 'atlas-hike', title: 'The three-day trek to Jbel Toubkal from an Imlil riad', excerpt: 'North Africa\u2019s highest peak is closer than you think.', image: IMG.atlasVillage, date: 'January 19, 2026', category: 'Adventure', readTime: 10, author: 'Hakim Alaoui' },
 ]
 
 const team = [
@@ -88,10 +106,10 @@ const stats = [
 ]
 
 const activityItems = [
-  { id: 'hammam', icon: 'drop-line', label: 'Hammam', title: 'The Royal Hammam Ritual', desc: 'A ninety-minute ceremony: steam room, black-soap exfoliation, rhassoul clay, argan oil massage, and rose-water rinse.', tags: ['Savon beldi', 'Rhassoul', 'Argan', 'Mint tea'], image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1000&q=80' },
-  { id: 'cuisine', icon: 'restaurant-line', label: 'Cuisine', title: 'Courtyard Tajine Class', desc: 'Shop the spice souk at dawn with Chef Aicha, return to a riad courtyard, and spend three hours learning the architecture of a perfect tajine.', tags: ['Souk walk', 'Charcoal', 'Spice blending', 'Lunch'], image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1000&q=80' },
-  { id: 'craft', icon: 'hammer-line', label: 'Craft', title: 'Zellige & Calligraphy', desc: 'Spend an afternoon with a master tiler in Fes, then move to a Koranic calligraphy workshop.', tags: ['Tile-making', 'Kufic', 'Master guild', 'Keepsake'], image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1000&q=80' },
-  { id: 'desert', icon: 'landscape-line', label: 'Desert', title: 'Erg Chebbi Dawn Ride', desc: 'A private camel trek from the dune base to the crest of Erg Chebbi before dawn.', tags: ['Camel trek', 'Sunrise', 'Berber camp', 'Silence'], image: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=1000&q=80' },
+  { id: 'hammam', icon: 'drop-line', label: 'Hammam', title: 'The Royal Hammam Ritual', desc: 'A ninety-minute ceremony: steam room, black-soap exfoliation, rhassoul clay, argan oil massage, and rose-water rinse.', tags: ['Savon beldi', 'Rhassoul', 'Argan', 'Mint tea'], image: IMG.hammamSpa },
+  { id: 'cuisine', icon: 'restaurant-line', label: 'Cuisine', title: 'Courtyard Tajine Class', desc: 'Shop the spice souk at dawn with Chef Aicha, return to a riad courtyard, and spend three hours learning the architecture of a perfect tajine.', tags: ['Souk walk', 'Charcoal', 'Spice blending', 'Lunch'], image: IMG.spiceSouk },
+  { id: 'craft', icon: 'hammer-line', label: 'Craft', title: 'Zellige & Calligraphy', desc: 'Spend an afternoon with a master tiler in Fes, then move to a Koranic calligraphy workshop.', tags: ['Tile-making', 'Kufic', 'Master guild', 'Keepsake'], image: IMG.benYoussefDetail },
+  { id: 'desert', icon: 'landscape-line', label: 'Desert', title: 'Erg Chebbi Dawn Ride', desc: 'A private camel trek from the dune base to the crest of Erg Chebbi before dawn.', tags: ['Camel trek', 'Sunrise', 'Berber camp', 'Silence'], image: IMG.desertCamp },
 ]
 
 const faqs = [
@@ -108,10 +126,76 @@ const _MegaMenus = {
     { title: 'Marrakech', links: [{ label: 'Riad Zellige', href: '/rooms' }, { label: 'Riad Zaitoune', href: '/rooms' }, { label: 'Dar Tadelakt', href: '/rooms' }] },
     { title: 'Fes', links: [{ label: 'Dar Andalusi', href: '/rooms' }, { label: 'Riad Talaa', href: '/rooms' }] },
     { title: 'Coast & North', links: [{ label: 'Riad Noor', href: '/rooms' }, { label: 'Dar Zaouia', href: '/rooms' }] },
-  ], promo: { title: 'Private Buy-outs', desc: 'Book an entire palace for your family or retreat.', href: '/contact', cta: 'Request a quote', image: 'https://images.unsplash.com/photo-1539020140153-e479b8c64e3a?auto=format&fit=crop&w=600&q=80' } },
+  ], promo: { title: 'Private Buy-outs', desc: 'Book an entire palace for your family or retreat.', href: '/contact', cta: 'Request a quote', image: IMG.benYoussefDetail } },
 }
 
 const featuredRiads = (() => { const f = allRiads.filter(r => r.featured).slice(0, 3); return f.length === 3 ? f : allRiads.slice(0, 3) })()
+
+const detailImageLibrary = {
+  riad: [
+    IMG.bahiaCourtyard,
+    IMG.riadDoor,
+    IMG.riadPool,
+  ],
+  package: [
+    IMG.desertCamp,
+    IMG.bahiaCourtyard,
+    IMG.atlasVillage,
+  ],
+  activity: [
+    IMG.benYoussefDetail,
+    IMG.spiceSouk,
+    IMG.hammamSpa,
+  ],
+}
+
+const homeJourneys = [
+  { icon: 'key-2-line', title: 'Choose a house', text: 'Pick the exact courtyard, roofline, and neighborhood rhythm you want to wake up inside.', image: allRiads[0].image, href: '/rooms' },
+  { icon: 'route-line', title: 'Shape the days', text: 'Layer in souk walks, hammam rituals, desert dawns, and cooking tables without losing the ease of a private stay.', image: packages[1].image, href: '/packages' },
+  { icon: 'cup-line', title: 'Arrive slowly', text: 'Your house team meets you at the door with mint tea, luggage handled, and dinner already fragrant in the kitchen.', image: IMG.mintTea, href: '/booking' },
+]
+
+const aboutTimeline = [
+  { year: '2019', title: 'One courtyard', text: 'The first restoration began in Marrakech with a collapsed fountain, cedar beams, and a stubborn belief in patient repair.' },
+  { year: '2021', title: 'The craft guild', text: 'We formalized partnerships with zellige cutters, tadelakt plasterers, cedar carvers, and textile ateliers across Fes.' },
+  { year: '2024', title: 'Eleven houses', text: 'Dar Zellige became a small network of restored riads connected by one hospitality standard and many local hands.' },
+]
+
+const contactChannels = [
+  { icon: 'chat-smile-2-line', title: 'Stay planning', text: 'Best for dates, riad matching, celebrations, and dietary needs.', action: 'hello@darzellige.ma', href: 'mailto:hello@darzellige.ma' },
+  { icon: 'phone-line', title: 'Urgent arrival', text: 'Use when you are already travelling or coordinating a transfer.', action: '+212 524 388 812', href: 'tel:+212524388812' },
+  { icon: 'map-pin-time-line', title: 'Private visits', text: 'For location scouting, full buy-outs, retreats, and wedding walk-throughs.', action: 'Request a visit', href: '/booking' },
+]
+
+const packageDetailExtras = {
+  'desert-romance': {
+    gallery: [IMG.desertCamp, IMG.nightSky, IMG.hammamSpa],
+    plan: ['Private arrival in Merzouga with sunset tea', 'Camel crossing to the Star Pavilion', 'Hammam, dune dinner, and telescope night', 'Slow breakfast and chauffeured return'],
+  },
+  'imperial-tour': {
+    gallery: [IMG.bahiaCourtyard, IMG.chefchaouenStreet, IMG.fesCourtyard],
+    plan: ['Marrakech medina orientation and riad dinner', 'Fes artisan ateliers and tannery balcony', 'Chefchaouen blue-city morning walk', 'Private driver return with Atlas lunch stop'],
+  },
+  'atlas-adventure': {
+    gallery: [IMG.atlasVillage, IMG.desertCamp, IMG.bahiaCourtyard],
+    plan: ['Imlil arrival and Berber village lunch', 'Guided ridge trek with mule support', 'Kasbah transfer toward the desert', 'Dawn dune ride and campfire supper'],
+  },
+  'coastal-serenity': {
+    gallery: [IMG.essaouiraTerrace, IMG.oceanRocks, IMG.spiceSouk],
+    plan: ['Essaouira harbor arrival and ocean riad check-in', 'Kitesurf lesson or argan-grove picnic', 'Hammam ritual and seafood table', 'Late checkout with market concierge'],
+  },
+}
+
+const activityDetailExtras = {
+  'medina-walk': { icon: 'compass-3-line', gallery: [IMG.benYoussefDetail, IMG.spiceSouk, IMG.mintTea], flow: ['Meet your historian at Bab Boujloud', 'Copper, leather, and calligraphy atelier visits', 'Mint tea debrief on a private roof'] },
+  'tajine-class': { icon: 'restaurant-2-line', gallery: [IMG.spiceSouk, IMG.moroccanFood, IMG.mintTea], flow: ['Shop saffron, cumin, and preserved lemon', 'Prep over charcoal in a riad kitchen', 'Shared courtyard lunch with recipe cards'] },
+  'dune-dawn': { icon: 'sun-line', gallery: [IMG.desertCamp, IMG.nightSky, IMG.atlasPeaks], flow: ['Pre-dawn camp pickup with hot coffee', 'Camel ascent to the ridge', 'Sunrise breakfast and drum circle'] },
+  'hammam-ritual': { icon: 'drop-line', gallery: [IMG.hammamSpa, IMG.mintTea, IMG.bahiaCourtyard], flow: ['Steam and black-soap preparation', 'Rhassoul clay wrap and warm rinse', 'Argan massage with mint tea recovery'] },
+  'atlas-trek': { icon: 'landscape-line', gallery: [IMG.atlasVillage, IMG.atlasPeaks, IMG.bahiaCourtyard], flow: ['Trail briefing in Imlil village', 'Waterfall path and walnut grove climb', 'Mountain lunch before return transfer'] },
+  stargazing: { icon: 'sparkling-2-line', gallery: [IMG.nightSky, IMG.desertCamp, IMG.atlasPeaks], flow: ['Thermal recliner setup after dinner', 'Guided constellation map of Sahara skies', 'Telescope session and spiced tea'] },
+}
+
+const getRiadGallery = (riad) => [riad.image, ...detailImageLibrary.riad.filter(src => src !== riad.image)].slice(0, 3)
 
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -147,6 +231,116 @@ function BreadcrumbHero({ title, titleEm, crumbs, image }) {
         <h1>{title} {titleEm && <em>{titleEm}</em>}</h1>
       </div>
     </section>
+  )
+}
+
+function DetailGallery({ images, title, label }) {
+  return (
+    <div className="rd-detail-gallery" aria-label={`${title} image showcase`}>
+      {images.map((img, i) => (
+        <figure key={`${title}-${i}`} className={i === 0 ? 'rd-detail-gallery__hero' : 'rd-detail-gallery__tile'}>
+          <img src={img} alt={`${title} ${label} ${i + 1}`} loading={i === 0 ? 'eager' : 'lazy'} />
+          {i === 0 && <figcaption>{label}</figcaption>}
+        </figure>
+      ))}
+    </div>
+  )
+}
+
+function DetailHero({ type, eyebrow, title, subtitle, image, crumbs, stats }) {
+  return (
+    <section className={`rd-detail-hero rd-detail-hero--${type}`}>
+      <div className="rd-detail-hero__bg"><img src={image} alt={title} /></div>
+      <div className="rd-detail-hero__veil" />
+      <div className="contain rd-detail-hero__inner">
+        <nav className="rd-detail-hero__crumbs" aria-label="Breadcrumb">
+          {crumbs.map((c, i) => (<span key={c.label}>{i > 0 && <I name="arrow-right-s-line" />}{c.href ? <Link to={c.href}>{c.label}</Link> : <span>{c.label}</span>}</span>))}
+        </nav>
+        <p className="rd-detail-hero__eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{subtitle}</p>
+        <div className="rd-detail-hero__stats">{stats.map(stat => <span key={stat.label}><I name={stat.icon} /><strong>{stat.value}</strong><small>{stat.label}</small></span>)}</div>
+      </div>
+    </section>
+  )
+}
+
+const monthLabel = (date) => date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+const dayKey = (date) => date ? date.toISOString().slice(0, 10) : ''
+const cleanDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
+const addMonths = (date, count) => new Date(date.getFullYear(), date.getMonth() + count, 1)
+const sameDay = (a, b) => a && b && dayKey(a) === dayKey(b)
+const formatShortDate = (date) => date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Select'
+
+function MiniBookingCalendar({ mode = 'range', label = 'Choose dates' }) {
+  const today = cleanDay(new Date())
+  const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
+  const [start, setStart] = useState(null)
+  const [end, setEnd] = useState(null)
+  const days = useMemo(() => {
+    const first = new Date(month.getFullYear(), month.getMonth(), 1)
+    const total = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
+    const cells = []
+    for (let i = 0; i < first.getDay(); i += 1) cells.push(null)
+    for (let i = 1; i <= total; i += 1) cells.push(new Date(month.getFullYear(), month.getMonth(), i))
+    while (cells.length % 7 !== 0) cells.push(null)
+    return cells
+  }, [month])
+
+  const selectDay = (date) => {
+    if (!date || cleanDay(date) < today) return
+    if (mode === 'single') { setStart(date); setEnd(null); return }
+    if (!start || end) { setStart(date); setEnd(null); return }
+    if (date < start) { setStart(date); setEnd(null); return }
+    setEnd(date)
+  }
+
+  const inRange = (date) => mode === 'range' && start && end && date > start && date < end
+  const summary = mode === 'single'
+    ? formatShortDate(start)
+    : `${formatShortDate(start)} - ${formatShortDate(end)}`
+
+  return (
+    <div className="rd-mini-cal">
+      <div className="rd-mini-cal__top">
+        <span><I name="calendar-2-line" /> {label}</span>
+        <strong>{summary}</strong>
+      </div>
+      <div className="rd-mini-cal__head">
+        <button type="button" aria-label="Previous month" onClick={() => setMonth(m => addMonths(m, -1))}><I name="arrow-left-s-line" /></button>
+        <h4>{monthLabel(month)}</h4>
+        <button type="button" aria-label="Next month" onClick={() => setMonth(m => addMonths(m, 1))}><I name="arrow-right-s-line" /></button>
+      </div>
+      <div className="rd-mini-cal__week">{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <span key={`${d}-${i}`}>{d}</span>)}</div>
+      <div className="rd-mini-cal__days">
+        {days.map((date, i) => {
+          const disabled = date && cleanDay(date) < today
+          const cls = [
+            date ? '' : 'is-empty',
+            disabled ? 'is-disabled' : '',
+            sameDay(date, start) ? 'is-start' : '',
+            sameDay(date, end) ? 'is-end' : '',
+            inRange(date) ? 'is-range' : '',
+          ].filter(Boolean).join(' ')
+          return <button key={date ? dayKey(date) : `blank-${i}`} type="button" disabled={!date || disabled} className={cls} onClick={() => selectDay(date)}>{date?.getDate()}</button>
+        })}
+      </div>
+    </div>
+  )
+}
+
+function DetailBookingCard({ price, pricePer, rating, reviews, primaryLabel, secondaryLabel = 'Ask a question', calendarMode = 'range', calendarLabel = 'Choose dates' }) {
+  return (
+    <aside className="rd-detail-book">
+      <div className="rd-detail-book__card">
+        <span className="rd-detail-book__label">Concierge ready</span>
+        <div className="rd-detail-book__price"><strong>${price.toLocaleString()}</strong><small>{pricePer}</small></div>
+        {rating && <div className="rd-detail-book__rating"><I name="star-fill" /> {rating} <small>{reviews ? `- ${reviews} reviews` : 'guest rated'}</small></div>}
+        <MiniBookingCalendar mode={calendarMode} label={calendarLabel} />
+        <Link to="/booking" className="rd-btn rd-btn-primary rd-btn-full">{primaryLabel} <I name="arrow-right-line" /></Link>
+        <Link to="/contact" className="rd-btn rd-btn-ghost rd-btn-full">{secondaryLabel}</Link>
+      </div>
+    </aside>
   )
 }
 
@@ -342,6 +536,27 @@ function HomePage() {
         <div className="rd-hero__scroll"><span className="rd-hero__scroll-label">Scroll</span><span className="rd-hero__scroll-bar" /></div>
       </section>
 
+      {/* JOURNEY STRIP */}
+      <section className="section contain">
+        <Reveal className="rd-home-journey">
+          <div className="rd-home-journey__intro">
+            <p className="eyebrow">How it unfolds</p>
+            <h2>From first key to final glass of tea, every step has a human hand on it.</h2>
+          </div>
+          <div className="rd-home-journey__track">
+            {homeJourneys.map((item, i) => (
+              <Link key={item.title} to={item.href} className="rd-home-step">
+                <img src={item.image} alt={item.title} loading="lazy" />
+                <span className="rd-home-step__num">{String(i + 1).padStart(2, '0')}</span>
+                <span className="rd-home-step__icon"><I name={item.icon} /></span>
+                <strong>{item.title}</strong>
+                <small>{item.text}</small>
+              </Link>
+            ))}
+          </div>
+        </Reveal>
+      </section>
+
       {/* FEATURED RIADS */}
       <section className="section contain">
         <Reveal className="section-heading"><p className="eyebrow">Featured Riads</p><h2>Three courtyards, three cities, three different mornings.</h2></Reveal>
@@ -363,7 +578,7 @@ function HomePage() {
       {/* BRAND STORY */}
       <section className="section contain">
         <Reveal className="rd-story">
-          <div className="rd-story__imgwrap"><img src="https://images.unsplash.com/photo-1591825729269-caeb344f6df2?auto=format&fit=crop&w=1000&q=80" alt="Courtyard fountain" loading="lazy" /><div className="rd-story__badge"><strong>07</strong><span>Years restoring</span></div></div>
+          <div className="rd-story__imgwrap"><img src={IMG.riadDoor} alt="Restored riad entrance in Marrakech" loading="lazy" /><div className="rd-story__badge"><strong>07</strong><span>Years restoring</span></div></div>
           <div><p className="eyebrow">Our story</p><h2>Every riad we restore takes seven years.</h2><p style={{ marginTop: '1rem', lineHeight: 1.7 }}>Dar Zellige was founded by an architect from Fes who wanted to bring the slow, honest restoration practice to a small collection of riads. Real tadelakt, hand-cut zellige, carved cedar â€” everything patient, everything right.</p><div style={{ marginTop: '1.5rem' }}><Link to="/about" className="rd-btn rd-btn-primary">Read our story <I name="arrow-right-line" /></Link></div></div>
         </Reveal>
       </section>
@@ -375,7 +590,7 @@ function HomePage() {
           {experiences.slice(0, 4).map(e => (
             <article key={e.id} className="rd-act-card">
               <div className="rd-act-card__img"><img src={e.image} alt={e.title} loading="lazy" /><div className="rd-act-card__overlay"><span className="rd-act-card__pill"><I name="time-line" /> {e.duration}</span><span className="rd-act-card__pill"><I name="group-line" /> {e.groupSize}</span></div></div>
-              <div className="rd-act-card__body"><span className="rd-act-card__cat">{e.category}</span><h3 className="rd-act-card__title">{e.title}</h3><p className="rd-act-card__desc">{e.excerpt}</p><div className="rd-act-card__footer"><span className="rd-act-card__price"><strong>${e.price}</strong> <small>/ person</small></span><Link to="/activities" className="rd-btn rd-btn-ghost rd-btn-sm">Details</Link></div></div>
+              <div className="rd-act-card__body"><span className="rd-act-card__cat">{e.category}</span><h3 className="rd-act-card__title">{e.title}</h3><p className="rd-act-card__desc">{e.excerpt}</p><div className="rd-act-card__footer"><span className="rd-act-card__price"><strong>${e.price}</strong> <small>/ person</small></span><Link to={`/activities/${e.id}`} className="rd-btn rd-btn-ghost rd-btn-sm">Details</Link></div></div>
             </article>
           ))}
         </Reveal>
@@ -428,7 +643,7 @@ function RiadsPage() {
 
   return (
     <>
-      <BreadcrumbHero title="The" titleEm="Collection" crumbs={[{ label: 'Home', href: '/' }, { label: 'Riads' }]} image="https://images.unsplash.com/photo-1539020140153-e479b8c64e3a?auto=format&fit=crop&w=1800&q=80" />
+      <BreadcrumbHero title="The" titleEm="Collection" crumbs={[{ label: 'Home', href: '/' }, { label: 'Riads' }]} image={IMG.benYoussefDetail} />
       <section className="section contain">
         <div className="rd-sort-bar">
           <div className="rd-sort-bar__count"><strong>{sorted.length}</strong> riads across three cities</div>
@@ -465,34 +680,50 @@ function RiadsPage() {
 function StayDetailPage() {
   const { id } = useParams()
   const riad = allRiads.find(r => r.id === id) || allRiads[0]
+  const gallery = getRiadGallery(riad)
   return (
     <>
-      <section className="rd-stay-hero">
-        <div className="rd-stay-hero__bg"><img src={riad.image} alt={riad.name} /></div>
-        <div className="rd-stay-hero__overlay" />
-        <div className="contain rd-stay-hero__content">
-          <span className="rd-stay-hero__badge">{riad.badge}</span>
-          <h1>{riad.name}</h1>
-          <span className="rd-stay-hero__loc"><I name="map-pin-line" /> {riad.address}</span>
-        </div>
-      </section>
+      <DetailHero
+        type="riad"
+        eyebrow={riad.badge}
+        title={riad.name}
+        subtitle={riad.description}
+        image={riad.image}
+        crumbs={[{ label: 'Home', href: '/' }, { label: 'Riads', href: '/rooms' }, { label: riad.name }]}
+        stats={[
+          { icon: 'hotel-bed-line', value: riad.beds, label: 'Bedrooms' },
+          { icon: 'group-line', value: riad.capacity, label: 'Guests' },
+          { icon: 'ruler-line', value: `${riad.size} m2`, label: 'Interior' },
+          { icon: 'map-pin-line', value: riad.city.split(',')[0], label: 'City' },
+        ]}
+      />
       <section className="section contain">
-        <div className="rd-stay-detail">
-          <div className="rd-stay-detail__main">
-            <div><p className="eyebrow">{riad.category}</p><h2>{riad.name}</h2><p style={{ marginTop: '1rem', lineHeight: 1.7 }}>{riad.description}</p></div>
-            <div className="rd-stay-detail__facts"><span className="rd-stay-detail__fact"><I name="hotel-bed-line" /> {riad.beds} bedrooms</span><span className="rd-stay-detail__fact"><I name="group-line" /> Sleeps {riad.capacity}</span><span className="rd-stay-detail__fact"><I name="ruler-line" /> {riad.size} mÂ²</span><span className="rd-stay-detail__fact"><I name="map-pin-line" /> {riad.city}</span></div>
-            <div><h3>Highlights</h3><ul style={{ marginTop: '.8rem', display: 'grid', gap: '.5rem' }}>{riad.highlights.map(h => <li key={h} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', color: 'var(--text)' }}><I name="check-line" className="rd-card__rating" /> {h}</li>)}</ul></div>
-            <div><h3>Amenities</h3><div className="rd-stay-detail__amenities" style={{ marginTop: '.8rem' }}>{riad.amenities.map((a, i) => <div key={a} className="rd-stay-detail__amenity"><I name={a} /> {riad.amenityLabels[i]}</div>)}</div></div>
-            <div style={{ padding: '1.2rem', background: 'color-mix(in srgb, var(--accent), transparent 92%)', borderRadius: 'var(--rd-r-md)', display: 'flex', alignItems: 'center', gap: '.6rem' }}><I name="shield-check-line" className="rd-card__rating" /> <span style={{ fontSize: '.9rem' }}>{riad.cancellation}</span></div>
+        <div className="rd-detail-layout">
+          <div className="rd-detail-main">
+            <Reveal><DetailGallery images={gallery} title={riad.name} label={riad.category} /></Reveal>
+            <Reveal className="rd-detail-copy">
+              <p className="eyebrow">{riad.category}</p>
+              <h2>A private riad composed around shade, water, and arrival.</h2>
+              <p>{riad.description}</p>
+              <div className="rd-detail-note"><I name="shield-check-line" /> {riad.cancellation}</div>
+            </Reveal>
+            <Reveal className="rd-detail-panels">
+              <div className="rd-detail-panel">
+                <h3>Signature Highlights</h3>
+                <ul>{riad.highlights.map(h => <li key={h}><I name="check-line" /> {h}</li>)}</ul>
+              </div>
+              <div className="rd-detail-panel">
+                <h3>Amenities</h3>
+                <div className="rd-detail-chipgrid">{riad.amenities.map((a, i) => <span key={a}><I name={a} /> {riad.amenityLabels[i]}</span>)}</div>
+              </div>
+            </Reveal>
+            <Reveal className="rd-detail-rhythm">
+              <div><span>Morning</span><strong>Breakfast under orange leaves</strong></div>
+              <div><span>Afternoon</span><strong>Cool salon, hammam, or souk guide</strong></div>
+              <div><span>Evening</span><strong>Rooftop lanterns and a house-cooked table</strong></div>
+            </Reveal>
           </div>
-          <aside className="rd-stay-sidebar">
-            <div className="rd-stay-sidebar__card">
-              <div className="rd-stay-sidebar__price">{riad.originalPrice && <del>${riad.originalPrice}</del>}<strong>${riad.price}</strong> <small>/ night</small></div>
-              <div className="rd-stay-sidebar__rating"><I name="star-fill" /> {riad.rating} <small>Â· {riad.reviews} reviews</small></div>
-              <Link to="/booking" className="rd-btn rd-btn-primary rd-btn-full" style={{ marginBottom: '1rem' }}>Book this riad <I name="arrow-right-line" /></Link>
-              <Link to="/contact" className="rd-btn rd-btn-ghost rd-btn-full">Ask a question</Link>
-            </div>
-          </aside>
+          <DetailBookingCard price={riad.price} pricePer="/ night" rating={riad.rating} reviews={riad.reviews} primaryLabel="Book this riad" calendarLabel="Choose stay dates" />
         </div>
       </section>
     </>
@@ -505,7 +736,7 @@ function StayDetailPage() {
 function PackagesPage() {
   return (
     <>
-      <BreadcrumbHero title="Curated" titleEm="Packages" crumbs={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} image="https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1800&q=80" />
+      <BreadcrumbHero title="Curated" titleEm="Packages" crumbs={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} image={IMG.bahiaCourtyard} />
       <section className="section contain">
         <Reveal className="section-heading"><p className="eyebrow">Multi-night journeys</p><h2>Packages designed for the unhurried traveller.</h2><p className="lede" style={{ marginTop: '1rem' }}>Each package combines our finest riads with curated experiences, private transfers, and a dedicated concierge.</p></Reveal>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -518,7 +749,7 @@ function PackagesPage() {
                 <p className="rd-pkg-card__tagline">{pkg.tagline}</p>
                 <p className="rd-pkg-card__desc">{pkg.description}</p>
                 <div className="rd-pkg-card__includes">{pkg.includes.map(inc => <span key={inc}><I name="check-line" /> {inc}</span>)}</div>
-                <div className="rd-pkg-card__footer"><div className="rd-pkg-card__price"><strong>${pkg.price.toLocaleString()}</strong><small>{pkg.pricePer}</small></div><Link to="/booking" className="rd-btn rd-btn-primary">Book package <I name="arrow-right-line" /></Link></div>
+                <div className="rd-pkg-card__footer"><div className="rd-pkg-card__price"><strong>${pkg.price.toLocaleString()}</strong><small>{pkg.pricePer}</small></div><div className="rd-pkg-card__actions"><Link to={`/packages/${pkg.id}`} className="rd-btn rd-btn-ghost">View details</Link><Link to="/booking" className="rd-btn rd-btn-primary">Book <I name="arrow-right-line" /></Link></div></div>
               </div>
             </Reveal>
           ))}
@@ -528,25 +759,128 @@ function PackagesPage() {
   )
 }
 
+function PackageDetailPage() {
+  const { id } = useParams()
+  const pkg = packages.find(p => p.id === id) || packages[0]
+  const extras = packageDetailExtras[pkg.id] || { gallery: [pkg.image, ...detailImageLibrary.package], plan: pkg.includes }
+  const pairedRiads = allRiads.slice(0, 3)
+  return (
+    <>
+      <DetailHero
+        type="package"
+        eyebrow={pkg.badge}
+        title={pkg.name}
+        subtitle={pkg.description}
+        image={pkg.image}
+        crumbs={[{ label: 'Home', href: '/' }, { label: 'Packages', href: '/packages' }, { label: pkg.name }]}
+        stats={[
+          { icon: 'map-pin-line', value: pkg.location.split(' ')[0], label: 'Region' },
+          { icon: 'time-line', value: pkg.duration, label: 'Duration' },
+          { icon: 'suitcase-line', value: pkg.includes.length, label: 'Inclusions' },
+          { icon: 'service-line', value: 'Private', label: 'Concierge' },
+        ]}
+      />
+      <section className="section contain">
+        <div className="rd-detail-layout">
+          <div className="rd-detail-main">
+            <Reveal><DetailGallery images={extras.gallery.slice(0, 3)} title={pkg.name} label="Curated journey" /></Reveal>
+            <Reveal className="rd-detail-copy rd-detail-copy--package">
+              <p className="eyebrow">{pkg.location}</p>
+              <h2>{pkg.tagline}.</h2>
+              <p>{pkg.description}</p>
+            </Reveal>
+            <Reveal className="rd-detail-panels">
+              <div className="rd-detail-panel rd-detail-panel--timeline">
+                <h3>Journey Flow</h3>
+                <ol>{extras.plan.map((step, i) => <li key={step}><span>{String(i + 1).padStart(2, '0')}</span>{step}</li>)}</ol>
+              </div>
+              <div className="rd-detail-panel">
+                <h3>Included</h3>
+                <div className="rd-detail-chipgrid">{pkg.includes.map(inc => <span key={inc}><I name="check-line" /> {inc}</span>)}</div>
+              </div>
+            </Reveal>
+            <Reveal className="rd-linked-stays">
+              <div className="section-heading"><p className="eyebrow">Where you may sleep</p><h2>Riads matched to this package.</h2></div>
+              <div className="rd-linked-stays__grid">{pairedRiads.map(r => <Link key={r.id} to={`/rooms/${r.id}`}><img src={r.image} alt={r.name} loading="lazy" /><span>{r.city}</span><strong>{r.name}</strong></Link>)}</div>
+            </Reveal>
+          </div>
+          <DetailBookingCard price={pkg.price} pricePer={pkg.pricePer} primaryLabel="Book package" calendarLabel="Choose journey dates" />
+        </div>
+      </section>
+    </>
+  )
+}
+
 function ActivitiesPage() {
   return (
     <>
-      <BreadcrumbHero title="Moroccan" titleEm="Experiences" crumbs={[{ label: 'Home', href: '/' }, { label: 'Activities' }]} image="https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1800&q=80" />
+      <BreadcrumbHero title="Moroccan" titleEm="Experiences" crumbs={[{ label: 'Home', href: '/' }, { label: 'Activities' }]} image={IMG.spiceSouk} />
       <section className="section contain">
         <Reveal className="section-heading"><p className="eyebrow">Curated by locals</p><h2>Experiences that go beyond the guidebook.</h2></Reveal>
         <Reveal className="rd-grid rd-grid--3">
           {experiences.map(e => (
             <article key={e.id} className="rd-act-card">
-              <div className="rd-act-card__img"><img src={e.image} alt={e.title} loading="lazy" /><div className="rd-act-card__overlay"><span className="rd-act-card__pill"><I name="time-line" /> {e.duration}</span><span className="rd-act-card__pill">{e.difficulty}</span></div></div>
+              <Link to={`/activities/${e.id}`} className="rd-act-card__img"><img src={e.image} alt={e.title} loading="lazy" /><div className="rd-act-card__overlay"><span className="rd-act-card__pill"><I name="time-line" /> {e.duration}</span><span className="rd-act-card__pill">{e.difficulty}</span></div></Link>
               <div className="rd-act-card__body">
                 <span className="rd-act-card__cat">{e.category}</span>
-                <h3 className="rd-act-card__title">{e.title}</h3>
+                <h3 className="rd-act-card__title"><Link to={`/activities/${e.id}`}>{e.title}</Link></h3>
                 <p className="rd-act-card__desc">{e.excerpt}</p>
-                <div className="rd-act-card__footer"><span className="rd-act-card__price"><strong>${e.price}</strong> <small>/ person</small></span><Link to="/booking" className="rd-btn rd-btn-primary rd-btn-sm">Book <I name="arrow-right-line" /></Link></div>
+                <div className="rd-act-card__footer"><span className="rd-act-card__price"><strong>${e.price}</strong> <small>/ person</small></span><Link to={`/activities/${e.id}`} className="rd-btn rd-btn-primary rd-btn-sm">Details <I name="arrow-right-line" /></Link></div>
               </div>
             </article>
           ))}
         </Reveal>
+      </section>
+    </>
+  )
+}
+
+function ActivityDetailPage() {
+  const { id } = useParams()
+  const activity = experiences.find(e => e.id === id) || experiences[0]
+  const extras = activityDetailExtras[activity.id] || { icon: 'compass-3-line', gallery: [activity.image, ...detailImageLibrary.activity], flow: activity.highlights }
+  return (
+    <>
+      <DetailHero
+        type="activity"
+        eyebrow={activity.category}
+        title={activity.title}
+        subtitle={activity.excerpt}
+        image={activity.image}
+        crumbs={[{ label: 'Home', href: '/' }, { label: 'Activities', href: '/activities' }, { label: activity.title }]}
+        stats={[
+          { icon: 'time-line', value: activity.duration, label: 'Duration' },
+          { icon: 'group-line', value: activity.groupSize, label: 'Group' },
+          { icon: 'speed-up-line', value: activity.difficulty, label: 'Pace' },
+          { icon: 'star-fill', value: activity.rating, label: 'Rating' },
+        ]}
+      />
+      <section className="section contain">
+        <div className="rd-detail-layout">
+          <div className="rd-detail-main">
+            <Reveal><DetailGallery images={extras.gallery.slice(0, 3)} title={activity.title} label="Experience detail" /></Reveal>
+            <Reveal className="rd-activity-stage">
+              <div className="rd-activity-stage__icon"><I name={extras.icon} /></div>
+              <div><p className="eyebrow">{activity.category}</p><h2>{activity.title}, designed at human pace.</h2><p>{activity.excerpt} Every route is timed around light, heat, and local working rhythms so the experience feels alive instead of staged.</p></div>
+            </Reveal>
+            <Reveal className="rd-detail-panels">
+              <div className="rd-detail-panel rd-detail-panel--timeline">
+                <h3>Experience Flow</h3>
+                <ol>{extras.flow.map((step, i) => <li key={step}><span>{String(i + 1).padStart(2, '0')}</span>{step}</li>)}</ol>
+              </div>
+              <div className="rd-detail-panel">
+                <h3>Highlights</h3>
+                <ul>{activity.highlights.map(h => <li key={h}><I name="check-line" /> {h}</li>)}</ul>
+              </div>
+            </Reveal>
+            <Reveal className="rd-detail-rhythm rd-detail-rhythm--activity">
+              <div><span>Before</span><strong>Concierge confirms pickup, clothing, and dietary notes</strong></div>
+              <div><span>During</span><strong>Local host, private pacing, and flexible pauses</strong></div>
+              <div><span>After</span><strong>Return transfer or dinner reservation arranged</strong></div>
+            </Reveal>
+          </div>
+          <DetailBookingCard price={activity.price} pricePer="/ person" rating={activity.rating} reviews={activity.reviews} primaryLabel="Book activity" calendarMode="single" calendarLabel="Choose activity date" />
+        </div>
       </section>
     </>
   )
@@ -557,14 +891,38 @@ function AboutPage() {
   const active = activityItems.find(a => a.id === tab) || activityItems[0]
   return (
     <>
-      <BreadcrumbHero title="Our" titleEm="Story" crumbs={[{ label: 'Home', href: '/' }, { label: 'About' }]} image="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1800&q=80" />
+      <BreadcrumbHero title="Our" titleEm="Story" crumbs={[{ label: 'Home', href: '/' }, { label: 'About' }]} image={IMG.benYoussefDetail} />
       <section className="section contain">
         <Reveal className="rd-about-intro">
-          <div className="rd-story__imgwrap"><img src="https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1000&q=80" alt="Riad courtyard" loading="lazy" /><div className="rd-story__badge"><strong>07</strong><span>Year restorations</span></div></div>
-          <div><p className="eyebrow">Craft first, always</p><h2>A small collection of Moroccan riads, restored the way they were built.</h2><p style={{ marginTop: '1rem', lineHeight: 1.7 }}>We believe a riad is a living building. Our restorations average seven years. Every property is restored in partnership with a local master-tiler, plasterer, and carpenter.</p></div>
+          <div className="rd-story__imgwrap"><img src={IMG.bahiaCourtyard} alt="Riad courtyard" loading="lazy" /><div className="rd-story__badge"><strong>07</strong><span>Year restorations</span></div></div>
+          <div className="rd-about-manifesto"><p className="eyebrow">Craft first, always</p><h2>A small collection of Moroccan riads, restored the way they were built.</h2><p>We believe a riad is a living building. Our restorations average seven years. Every property is restored in partnership with a local master-tiler, plasterer, and carpenter.</p><div className="rd-about-seal"><I name="fingerprint-line" /><span>Each house keeps its original plan, courtyard proportions, and street relationship.</span></div></div>
+        </Reveal>
+      </section>
+      <section className="section contain">
+        <Reveal className="rd-about-timeline">
+          {aboutTimeline.map(item => <div key={item.year} className="rd-about-time"><span>{item.year}</span><h3>{item.title}</h3><p>{item.text}</p></div>)}
         </Reveal>
       </section>
       <section className="section contain"><Reveal className="rd-stats-bar">{stats.map(s => <div key={s.label} className="rd-stat"><I name={s.icon} /><strong>{s.value}</strong><span>{s.label}</span></div>)}</Reveal></section>
+      <section className="section contain">
+        <Reveal className="rd-about-craftmap">
+          <div className="rd-about-craftmap__media">
+            <img src={IMG.benYoussefDetail} alt="Moroccan zellige and carved plaster details" loading="lazy" />
+            <img src={IMG.spiceSouk} alt="Marrakech souk color and craft material" loading="lazy" />
+          </div>
+          <div className="rd-about-craftmap__copy">
+            <p className="eyebrow">The restoration table</p>
+            <h2>Every house is edited by craft, not decorated by trend.</h2>
+            <div className="rd-about-craftmap__rows">
+              {[
+                ['Zellige', 'Hand-cut tiles are repaired in their original geometry, then reset around new water lines.'],
+                ['Tadelakt', 'Lime plaster is burnished by hand, waterproofed with black soap, and left softly uneven.'],
+                ['Cedar', 'Ceilings, doors, and screens are restored by the same carpenter families who built them.'],
+              ].map(([name, text]) => <div key={name}><strong>{name}</strong><p>{text}</p></div>)}
+            </div>
+          </div>
+        </Reveal>
+      </section>
       <section className="section contain">
         <Reveal className="section-heading section-heading--center"><p className="eyebrow" style={{ justifyContent:'center',display:'inline-flex' }}>Why our guests return</p><h2>Four commitments we never break.</h2></Reveal>
         <Reveal className="rd-why-grid">{whyUsFeatures.map(f => <div key={f.title} className="rd-why"><div className="rd-why__ic"><I name={f.icon} /></div><h4>{f.title}</h4><p>{f.desc}</p></div>)}</Reveal>
@@ -589,9 +947,24 @@ function BlogPage() {
   const [query, setQuery] = useState('')
   const categories = useMemo(() => ['All', ...new Set(blogPosts.map(p => p.category))], [])
   const filtered = useMemo(() => { const q = query.trim().toLowerCase(); return blogPosts.filter(p => { const catOk = category === 'All' || p.category.toLowerCase() === category.toLowerCase(); const qOk = !q || (p.title + ' ' + p.excerpt).toLowerCase().includes(q); return catOk && qOk }) }, [category, query])
+  const feature = filtered[0] || blogPosts[0]
   return (
     <>
-      <BreadcrumbHero title="The" titleEm="Journal" crumbs={[{ label: 'Home', href: '/' }, { label: 'Journal' }]} image="https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=1800&q=80" />
+      <BreadcrumbHero title="The" titleEm="Journal" crumbs={[{ label: 'Home', href: '/' }, { label: 'Journal' }]} image={IMG.mintTea} />
+      <section className="section contain">
+        <Reveal className="rd-journal-feature">
+          <div className="rd-journal-feature__image"><img src={feature.image} alt={feature.title} loading="eager" /><span>{feature.category}</span></div>
+          <div className="rd-journal-feature__copy">
+            <p className="eyebrow">Latest dispatch</p>
+            <h2>{feature.title}</h2>
+            <p>{feature.excerpt}</p>
+            <div className="rd-journal-feature__meta"><span>{feature.date}</span><span>{feature.readTime} min read</span><span>{feature.author}</span></div>
+          </div>
+          <div className="rd-journal-feature__rail">
+            {blogPosts.slice(1, 4).map(post => <button key={post.id} type="button" onClick={() => { setCategory(post.category); setQuery('') }}><img src={post.image} alt={post.title} /><span>{post.category}</span><strong>{post.title}</strong></button>)}
+          </div>
+        </Reveal>
+      </section>
       <section className="section contain">
         <div className="rd-blog-layout">
           <div>{filtered.length === 0 ? <div className="rd-empty"><I name="search-eye-line" />No posts match your filters.</div> : <Reveal className="rd-blog-grid">{filtered.map(p => <article key={p.id} className="rd-card"><div className="rd-card__img rd-card__img--arch"><img src={p.image} alt={p.title} loading="lazy" /><span className="rd-card__badge">{p.category}</span></div><div className="rd-card__body"><div className="rd-card__meta"><span>{p.date}</span><span>{p.readTime} min</span></div><h3 className="rd-card__title">{p.title}</h3><p className="rd-card__excerpt">{p.excerpt}</p><span className="rd-card__loc"><I name="user-line" /> {p.author}</span></div></article>)}</Reveal>}</div>
@@ -615,11 +988,22 @@ function ContactPage() {
   const submit = e => { e.preventDefault(); const errs = {}; Object.keys(form).forEach(k => { if (!form[k].trim()) errs[k] = 'Required.' }); if (!errs.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Invalid email.'; setErrors(errs); if (Object.keys(errs).length) return; setSuccess(true); setForm({ name:'',email:'',subject:'',message:'' }); setTimeout(() => setSuccess(false), 6000) }
   return (
     <>
-      <BreadcrumbHero title="Let us" titleEm="welcome you" crumbs={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} image="https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=1800&q=80" />
+      <BreadcrumbHero title="Let us" titleEm="welcome you" crumbs={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} image={IMG.riadDoor} />
+      <section className="section contain">
+        <Reveal className="rd-contact-channels">
+          {contactChannels.map(channel => {
+            const content = <><I name={channel.icon} /><h3>{channel.title}</h3><p>{channel.text}</p><span>{channel.action}</span></>
+            return channel.href.startsWith('/')
+              ? <Link key={channel.title} to={channel.href} className="rd-contact-channel">{content}</Link>
+              : <a key={channel.title} href={channel.href} className="rd-contact-channel">{content}</a>
+          })}
+        </Reveal>
+      </section>
       <section className="section contain">
         <Reveal className="rd-contact-grid">
           <div className="rd-contact-info">
             <p className="eyebrow">Reach us directly</p><h2>Talk to the house.</h2>
+            <div className="rd-contact-portrait"><img src={IMG.bahiaCourtyard} alt="Quiet riad courtyard prepared for guests" loading="lazy" /><span>Replies are written by the Marrakech house desk, not a call center.</span></div>
             <div className="rd-contact-item"><div className="rd-contact-item__ic"><I name="map-pin-line" /></div><div><h5>Address</h5><p>Derb Bouhsain 24, Marrakech Medina 40000</p></div></div>
             <div className="rd-contact-item"><div className="rd-contact-item__ic"><I name="phone-line" /></div><div><h5>Hotline</h5><a href="tel:+212524388812">+212 524 388 812</a></div></div>
             <div className="rd-contact-item"><div className="rd-contact-item__ic"><I name="mail-line" /></div><div><h5>Email</h5><a href="mailto:hello@darzellige.ma">hello@darzellige.ma</a></div></div>
@@ -632,6 +1016,13 @@ function ContactPage() {
             <div><label>Message</label><textarea value={form.message} onChange={onChange('message')} placeholder="Tell us about your plans..." />{errors.message && <span className="rd-form__error">{errors.message}</span>}</div>
             <button type="submit" className="rd-btn rd-btn-primary">Send <I name="arrow-right-line" /></button>
           </form>
+        </Reveal>
+      </section>
+      <section className="section contain">
+        <Reveal className="rd-contact-route">
+          <div><span>01</span><h3>Tell us the shape</h3><p>Dates, pace, city mix, family needs, and whether this is a celebration or a quiet retreat.</p></div>
+          <div><span>02</span><h3>We match the house</h3><p>The concierge chooses the riad, route, activities, and arrival plan that fit your group.</p></div>
+          <div><span>03</span><h3>You arrive to a prepared door</h3><p>Transfers, tea, luggage, dinner, and first morning plans are already handled.</p></div>
         </Reveal>
       </section>
       <section className="section contain">
@@ -648,7 +1039,7 @@ function BookingPage() {
   const steps = ['Dates', 'Guests', 'Accommodation', 'Extras', 'Your Details', 'Confirm']
   return (
     <>
-      <BreadcrumbHero title="Book Your" titleEm="Stay" crumbs={[{ label: 'Home', href: '/' }, { label: 'Booking' }]} image="https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1800&q=80" />
+      <BreadcrumbHero title="Book Your" titleEm="Stay" crumbs={[{ label: 'Home', href: '/' }, { label: 'Booking' }]} image={IMG.riadPool} />
       <section className="section contain">
         <div className="rd-booking-wizard">
           <div className="rd-booking-wizard__stepper">
@@ -656,7 +1047,7 @@ function BookingPage() {
           </div>
           <div className="rd-booking-wizard__body">
             <div className="rd-booking-wizard__main">
-              {step===0 && <div><h3><I name="calendar-2-line" /> When are you visiting?</h3><p className="rd-wiz-desc">Select your dates and tell us about your group.</p><p style={{color:'var(--text-soft)',textAlign:'center',padding:'3rem 0'}}>Select check-in and check-out dates using the calendar.</p></div>}
+              {step===0 && <div><h3><I name="calendar-2-line" /> When are you visiting?</h3><p className="rd-wiz-desc">Select your dates and tell us about your group.</p><div className="rd-wiz-calendar"><MiniBookingCalendar label="Choose check-in and check-out" /></div></div>}
               {step===1 && <div><h3><I name="group-line" /> Travellers</h3><p className="rd-wiz-desc">How many guests will be staying?</p><div className="rd-guest-row"><div className="rd-guest-row__info"><strong>Adults</strong><span>Ages 13+</span></div><div className="rd-guest-stepper"><button type="button">-</button><span className="rd-guest-stepper__val">2</span><button type="button">+</button></div></div><div className="rd-guest-row"><div className="rd-guest-row__info"><strong>Children</strong><span>Ages 2-12</span></div><div className="rd-guest-stepper"><button type="button">-</button><span className="rd-guest-stepper__val">0</span><button type="button">+</button></div></div></div>}
               {step===2 && <div><h3><I name="hotel-bed-line" /> Accommodation</h3><p className="rd-wiz-desc">Choose your riad or room.</p><div className="rd-room-options">{allRiads.slice(0,3).map(r => <div key={r.id} className="rd-room-opt"><img src={r.image} alt={r.name} className="rd-room-opt__img" /><h5>{r.name}</h5><p>{r.category} · {r.city}</p><div className="rd-room-opt__price">${r.price}/night</div></div>)}</div></div>}
               {step===3 && <div><h3><I name="sparkling-2-line" /> Extras & Services</h3><p className="rd-wiz-desc">Enhance your stay with optional add-ons.</p><div className="rd-extras-grid"><div className="rd-extra"><div className="rd-extra__check"><I name="check-line" /></div><div className="rd-extra__info"><h5>Airport Transfer</h5><p>Private car from Marrakech airport</p></div><span className="rd-extra__price">$45</span></div><div className="rd-extra"><div className="rd-extra__check"><I name="check-line" /></div><div className="rd-extra__info"><h5>Hammam Ritual</h5><p>90-minute traditional ceremony</p></div><span className="rd-extra__price">$140</span></div><div className="rd-extra"><div className="rd-extra__check"><I name="check-line" /></div><div className="rd-extra__info"><h5>Private Chef Dinner</h5><p>5-course Moroccan feast</p></div><span className="rd-extra__price">$95</span></div></div></div>}
@@ -700,7 +1091,9 @@ function AppShell() {
           <Route path="/rooms" element={<RiadsPage />} />
           <Route path="/rooms/:id" element={<StayDetailPage />} />
           <Route path="/packages" element={<PackagesPage />} />
+          <Route path="/packages/:id" element={<PackageDetailPage />} />
           <Route path="/activities" element={<ActivitiesPage />} />
+          <Route path="/activities/:id" element={<ActivityDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/contact" element={<ContactPage />} />
